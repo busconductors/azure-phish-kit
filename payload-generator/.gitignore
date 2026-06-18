@@ -1,0 +1,4 @@
+*.exe
+capture-backend/capture-srv
+payload-generator/payload-gen
+go.work.sum
