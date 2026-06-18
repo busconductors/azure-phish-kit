@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-all",
+      "detail": "Build all three Go binaries",
+      "dependsOn": ["build-capture", "build-proxy", "build-analytics"],
+      "dependsOrder": "parallel"
+    },
+    {
+      "label": "build-capture",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/capture-backend && go build -o capture-srv .",
+      "presentation": { "reveal": "silent" },
+      "problemMatcher": "$go"
+    },
+    {
+      "label": "build-proxy",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/proxy-server && go build -o proxy-srv .",
+      "presentation": { "reveal": "silent" },
+      "problemMatcher": "$go"
+    },
+    {
+      "label": "build-analytics",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/analytics-server && go build -o analytics-srv .",
+      "presentation": { "reveal": "silent" },
+      "problemMatcher": "$go"
+    },
+    {
+      "label": "run-all",
+      "detail": "Start all three services in terminal tabs",
+      "dependsOn": ["build-all"],
+      "dependsOrder": "sequence",
+      "type": "shell",
+      "command": "echo 'Starting all services...' && mkdir -p ${workspaceFolder}/data && trap 'kill 0' EXIT && (cd ${workspaceFolder}/capture-backend && STORAGE_KEY=${STORAGE_KEY:-laZ6Z3XmXXAJb1JJeLJ1rQITgxQAtQxbWGYa1WQoln8=} TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN} TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID} ./capture-srv) & (cd ${workspaceFolder}/proxy-server && TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN} TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID} ./proxy-srv) & (cd ${workspaceFolder}/analytics-server && ./analytics-srv --data ${workspaceFolder}/data/captures.jsonl --port 9092) & wait",
+      "problemMatcher": []
+    }
+  ]
+}
