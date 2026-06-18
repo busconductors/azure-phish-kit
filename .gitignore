@@ -5,3 +5,4 @@ capture-backend/capture-srv
 *.log
 go.work.sum
 .DS_Store
+proxy-server/proxy-srv
