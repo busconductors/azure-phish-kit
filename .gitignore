@@ -6,3 +6,5 @@ capture-backend/capture-srv
 go.work.sum
 .DS_Store
 proxy-server/proxy-srv
+analytics-server/analytics-srv
+data/

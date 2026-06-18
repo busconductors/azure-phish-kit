@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="30">
+<title>Phishing Kit — Analytics</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0d1117; color: #c9d1d9; padding: 24px; }
+  h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: 20px; color: #f0f6fc; }
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 28px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 16px; }
+  .card .label { font-size: 0.75rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .card .value { font-size: 1.5rem; font-weight: 600; color: #f0f6fc; }
+  .card .sub { font-size: 0.75rem; color: #8b949e; margin-top: 2px; }
+  h2 { font-size: 0.95rem; font-weight: 600; color: #f0f6fc; margin-bottom: 10px; margin-top: 24px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 0.8rem; }
+  th { text-align: left; padding: 8px 10px; border-bottom: 1px solid #30363d; color: #8b949e; font-weight: 500; font-size: 0.72rem; text-transform: uppercase; }
+  td { padding: 6px 10px; border-bottom: 1px solid #21262d; }
+  tr:hover { background: #1c2129; }
+  .badge { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 500; }
+  .badge-success { background: #033a16; color: #3fb950; }
+  .badge-fail { background: #3a0312; color: #f85149; }
+  .badge-capture { background: #0c2d6b; color: #58a6ff; }
+  .badge-proxy { background: #2e0c6b; color: #bc8cff; }
+  .mono { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.75rem; }
+  .footer { margin-top: 24px; font-size: 0.7rem; color: #484f58; border-top: 1px solid #21262d; padding-top: 12px; }
+  .empty { color: #484f58; font-style: italic; padding: 20px 0; }
+</style>
+</head>
+<body>
+<h1>Phishing Kit Analytics</h1>
+
+<div class="summary">
+  <div class="card">
+    <div class="label">Total Events</div>
+    <div class="value">{{.Total}}</div>
+  </div>
+  <div class="card">
+    <div class="label">Success Rate</div>
+    <div class="value">{{printf "%.1f" .SuccessRate}}%</div>
+    <div class="sub">captured / total</div>
+  </div>
+  <div class="card">
+    <div class="label">Unique IPs</div>
+    <div class="value">{{.UniqueIPs}}</div>
+  </div>
+  <div class="card">
+    <div class="label">Active Campaigns</div>
+    <div class="value">{{.ActiveCampaigns}}</div>
+  </div>
+</div>
+
+<h2>Campaigns</h2>
+{{if .Campaigns}}
+<table>
+  <thead>
+    <tr>
+      <th>Campaign ID</th>
+      <th>Brand</th>
+      <th>Events</th>
+      <th>Success</th>
+      <th>Failed</th>
+      <th>Rate</th>
+      <th>Last Seen</th>
+    </tr>
+  </thead>
+  <tbody>
+  {{range .Campaigns}}
+    <tr>
+      <td class="mono">{{.CampaignID}}</td>
+      <td>{{.Brand}}</td>
+      <td>{{.Total}}</td>
+      <td><span class="badge badge-success">{{.Successes}}</span></td>
+      <td><span class="badge badge-fail">{{.Failures}}</span></td>
+      <td>{{printf "%.0f" .Rate}}%</td>
+      <td class="mono">{{.LastSeen}}</td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="empty">No campaign data yet.</p>
+{{end}}
+
+<h2>Top Victim IPs</h2>
+{{if .TopIPs}}
+<table>
+  <thead>
+    <tr>
+      <th>IP Address</th>
+      <th>Events</th>
+      <th>Last Seen</th>
+    </tr>
+  </thead>
+  <tbody>
+  {{range .TopIPs}}
+    <tr>
+      <td class="mono">{{.IP}}</td>
+      <td>{{.Count}}</td>
+      <td class="mono">{{.Last}}</td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="empty">No IP data yet.</p>
+{{end}}
+
+<h2>Recent Events</h2>
+{{if .Recent}}
+<table>
+  <thead>
+    <tr>
+      <th>Time</th>
+      <th>Campaign</th>
+      <th>Brand</th>
+      <th>IP</th>
+      <th>Username</th>
+      <th>Status</th>
+      <th>Source</th>
+    </tr>
+  </thead>
+  <tbody>
+  {{range .Recent}}
+    <tr>
+      <td class="mono">{{.Timestamp}}</td>
+      <td class="mono">{{.CampaignID}}</td>
+      <td>{{.Brand}}</td>
+      <td class="mono">{{.IP}}</td>
+      <td>{{.Username}}</td>
+      <td>{{if eq .Status "success"}}<span class="badge badge-success">success</span>{{else}}<span class="badge badge-fail">failed</span>{{end}}</td>
+      <td>{{if eq .Source "proxy"}}<span class="badge badge-proxy">proxy</span>{{else}}<span class="badge badge-capture">capture</span>{{end}}</td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="empty">No events yet.</p>
+{{end}}
+
+<div class="footer">Generated {{.GeneratedAt}} &middot; Auto-refreshes every 30s</div>
+</body>
+</html>

