@@ -4,6 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"embed"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -13,6 +14,9 @@ import (
 	"os"
 	"time"
 )
+
+//go:embed index.html
+var landingPage embed.FS
 
 var storageKey []byte
 
@@ -44,7 +48,18 @@ func main() {
 		w.Write([]byte("ok"))
 	})
 
-	log.Printf("Capture backend listening on :%s (redirect: %s)", port, redirectURL)
+	// Serve the landing page (with embedded JS decryptor) at /
+	landingHTML, err := landingPage.ReadFile("index.html")
+	if err != nil {
+		log.Fatalf("FATAL: cannot read embedded index.html: %v", err)
+	}
+	log.Printf("Landing page loaded: %d bytes", len(landingHTML))
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write(landingHTML)
+	})
+
+	log.Printf("Capture backend + landing page listening on :%s (redirect: %s)", port, redirectURL)
 	log.Fatal(http.ListenAndServe(":"+port, mux))
 }
 
