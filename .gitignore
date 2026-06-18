@@ -1,6 +1,7 @@
 *.exe
-payload-generator/payload-generator
-capture-backend/capture-backend
+payload-generator/payload-gen
+capture-backend/capture-srv
 .env
 *.log
+go.work.sum
 .DS_Store
