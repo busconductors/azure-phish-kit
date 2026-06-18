@@ -1,0 +1,6 @@
+*.exe
+payload-generator/payload-generator
+capture-backend/capture-backend
+.env
+*.log
+.DS_Store

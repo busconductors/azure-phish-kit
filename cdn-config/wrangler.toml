@@ -1,0 +1,8 @@
+name = "azure-phish-kit"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[env.production]
+routes = [
+    { pattern = "your-worker.workers.dev", custom_domain = false }
+]
