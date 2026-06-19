@@ -1,6 +1,5 @@
 *.exe
 payload-generator/payload-gen
-capture-backend/capture-srv
 .env
 *.log
 go.work.sum
@@ -8,7 +7,6 @@ go.work.sum
 proxy-server/proxy-srv
 analytics-server/analytics-srv
 data/
-capture-backend/capture-backend
 payload-generator/payload-generator
 proxy-server/proxy-server
 analytics-server/analytics-server
