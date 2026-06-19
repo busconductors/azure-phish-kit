@@ -21,11 +21,7 @@
     "ESTSAUTH",
     "ESTSAUTHPERSISTENT",
     "ESTSAUTHLIGHT",
-    "SignInStateCookie",
-    "fpc",
-    "esctx",
-    "x-ms-gateway-slice",
-    "stsservicecookie"
+    "SignInStateCookie"
   ],
   "rewrite": {
     "strip_csp": true,
