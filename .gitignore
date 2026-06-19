@@ -11,3 +11,4 @@ payload-generator/payload-generator
 proxy-server/proxy-server
 analytics-server/analytics-server
 analytics-server/payload-gen
+.wrangler/
