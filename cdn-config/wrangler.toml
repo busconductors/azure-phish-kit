@@ -1,8 +1,7 @@
-name = "azure-phish-kit"
+name = "glnt-proxy"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
-[env.production]
-routes = [
-    { pattern = "your-worker.workers.dev", custom_domain = false }
-]
+[[routes]]
+pattern = "glnt.cc/*"
+zone_name = "glnt.cc"
