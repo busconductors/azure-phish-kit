@@ -35,6 +35,7 @@ type Phishlet struct {
 		StripCookieDomain  bool `json:"strip_cookie_domain"`
 		RewriteLocation    bool `json:"rewrite_location"`
 	} `json:"rewrite"`
+	PathMap map[string]string `json:"path_map"`
 }
 
 // loadPhishlets reads all JSON phishlet configs from the embedded filesystem.

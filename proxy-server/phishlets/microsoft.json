@@ -34,5 +34,6 @@
     "strip_cookie_secure": true,
     "strip_cookie_domain": true,
     "rewrite_location": true
-  }
+  },
+  "path_map": {}
 }
