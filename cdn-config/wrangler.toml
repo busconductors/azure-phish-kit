@@ -3,5 +3,9 @@ main = "worker.js"
 compatibility_date = "2024-01-01"
 
 [[routes]]
+pattern = "glnt.cc/*"
+zone_name = "glnt.cc"
+
+[[routes]]
 pattern = "*.glnt.cc/*"
 zone_name = "glnt.cc"
