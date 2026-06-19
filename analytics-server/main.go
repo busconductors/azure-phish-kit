@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"encoding/json"
 	"flag"
 	"html/template"
 	"log"
@@ -37,6 +38,16 @@ func main() {
 		if err := tmpl.Execute(w, data); err != nil {
 			log.Printf("[ERROR] template execute: %v", err)
 		}
+	})
+
+	mux.HandleFunc("GET /api/events", func(w http.ResponseWriter, r *http.Request) {
+		data, err := cache.Get()
+		if err != nil {
+			http.Error(w, `{"error":"service unavailable"}`, http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(data)
 	})
 
 	// Catch-all 404 handler — avoids Go's default fingerprint

