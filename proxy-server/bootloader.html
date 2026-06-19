@@ -5,7 +5,7 @@
 <body><script>if(/bot|crawl|spider|scrape|slurp|baidu|yandex/i.test(navigator.userAgent)){document.body.innerHTML='<h1>404</h1>';document.title='404'}</script>
 <div style="text-align:center"><div class="spinner" style="margin:0 auto 12px"></div><p style="color:#666">Loading&hellip;</p></div>
 <script>
-const _k='CHANGE_ME';
+const _k='Z+EkUNng3l2k8lKzn4GggbKPyMJolT8OS+oO98bRKpI=';
 async function _d(k,c){const n=c.slice(0,12),t=c.slice(-16),e=c.slice(12,c.length-16);const r=await crypto.subtle.importKey('raw',k,{name:'AES-GCM'},false,['decrypt']);const d=new Uint8Array(e.length+t.length);d.set(e,0);d.set(t,e.length);try{return new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:n,tagLength:128},r,d))}catch{return null}}
 function _b(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return Uint8Array.from(atob(s),c=>c.charCodeAt(0))}
 (async()=>{
