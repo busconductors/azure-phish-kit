@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Package Delivery Attempt</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f4;font-family:Arial,Helvetica,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4;padding:20px 0;">
+  <tr>
+    <td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:6px;border:1px solid #e0e0e0;">
+
+        <!-- Header -->
+        <tr>
+          <td style="padding:30px 40px 20px 40px;border-bottom:2px solid #f0f0f0;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="font-size:20px;font-weight:600;color:#333333;">Package Delivery Service</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Alert Banner -->
+        <tr>
+          <td style="padding:16px 40px;background-color:#fff7ed;border-bottom:1px solid #fed7aa;">
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td>
+                  <p style="font-size:13px;color:#c2410c;margin:0;font-weight:600;">Delivery Attempt Unsuccessful</p>
+                  <p style="font-size:12px;color:#9a3412;margin:4px 0 0 0;">Our driver was unable to deliver your package. Action is required to reschedule delivery.</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:30px 40px;">
+            <p style="font-size:14px;color:#666666;margin:0 0 8px 0;">Hello{RECIPIENT_NAME},</p>
+            <p style="font-size:14px;color:#666666;margin:0 0 20px 0;line-height:1.6;">
+              We attempted to deliver your package today but were unable to complete the delivery. Please review the details below and reschedule at your earliest convenience.
+            </p>
+
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;border:1px solid #e5e7eb;border-radius:4px;margin-bottom:20px;">
+              <tr>
+                <td style="padding:16px 20px;">
+                  <p style="font-size:13px;color:#888888;margin:0 0 8px 0;text-transform:uppercase;letter-spacing:0.5px;">Delivery Information</p>
+                  <table width="100%" cellpadding="4" cellspacing="0" style="font-size:14px;color:#333333;">
+                    <tr>
+                      <td width="130" style="color:#888888;">Tracking Number</td>
+                      <td><strong>1Z999AA10123456784</strong></td>
+                    </tr>
+                    <tr>
+                      <td style="color:#888888;">Attempt Date</td>
+                      <td>June 20, 2026 at 2:15 PM</td>
+                    </tr>
+                    <tr>
+                      <td style="color:#888888;">Reason</td>
+                      <td>Recipient not available / No secure drop-off</td>
+                    </tr>
+                    <tr>
+                      <td style="color:#888888;">Next Attempt</td>
+                      <td>June 21, 2026</td>
+                    </tr>
+                    <tr>
+                      <td style="color:#888888;">Status</td>
+                      <td><span style="background-color:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:3px;font-size:12px;font-weight:600;">ACTION REQUIRED</span></td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+
+            <p style="font-size:14px;color:#666666;margin:0 0 8px 0;line-height:1.6;">
+              <strong>Rescheduling Options:</strong> You may choose an alternative delivery date, provide delivery instructions, or request that the package be held at a local pickup location for your convenience.
+            </p>
+
+            <p style="font-size:14px;color:#c2410c;margin:0 0 24px 0;line-height:1.6;font-weight:600;">
+              If no action is taken within 48 hours, the package will be returned to sender.
+            </p>
+
+            <!-- CTA Button -->
+            <table cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+              <tr>
+                <td align="center" style="background-color:#2563eb;border-radius:5px;padding:12px 32px;">
+                  <a href="{LINK}" style="font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;display:inline-block;">Reschedule Delivery</a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="font-size:13px;color:#999999;margin:0 0 20px 0;line-height:1.5;">
+              Or use this link to manage your delivery:<br>
+              <span style="color:#2563eb;">{LINK}</span>
+            </p>
+
+            <p style="font-size:12px;color:#aaaaaa;margin:0;line-height:1.5;">
+              This is an automated notification from the Package Delivery Service. Standard delivery terms and conditions apply. Tracking information may take up to 24 hours to update after changes are made.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:20px 40px;background-color:#fafafa;border-top:1px solid #e0e0e0;border-radius:0 0 6px 6px;">
+            <p style="font-size:11px;color:#999999;margin:0 0 4px 0;line-height:1.5;">
+              Package Delivery Service &mdash; Logistics &amp; Shipping Solutions
+            </p>
+            <p style="font-size:11px;color:#bbbbbb;margin:0;line-height:1.5;">
+              Do not reply to this email. For assistance, please use the support options available through the delivery management portal.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
