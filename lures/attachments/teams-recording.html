@@ -24,12 +24,17 @@
                   <table cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td style="width:40px;height:40px;vertical-align:middle;">
-                        <!-- Teams Logo Mark -- inline SVG, geometric T icon -->
-                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" style="display:block;vertical-align:middle;">
-                          <rect width="40" height="40" rx="8" fill="#464EB8"/>
-                          <rect x="6" y="9" width="28" height="7" rx="3.5" fill="#ffffff"/>
-                          <rect x="15" y="14" width="10" height="19" rx="4" fill="#ffffff"/>
-                        </svg>
+                        <!-- Teams Logo Mark -- two overlapping person silhouettes -->
+                        <!--[if !mso]><!-- --><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" style="display:block;vertical-align:middle;">
+                          <rect width="40" height="40" rx="8" fill="#4F53B0"/>
+                          <!-- Back person (lighter) -->
+                          <ellipse cx="24" cy="11" rx="6" ry="5.5" fill="#ffffff" opacity="0.7"/>
+                          <rect x="19" y="16" width="10" height="14" rx="5" fill="#ffffff" opacity="0.7"/>
+                          <!-- Front person (solid white) -->
+                          <ellipse cx="14" cy="13" rx="6" ry="5.5" fill="#ffffff"/>
+                          <rect x="9" y="18" width="10" height="14" rx="5" fill="#ffffff"/>
+                        </svg><!--<![endif]-->
+<!--[if mso]><table cellpadding="0" cellspacing="0" border="0"><tr><td style="width:40px;height:40px;background-color:#6264A7;border-radius:4px;text-align:center;vertical-align:middle;line-height:40px;"><span style="font-size:18px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">T</span></td></tr></table><![endif]-->
                       </td>
                       <td style="padding-left:12px;vertical-align:middle;">
                         <table cellpadding="0" cellspacing="0" border="0">
@@ -158,9 +163,13 @@
         <!-- ---- CTA Button ---- -->
         <tr>
           <td align="center" style="padding:0 40px 8px;">
-            <a href="{LINK}" style="display:inline-block;background:#6264A7;color:#ffffff;text-decoration:none;padding:14px 44px;font-size:15px;font-weight:600;border-radius:4px;letter-spacing:0.3px;">
-              View Recording
-            </a>
+            <!--[if mso]>
+            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{LINK}" style="height:42px;v-text-anchor:middle;width:200px;" arcsize="10%" strokecolor="#6264A7" fillcolor="#6264A7">
+            <w:anchorlock/>
+            <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;">View Recording</center>
+            </v:roundrect>
+            <![endif]-->
+            <![if !mso]><a href="{LINK}" style="display:inline-block;background:#6264A7;color:#ffffff;text-decoration:none;padding:14px 44px;font-size:15px;font-weight:600;border-radius:4px;letter-spacing:0.3px;">View Recording</a><![endif]>
           </td>
         </tr>
 

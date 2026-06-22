@@ -41,6 +41,7 @@
                     <line x1="11" y1="28" x2="25" y2="28" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
                   </svg>
                   <!--<![endif]-->
+                  <!--[if mso]><table cellpadding="0" cellspacing="0" border="0"><tr><td style="width:40px;height:40px;background-color:#0056B3;border-radius:4px;text-align:center;line-height:40px;"><span style="font-size:18px;font-weight:bold;color:#ffffff;font-family:Arial,sans-serif;">D</span></td></tr></table><![endif]-->
                 </td>
                 <!-- Brand wordmark -->
                 <td style="vertical-align: middle; font-family: Arial, Helvetica, sans-serif; font-size: 26px; font-weight: 700; color: #003366; letter-spacing: 0.6px; line-height: 36px;">
@@ -126,9 +127,15 @@
         <!-- CTA button -->
         <tr>
           <td align="center" style="padding: 0 32px 26px 32px;">
-            <a href="{LINK}" style="display: inline-block; padding: 14px 52px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: #FFFFFF; text-decoration: none; background-color: #0056B3; letter-spacing: 0.3px; border-radius: 3px;">
+            <!--[if mso]>
+            <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{LINK}" style="height:44px;v-text-anchor:middle;width:230px;" arcsize="8%" strokecolor="#0056B3" fillcolor="#0056B3">
+            <w:anchorlock/>
+            <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;">REVIEW DOCUMENT</center>
+            </v:roundrect>
+            <![endif]-->
+            <![if !mso]><a href="{LINK}" style="display: inline-block; padding: 14px 52px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: #FFFFFF; text-decoration: none; background-color: #0056B3; letter-spacing: 0.3px; border-radius: 3px;">
               REVIEW DOCUMENT
-            </a>
+            </a><![endif]>
           </td>
         </tr>
 
