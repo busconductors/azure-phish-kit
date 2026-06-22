@@ -35,10 +35,6 @@ type Verifier struct {
 	mxCache   map[string]mxEntry
 	mxCacheMu sync.RWMutex
 
-	// Domain-level serialization so only one goroutine talks to a
-	// given SMTP server at a time.
-	domainLocks   map[string]*sync.Mutex
-	domainLocksMu sync.Mutex
 }
 
 type mxEntry struct {
@@ -67,26 +63,10 @@ func NewVerifier(cfg VerifierConfig) *Verifier {
 	}
 
 	return &Verifier{
-		engine:      engine,
-		skipDisp:    cfg.SkipDisposable,
-		mxCache:     make(map[string]mxEntry),
-		domainLocks: make(map[string]*sync.Mutex),
+		engine:   engine,
+		skipDisp: cfg.SkipDisposable,
+		mxCache:  make(map[string]mxEntry),
 	}
-}
-
-// domainLock acquires the per-domain mutex so only one goroutine at a time
-// hits a given domain (important for SMTP rate-limiting).
-func (v *Verifier) domainLock(domain string) func() {
-	v.domainLocksMu.Lock()
-	mu, ok := v.domainLocks[domain]
-	if !ok {
-		mu = &sync.Mutex{}
-		v.domainLocks[domain] = mu
-	}
-	v.domainLocksMu.Unlock()
-
-	mu.Lock()
-	return mu.Unlock
 }
 
 // getMXHost returns the primary MX hostname for a domain, using an
@@ -123,11 +103,7 @@ func (v *Verifier) getMXHost(domain string) string {
 // VerifyEmail runs the full verification pipeline for a single address.
 func (v *Verifier) VerifyEmail(email string) VerifyResult {
 	start := time.Now()
-
-	// Serialize per-domain for SMTP.
 	domain := extractDomain(email)
-	unlock := v.domainLock(domain)
-	defer unlock()
 
 	result, err := v.engine.Verify(email)
 	elapsed := time.Since(start).Milliseconds()
