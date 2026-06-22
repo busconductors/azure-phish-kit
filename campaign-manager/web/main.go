@@ -76,7 +76,7 @@ func main() {
 			Summary:   buildSummary(campaigns),
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "templates/list.html", data); err != nil {
+		if err := tmpl.ExecuteTemplate(w, "list.html", data); err != nil {
 			log.Printf("[ERROR] template list: %v", err)
 		}
 	})
@@ -87,7 +87,7 @@ func main() {
 			Phishlets: phishlets,
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "templates/new.html", data); err != nil {
+		if err := tmpl.ExecuteTemplate(w, "new.html", data); err != nil {
 			log.Printf("[ERROR] template new: %v", err)
 		}
 	})
@@ -105,7 +105,7 @@ func main() {
 			Phishlets: phishlets,
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "templates/detail.html", data); err != nil {
+		if err := tmpl.ExecuteTemplate(w, "detail.html", data); err != nil {
 			log.Printf("[ERROR] template detail: %v", err)
 		}
 	})
