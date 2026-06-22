@@ -124,8 +124,9 @@ func authMiddleware(token string, next http.Handler) http.Handler {
 					return
 				}
 			}
-			w.Header().Set("WWW-Authenticate", "Basic")
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Access Denied</title><style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#090c10;color:#59616b;margin:0}.box{text-align:center;padding:40px;border:1px solid #1e2530;border-radius:8px;background:#11161e}.box h1{color:#e8ecf1;font-size:1rem;margin:0 0 8px}.box p{font-size:.8rem;margin:0}.box code{color:#4199f5;background:#091a30;padding:2px 8px;border-radius:4px;font-size:.75rem}</style></head><body><div class="box"><h1>Access Denied</h1><p>Add <code>?token=your-token</code> to the URL</p></div></body></html>`))
 			return
 		}
 		next.ServeHTTP(w, r)
