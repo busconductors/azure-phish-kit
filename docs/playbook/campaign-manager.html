@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Campaign Manager — Operations Playbook</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="/dev/stdin" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Campaign Manager — Operations Playbook</h1>
+</header>
+<h1 id="campaign-manager-operations-playbook">Campaign Manager –
+Operations Playbook</h1>
+<p><strong>GLNT Phish Kit v1.3 | June 2026</strong></p>
+<p>The Campaign Manager is the operator-facing control plane for
+building, linking, verifying, previewing, and deploying phishing
+campaigns. It comes in two forms: a browser-based <strong>Web
+UI</strong> on port 9093, and a keyboard-driven <strong>TUI</strong> for
+SSH/terminal sessions.</p>
+<hr />
+<h2 id="overview">Overview</h2>
+<p>The Campaign Manager sits above the shared <code>core/</code> library
+and orchestrates the four-step campaign pipeline:</p>
+<pre><code>1. CREATE     Name your campaign, pick a lure + phishlet
+2. LINK       Feed in an AES-256 key + redirect URL -- get back an encrypted link
+3. VERIFY     Upload a CSV of target emails -- validate deliverability
+4. DEPLOY     Mark the campaign ready for SuperMailer / SES send-out</code></pre>
+<p><strong>When to use which UI:</strong></p>
+<table>
+<colgroup>
+<col style="width: 68%" />
+<col style="width: 31%" />
+</colgroup>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>You have a browser and localhost access</td>
+<td>Web UI (richer forms, file upload, preview rendering)</td>
+</tr>
+<tr>
+<td>You are on an SSH session, no browser</td>
+<td>TUI (keyboard-driven, lightweight)</td>
+</tr>
+<tr>
+<td>You want visual previews of the lure</td>
+<td>Web UI (renders HTML inline)</td>
+</tr>
+<tr>
+<td>You are scripting or chaining CLI tools</td>
+<td>Web UI API (curlable JSON endpoints behind the forms)</td>
+</tr>
+<tr>
+<td>You are in a low-bandwidth VPS session</td>
+<td>TUI (draws ~4 KB per frame)</td>
+</tr>
+</tbody>
+</table>
+<p>Both UIs share the same data store
+(<code>../data/campaigns.json</code>) and the same core
+crypto/verification logic in <code>campaign-manager/core/</code>.</p>
+<hr />
+<h2 id="web-ui">Web UI</h2>
+<h3 id="starting-the-web-ui">Starting the Web UI</h3>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> /Users/sk_hga/azure-phish-kit/campaign-manager/web</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> run . <span class="dt">\</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">--port</span> 9093 <span class="dt">\</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">--token</span> <span class="st">&quot;super-secret-token&quot;</span> <span class="dt">\</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">--lures</span> ../../lures/attachments <span class="dt">\</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">--phishlets</span> ../../proxy-server/phishlets <span class="dt">\</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">--store</span> ../data/campaigns.json</span></code></pre></div>
+<p>All flags, with defaults from <code>main.go</code>:</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 37%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--port</code></td>
+<td><code>9093</code></td>
+<td>TCP listen port</td>
+</tr>
+<tr>
+<td><code>--token</code></td>
+<td><code>""</code> (no auth)</td>
+<td>Shared secret for authentication</td>
+</tr>
+<tr>
+<td><code>--lures</code></td>
+<td><code>../../lures/attachments</code></td>
+<td>Directory scanned for <code>.html</code> lure files</td>
+</tr>
+<tr>
+<td><code>--phishlets</code></td>
+<td><code>../../proxy-server/phishlets</code></td>
+<td>Directory scanned for <code>.json</code> phishlet configs</td>
+</tr>
+<tr>
+<td><code>--store</code></td>
+<td><code>../data/campaigns.json</code></td>
+<td>JSON file where campaigns are persisted</td>
+</tr>
+</tbody>
+</table>
+<p>Startup logs show how many lures and phishlets were loaded:</p>
+<pre><code>2026/06/22 23:00:00 Loaded 10 lures from ../../lures/attachments
+2026/06/22 23:00:00 Loaded 4 phishlets from ../../proxy-server/phishlets
+2026/06/22 23:00:00 Campaign Manager listening on http://localhost:9093</code></pre>
+<h3 id="authentication">Authentication</h3>
+<p>Two orthogonal auth mechanisms – you can use either or both:</p>
+<p><strong>Token auth</strong> (recommended for basic protection):</p>
+<p>Pass <code>--token "your-secret"</code> at startup. The server then
+checks three places in order:</p>
+<ol type="1">
+<li><strong>Cookie</strong> <code>_auth</code> – set automatically after
+a successful query-string auth</li>
+<li><strong>Query string</strong> <code>?token=your-secret</code> –
+first visit sets a 24-hour HttpOnly cookie</li>
+<li><strong>Authorization header</strong>
+<code>Bearer your-secret</code> – for API calls from scripts</li>
+</ol>
+<p>Example first visit:</p>
+<pre><code>http://localhost:9093/?token=super-secret-token</code></pre>
+<p>This sets the <code>_auth</code> cookie and redirects you to the
+campaign list. All subsequent page loads use the cookie – you do not
+need the query param again until the cookie expires (24 hours).</p>
+<p>Scripted API access:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-H</span> <span class="st">&quot;Authorization: Bearer super-secret-token&quot;</span> <span class="dt">\</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  http://localhost:9093/api/campaigns</span></code></pre></div>
+<p><strong>IP allowlist</strong> (no token needed, but tighter):</p>
+<p>Set the <code>ALLOWED_IPS</code> environment variable:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="va">ALLOWED_IPS</span><span class="op">=</span><span class="st">&quot;10.0.0.0/8,192.168.1.0/24&quot;</span> <span class="ex">go</span> run . <span class="at">--port</span> 9093</span></code></pre></div>
+<p>Any IP outside the CIDRs gets an empty 404 response – no
+fingerprinting.</p>
+<p>If neither <code>--token</code> nor <code>ALLOWED_IPS</code> is set,
+auth is <strong>wide open</strong>. Always use one of them in
+production.</p>
+<h3 id="creating-a-campaign">Creating a Campaign</h3>
+<ol type="1">
+<li><strong>Start</strong> the Web UI and navigate to
+<code>http://localhost:9093/</code></li>
+<li><strong>Click</strong> the blue <strong>“+ New Campaign”</strong>
+button</li>
+<li><strong>Fill in</strong> three fields:
+<ul>
+<li><strong>Campaign Name</strong> – free text,
+e.g. <code>Q4 Credential Harvest</code></li>
+<li><strong>Lure Template</strong> – dropdown populated from
+<code>lures/attachments/</code>. Files like
+<code>adobe-contract.html</code>, <code>docusign-wire.html</code>,
+<code>teams-recording.html</code>, etc.</li>
+<li><strong>Phishlet</strong> – dropdown populated from
+<code>proxy-server/phishlets/</code>. Options: <code>microsoft</code>,
+<code>microsoft-personal</code>, <code>google</code>,
+<code>okta</code></li>
+</ul></li>
+<li><strong>Click “Create Campaign”</strong></li>
+</ol>
+<p>Behind the scenes, <code>POST /api/campaigns</code> is called with
+form data <code>name</code>, <code>lure</code>, <code>phishlet</code>.
+The server creates a <code>Campaign</code> struct with status
+<code>"draft"</code>, saves it to the JSON store, and redirects you to
+the detail page.</p>
+<p>The campaign now shows in the list with a <code>draft</code>
+badge.</p>
+<h3 id="generating-a-link">Generating a Link</h3>
+<p>On the campaign detail page (status <code>draft</code>), you see
+<strong>Step 2 – Generate Phishing Link</strong>:</p>
+<ol type="1">
+<li><p><strong>Redirect URL</strong> – where the victim lands after MFA
+capture. Example:</p>
+<pre><code>https://login.microsoftonline.com/common/oauth2/authorize?client_id=CLIENT_ID&amp;redirect_uri=https://auth.your-domain.com&amp;response_type=code&amp;prompt=login</code></pre>
+<p>The <code>prompt=login</code> parameter forces fresh authentication
+even if the victim has existing browser cookies.</p></li>
+<li><p><strong>AES-256 Key</strong> – 32 bytes, base64-encoded. Generate
+one with:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> /Users/sk_hga/azure-phish-kit/payload-generator</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> run keygen.go</span></code></pre></div>
+<p>This prints a base64 string. Paste it into the key field.</p></li>
+<li><p><strong>Click “Generate Link”</strong></p></li>
+</ol>
+<p>The server calls <code>GenerateLink()</code> (mirrors
+<code>core/link.go</code>): - Decodes the base64 key (must be exactly 32
+bytes) - Builds a <code>LureConfig</code> JSON with brand, template,
+redirect, campaign ID, timestamp - Encrypts with AES-256-GCM (random
+nonce, 3-byte random prefix) - Base64URL-encodes the result (no padding
+– URL-safe) - Updates the campaign to status <code>"active"</code> and
+stores the link</p>
+<p>The generated link appears in the Campaign Info sidebar:</p>
+<pre><code>https://auth.your-domain.com/#H4sIAAAAAAAA...</code></pre>
+<p>This is the fragment-based link format. The <code>H4sIAAA...</code>
+portion is the encrypted lure payload. The bootloader on the proxy
+server decrypts it client-side.</p>
+<p><strong>Via curl (scripted):</strong></p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-X</span> POST http://localhost:9093/api/campaigns/<span class="op">&lt;</span>CAMPAIGN_ID<span class="op">&gt;</span>/link <span class="dt">\</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;Authorization: Bearer super-secret-token&quot;</span> <span class="dt">\</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-d</span> <span class="st">&quot;redirect=https://example.com/landing&amp;key=BASE64_32_BYTE_KEY&quot;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Returns: {&quot;link&quot;:&quot;https://auth.your-domain.com/#...&quot;}</span></span></code></pre></div>
+<h3 id="verifying-leads">Verifying Leads</h3>
+<p>On the campaign detail page (now status <code>active</code>), you see
+<strong>Step 3 – Verify Leads</strong>:</p>
+<ol type="1">
+<li><p><strong>Prepare a CSV</strong> with email addresses. The first
+column that contains <code>@</code> is auto-detected as the email
+column. Example:</p>
+<pre class="csv"><code>name,email,department
+John Doe,john.doe@company.com,Engineering
+Jane Smith,jane.smith@company.com,Finance</code></pre></li>
+<li><p><strong>Upload</strong> the CSV via the file picker</p></li>
+<li><p><strong>Click “Upload &amp; Verify”</strong></p></li>
+</ol>
+<p>The server: - Saves the CSV to
+<code>data/leads/&lt;campaign_id&gt;.csv</code> - Counts the rows (via
+<code>csv.Reader</code>) - Updates <code>campaign.LeadCount</code> and
+sets status to <code>"verified"</code></p>
+<p>Note: The Web UI currently does basic row counting. For full SMTP/MX
+verification, use the <code>email-verifier/</code> CLI:</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> /Users/sk_hga/azure-phish-kit/email-verifier</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> run . <span class="at">--input</span> ../data/leads/<span class="op">&lt;</span>campaign_id<span class="op">&gt;</span>.csv <span class="at">--output</span> ../data/leads/<span class="op">&lt;</span>campaign_id<span class="op">&gt;</span>_verified.csv</span></code></pre></div>
+<p>This runs syntax checks, disposable domain detection, MX record
+lookups, catch-all detection, and optional SMTP <code>RCPT TO</code>
+verification (with SOCKS5 proxy support).</p>
+<p><strong>Via curl:</strong></p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-X</span> POST http://localhost:9093/api/campaigns/<span class="op">&lt;</span>CAMPAIGN_ID<span class="op">&gt;</span>/verify <span class="dt">\</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;Authorization: Bearer super-secret-token&quot;</span> <span class="dt">\</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-F</span> <span class="st">&quot;leads=@/path/to/leads.csv&quot;</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Returns: {&quot;count&quot;:340,&quot;file&quot;:&quot;../data/leads/&lt;ID&gt;.csv&quot;,&quot;status&quot;:&quot;ok&quot;}</span></span></code></pre></div>
+<h3 id="previewing-the-lure">Previewing the Lure</h3>
+<p>Visit the preview endpoint to see the lure HTML with the phishing
+link embedded:</p>
+<pre><code>http://localhost:9093/api/campaigns/&lt;CAMPAIGN_ID&gt;/preview</code></pre>
+<p>The server reads the lure file from
+<code>lures/attachments/&lt;lure_filename&gt;</code>, replaces the
+<code>##LINK##</code> placeholder with the actual campaign link, and
+returns the HTML. If no link has been generated yet, the placeholder
+becomes <code>{{LINK_PLACEHOLDER}}</code>.</p>
+<p>Open this URL in a browser to visually verify: - The brand layout
+looks correct - All inline assets render (SVGs, MSO VML fallbacks, etc.)
+- The link appears where the CTA button points</p>
+<h3 id="deploying">Deploying</h3>
+<p>On the campaign detail page (status <code>verified</code>), you see
+<strong>Step 4 – Deploy Campaign</strong>:</p>
+<ol type="1">
+<li><strong>Review</strong> the stats: lead count, link, phishlet</li>
+<li><strong>Click “Deploy Campaign”</strong></li>
+</ol>
+<p>The server sets status to <code>"deployed"</code>. This is a marker –
+the actual email send-out happens in SuperMailer or SES. The deployment
+step signals that the campaign is ready to send.</p>
+<p><strong>Via curl:</strong></p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-X</span> POST http://localhost:9093/api/campaigns/<span class="op">&lt;</span>CAMPAIGN_ID<span class="op">&gt;</span>/deploy <span class="dt">\</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-H</span> <span class="st">&quot;Authorization: Bearer super-secret-token&quot;</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Returns: {&quot;status&quot;:&quot;deployed&quot;}</span></span></code></pre></div>
+<p>After deployment, monitor captures via the analytics dashboard:</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> /Users/sk_hga/azure-phish-kit/analytics-server</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> build <span class="at">-o</span> analytics-srv .</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="ex">./analytics-srv</span> <span class="at">--data</span> ../data/captures.jsonl <span class="at">--port</span> 9092 <span class="at">--token</span> <span class="st">&quot;strong-token&quot;</span></span></code></pre></div>
+<h3 id="live-events-api">Live Events (API)</h3>
+<p>The Web UI polls <code>/api/events</code> for real-time capture
+stats. This endpoint reads <code>EVENTS_PATH</code> (default
+<code>../data/captures.jsonl</code>) and returns aggregated counts:</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;total&quot;</span><span class="fu">:</span> <span class="dv">42</span><span class="fu">,</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;page_loads&quot;</span><span class="fu">:</span> <span class="dv">38</span><span class="fu">,</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;credentials&quot;</span><span class="fu">:</span> <span class="dv">12</span><span class="fu">,</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;mfa_complete&quot;</span><span class="fu">:</span> <span class="dv">5</span><span class="fu">,</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;rate&quot;</span><span class="fu">:</span> <span class="st">&quot;13.2%&quot;</span><span class="fu">,</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;last_capture&quot;</span><span class="fu">:</span> <span class="st">&quot;2026-06-22T23:00:00Z&quot;</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Override the data path:</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="va">EVENTS_PATH</span><span class="op">=</span>/custom/path/captures.jsonl <span class="ex">go</span> run . <span class="at">--port</span> 9093 <span class="at">--token</span> <span class="st">&quot;secret&quot;</span></span></code></pre></div>
+<hr />
+<h2 id="tui-terminal-ui">TUI (Terminal UI)</h2>
+<p>The TUI (<code>campaign-manager/tui/</code>) is a full-screen
+terminal application that works over SSH, in tmux, or directly in a
+terminal. No browser required.</p>
+<h3 id="starting-the-tui">Starting the TUI</h3>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> /Users/sk_hga/azure-phish-kit/campaign-manager/tui</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> run .</span></code></pre></div>
+<p>The TUI requires a terminal that supports ANSI escape sequences (any
+modern terminal emulator, tmux, screen, or iTerm2). It sets the terminal
+to raw mode on start and restores it on exit.</p>
+<p><strong>What you see on start:</strong></p>
+<pre><code> GLNT Campaign Manager v1.3
+╔══════════════════════════╗ ╔══════════════════════════════════════════════╗
+║ ▶ q3-phishing       ACT ║ ║  Step 1: Generate Link          1  2  3  4   ║
+║   exec-payroll      RDY ║ ║ ════════════════════════════════════════════ ║
+║   q2-it-audit       DFT ║ ║ Generate a phishing link with the           ║
+║                          ║ ║ base64-encoded target address.             ║
+║                          ║ ║                                            ║
+║                          ║ ║ The link is embedded into the lure page.   ║
+║                          ║ ║ Verified leads click through to Evilginx.  ║
+║                          ║ ║                                            ║
+║                          ║ ║ Press [L] to generate the link.            ║
+║                          ║ ║                                            ║
+║                          ║ ║                                            ║
+║                          ║ ║ Keys: [L]ink  [V]erify  [P]review  [D]ep… ║
+╚══════════════════════════╝ ╚══════════════════════════════════════════════╝
+ ● online  │  Last capture: 23:00 UTC  │  Events: 3</code></pre>
+<ul>
+<li><strong>Left panel</strong> – Campaign list. Blue arrow
+(<code>▶</code>) marks the selected campaign. Status badges:
+<code>ACT</code> = active, <code>RDY</code> = ready, <code>DFT</code> =
+draft, <code>ARC</code> = archived.</li>
+<li><strong>Right panel</strong> – Workflow guide for the current step.
+Shows step progress indicators (1 2 3 4) and contextual help text.</li>
+<li><strong>Bottom bar</strong> – Status: proxy online/offline
+indicator, last capture timestamp, event count, and temporary status
+messages.</li>
+</ul>
+<p>The TUI currently uses <strong>demo seed data</strong> (3 hardcoded
+campaigns in <code>seedCampaigns()</code>). Wiring to the shared
+<code>core/</code> package for real data is in progress (see the
+<code>TODO</code> comments in <code>stepGenerateLink</code>,
+<code>stepVerifyLeads</code>, etc.).</p>
+<h3 id="keyboard-controls">Keyboard Controls</h3>
+<table>
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 61%" />
+</colgroup>
+<thead>
+<tr>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>j</code> / <code>k</code></td>
+<td>Move cursor down/up in the campaign list (left panel focused)</td>
+</tr>
+<tr>
+<td><code>Up</code> / <code>Down</code> arrows</td>
+<td>Move cursor down/up in the campaign list</td>
+</tr>
+<tr>
+<td><code>Left</code> / <code>Right</code> arrows</td>
+<td>Switch focus between left (campaign list) and right (workflow)
+panels</td>
+</tr>
+<tr>
+<td><code>Tab</code></td>
+<td>Cycle focus between left and right panels</td>
+</tr>
+<tr>
+<td><code>Enter</code></td>
+<td>Select campaign (moves focus to workflow panel)</td>
+</tr>
+<tr>
+<td><code>L</code></td>
+<td>Execute <strong>Step 1 – Generate Link</strong></td>
+</tr>
+<tr>
+<td><code>V</code></td>
+<td>Execute <strong>Step 2 – Verify Leads</strong></td>
+</tr>
+<tr>
+<td><code>P</code></td>
+<td>Execute <strong>Step 3 – Preview</strong></td>
+</tr>
+<tr>
+<td><code>D</code></td>
+<td>Execute <strong>Step 4 – Deploy</strong></td>
+</tr>
+<tr>
+<td><code>Q</code> or <code>Ctrl+C</code></td>
+<td>Quit the TUI</td>
+</tr>
+</tbody>
+</table>
+<h3 id="campaign-workflow-in-the-tui">Campaign Workflow in the TUI</h3>
+<p>The TUI guides operators through the same four steps as the Web UI,
+shown as numbered progress indicators in the right panel header:</p>
+<p><strong>Step 1 – Generate Link (<code>L</code>)</strong></p>
+<p>Select a campaign, press <code>L</code>. The status bar shows:</p>
+<pre><code> ● Generating link... (core not yet wired)</code></pre>
+<p>When fully wired, this will call <code>core.GenerateLink()</code>
+with the same parameters as the Web UI (AES key, redirect URL, campaign
+ID, brand, template). The TUI will prompt for the key and redirect URL
+via a form overlay or read them from config.</p>
+<p><strong>Step 2 – Verify Leads (<code>V</code>)</strong></p>
+<p>Press <code>V</code> to verify the selected campaign’s lead file. The
+workflow panel shows:</p>
+<pre><code>Verify email addresses against the
+target mail server (SMTP RCPT TO).
+
+Valid leads are marked as verified and
+ready for campaign deployment.
+
+Press [V] to start verification.</code></pre>
+<p>When wired, this calls <code>core.VerifyLeads()</code> which runs the
+full email verification pipeline (syntax, disposable, MX, catch-all,
+SMTP).</p>
+<p><strong>Step 3 – Preview (<code>P</code>)</strong></p>
+<p>Press <code>P</code> to preview the lure with the link embedded. When
+wired, this calls <code>core.PreviewLure()</code>, reads the lure HTML,
+replaces <code>{LINK}</code> and <code>##victimemail##</code>
+placeholders, and either opens it in the system browser or writes a temp
+file.</p>
+<p><strong>Step 4 – Deploy (<code>D</code>)</strong></p>
+<p>Press <code>D</code> to deploy the campaign. Marks the campaign as
+deployed and ready for SuperMailer send-out.</p>
+<h3 id="resize-handling">Resize Handling</h3>
+<p>The TUI subscribes to <code>SIGWINCH</code> and redraws on terminal
+resize. The layout calculator allocates: - <strong>Left panel:</strong>
+28% of terminal width (min 22, max 35 columns) - <strong>Right
+panel:</strong> remaining width minus 1-column gap (min 30 columns) -
+<strong>Content height:</strong> terminal height minus 1 status bar row
+(min 8 rows)</p>
+<p>The TUI hides the cursor during operation and restores it on
+exit.</p>
+<hr />
+<h2 id="shared-core">Shared Core</h2>
+<p>The <code>campaign-manager/core/</code> package contains the shared
+library used by both UIs. It is the single source of truth for campaign
+data, link generation, email verification, and preview rendering.</p>
+<h3 id="files">Files</h3>
+<table>
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>campaign.go</code></td>
+<td><code>Campaign</code> struct, <code>ListCampaigns()</code>,
+<code>SaveCampaign()</code>, <code>LoadCampaign()</code></td>
+</tr>
+<tr>
+<td><code>link.go</code></td>
+<td><code>GenerateLink()</code> – AES-256-GCM encryption of lure
+config</td>
+</tr>
+<tr>
+<td><code>verify.go</code></td>
+<td><code>VerifyLeads()</code> – email validation with MX, catch-all,
+SMTP</td>
+</tr>
+<tr>
+<td><code>preview.go</code></td>
+<td><code>PreviewLure()</code> – placeholder substitution in lure
+HTML</td>
+</tr>
+</tbody>
+</table>
+<h3 id="campaign-data-model">Campaign Data Model</h3>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> Campaign <span class="kw">struct</span> <span class="op">{</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    ID        <span class="dt">string</span> <span class="co">// hex-encoded random 8 bytes</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    Name      <span class="dt">string</span> <span class="co">// human-readable campaign name</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    Lure      <span class="dt">string</span> <span class="co">// lure filename, e.g. &quot;adobe-contract.html&quot;</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    Phishlet  <span class="dt">string</span> <span class="co">// phishlet name, e.g. &quot;microsoft&quot;</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    Link      <span class="dt">string</span> <span class="co">// generated phishing URL</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    LeadFile  <span class="dt">string</span> <span class="co">// path to uploaded CSV</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>    LeadCount <span class="dt">int</span>    <span class="co">// number of leads in CSV</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>    Status    <span class="dt">string</span> <span class="co">// &quot;draft&quot; | &quot;active&quot; | &quot;verified&quot; | &quot;deployed&quot;</span></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>    CreatedAt <span class="dt">string</span> <span class="co">// RFC 3339 timestamp</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Campaigns are stored as individual JSON files
+(<code>&lt;id&gt;.json</code>) in a directory. The Web UI uses a
+different serialization (stores all campaigns in a single JSON array
+file) for simplicity, but both UIs are converging on the per-file
+approach from <code>core/</code>.</p>
+<h3 id="link-generation-link.go">Link Generation (link.go)</h3>
+<p><code>GenerateLink(keyB64, redirect, campaign, brand, template, email)</code>:</p>
+<ol type="1">
+<li><p>Validates the key (base64-decode, must be 32 bytes –
+AES-256)</p></li>
+<li><p>Defaults <code>brand</code> to <code>"microsoft"</code>,
+<code>template</code> to <code>"shared-doc"</code> if empty</p></li>
+<li><p>Builds a <code>LureConfig</code> JSON:</p>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span><span class="dt">&quot;v&quot;</span><span class="fu">:</span><span class="st">&quot;1&quot;</span><span class="fu">,</span><span class="dt">&quot;b&quot;</span><span class="fu">:</span><span class="st">&quot;microsoft&quot;</span><span class="fu">,</span><span class="dt">&quot;t&quot;</span><span class="fu">:</span><span class="st">&quot;shared-doc&quot;</span><span class="fu">,</span><span class="dt">&quot;r&quot;</span><span class="fu">:</span><span class="st">&quot;https://...&quot;</span><span class="fu">,</span><span class="dt">&quot;c&quot;</span><span class="fu">:</span><span class="st">&quot;abc123&quot;</span><span class="fu">,</span><span class="dt">&quot;ts&quot;</span><span class="fu">:</span><span class="dv">1680000000</span><span class="fu">}</span></span></code></pre></div>
+<p>If <code>email</code> is non-empty, <code>"e"</code> field is
+included for per-victim tracking.</p></li>
+<li><p>Encrypts with AES-256-GCM (12-byte random nonce, GCM tag
+appended)</p></li>
+<li><p>Prepends 3 random bytes (avoids the trivially signatured
+<code>bXY9</code> base64 prefix that would otherwise be produced by the
+nonce + GCM layout)</p></li>
+<li><p>Returns base64url-encoded (no padding) result</p></li>
+</ol>
+<p>The output is used as the URL fragment:
+<code>https://auth.your-domain.com/#&lt;result&gt;</code>.</p>
+<h3 id="email-verification-verify.go">Email Verification
+(verify.go)</h3>
+<p><code>VerifyLeads(csvPath, smtp, smtpProxy)</code>:</p>
+<ul>
+<li>Reads a CSV, auto-detects the email column (scans first 5 rows for
+<code>@</code> + <code>.</code>)</li>
+<li>Runs up to 5 concurrent verification goroutines
+(semaphore-limited)</li>
+<li>Each verification checks: syntax validity, disposable domain list,
+MX record existence, catch-all detection, SMTP deliverability (if
+enabled)</li>
+<li>Returns <code>(total, valid, invalid, catchAll, error)</code>
+counts</li>
+<li>MX records are cached per domain to avoid repeated DNS lookups</li>
+</ul>
+<p>The <code>AfterShip/email-verifier</code> library handles the heavy
+lifting. SMTP verification can optionally route through a SOCKS5
+proxy:</p>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode go"><code class="sourceCode go"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>cfg <span class="op">:=</span> VerifierConfig<span class="op">{</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    EnableSMTP<span class="op">:</span>     <span class="ot">true</span><span class="op">,</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    SMTPProxy<span class="op">:</span>      <span class="st">&quot;socks5://127.0.0.1:1080&quot;</span><span class="op">,</span></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    TimeoutSeconds<span class="op">:</span> <span class="dv">10</span><span class="op">,</span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="lure-preview-preview.go">Lure Preview (preview.go)</h3>
+<p><code>PreviewLure(lurePath, link, recipientEmail)</code>:</p>
+<ul>
+<li>Reads the lure HTML file</li>
+<li>Replaces <code>{LINK}</code> with the phishing link</li>
+<li>Replaces <code>##victimemail##</code> with the target email</li>
+<li>Returns the filled HTML string for rendering</li>
+</ul>
+<p>The Web UI uses a slightly different placeholder convention
+(<code>##LINK##</code> instead of <code>{LINK}</code>), handled in the
+web handler directly.</p>
+<hr />
+<h2 id="opsec-notes">OPSEC Notes</h2>
+<h3 id="token-authentication">Token Authentication</h3>
+<ul>
+<li>Always use <code>--token</code> when binding to anything other than
+<code>127.0.0.1</code></li>
+<li>The cookie is <code>HttpOnly</code> + <code>SameSite=Lax</code> –
+not accessible from JavaScript</li>
+<li>Token appears in the URL once (to set the cookie), then stays in the
+cookie for 24 hours</li>
+<li>The 401 page is stylized and reveals no server fingerprint (no “Go
+default”)</li>
+</ul>
+<h3 id="ip-allowlist">IP Allowlist</h3>
+<ul>
+<li>Set <code>ALLOWED_IPS=10.0.0.0/8,172.16.0.0/12</code> to restrict to
+private network</li>
+<li>Requests from disallowed IPs get an empty 404
+(<code>&lt;html&gt;&lt;body&gt;&lt;/body&gt;&lt;/html&gt;</code>) –
+indistinguishable from a non-existent path</li>
+<li>Works with <code>X-Forwarded-For</code> header (first entry) for
+proxy/CDN setups</li>
+</ul>
+<h3 id="auto-purge">Auto-Purge</h3>
+<p>There is no built-in auto-purge yet. Delete old campaign files
+manually:</p>
+<div class="sourceCode" id="cb26"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> ../data/campaigns/<span class="op">&lt;</span>campaign_id<span class="op">&gt;</span>.json</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span> ../data/leads/<span class="op">&lt;</span>campaign_id<span class="op">&gt;</span>.csv</span></code></pre></div>
+<h3 id="separate-ports-from-proxy">Separate Ports from Proxy</h3>
+<p>The Campaign Manager runs on port <strong>9093</strong>. The proxy
+server runs on <strong>9091</strong>. The analytics dashboard runs on
+<strong>9092</strong>. Keep them on separate ports – never expose the
+campaign manager port publicly. It should only be accessible via:</p>
+<ul>
+<li>SSH tunnel:
+<code>ssh -L 9093:localhost:9093 user@ec2-instance</code></li>
+<li>VPN / internal network</li>
+<li>Localhost only (bind to <code>127.0.0.1</code>)</li>
+</ul>
+<p>If you must bind to <code>0.0.0.0</code>, ALWAYS use both
+<code>--token</code> and <code>ALLOWED_IPS</code>.</p>
+<h3 id="security-headers">Security Headers</h3>
+<p>The Web UI sets: - <code>X-Content-Type-Options: nosniff</code> –
+prevents MIME sniffing - <code>Referrer-Policy: no-referrer</code> – no
+referrer leakage on outbound links</p>
+<p>No <code>Server</code> header is exposed (Go’s default
+<code>net/http</code> does not set one).</p>
+<hr />
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="port-already-in-use">Port already in use</h3>
+<pre><code>FATAL: listen tcp :9093: bind: address already in use</code></pre>
+<p>Find and kill the process:</p>
+<div class="sourceCode" id="cb28"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="ex">lsof</span> <span class="at">-i</span> :9093</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="ex">ss</span> <span class="at">-tlnp</span> <span class="kw">|</span> <span class="fu">grep</span> 9093</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="bu">kill</span> <span class="op">&lt;</span>PID<span class="op">&gt;</span></span></code></pre></div>
+<h3 id="no-lures-loaded">No lures loaded</h3>
+<pre><code>Loaded 0 lures from ../../lures/attachments</code></pre>
+<p>The <code>--lures</code> path doesn’t point to a directory with
+<code>.html</code> files. Check:</p>
+<div class="sourceCode" id="cb30"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> /Users/sk_hga/azure-phish-kit/lures/attachments/<span class="pp">*</span>.html <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Should show 10</span></span></code></pre></div>
+<p>If the directory doesn’t exist, the built-in <code>lureBrands</code>
+map (hardcoded in <code>web/main.go</code>) provides fallback
+definitions. Lure previews will fail however since the actual files are
+missing.</p>
+<h3 id="no-phishlets-loaded">No phishlets loaded</h3>
+<pre><code>Loaded 0 phishlets from ../../proxy-server/phishlets</code></pre>
+<p>The <code>--phishlets</code> path doesn’t contain <code>.json</code>
+files. Check the directory:</p>
+<div class="sourceCode" id="cb32"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> /Users/sk_hga/azure-phish-kit/proxy-server/phishlets/</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Should show: google.json  microsoft.json  microsoft-personal.json  okta.json</span></span></code></pre></div>
+<p>Each JSON file must have at least a <code>"name"</code> field to be
+loaded.</p>
+<h3 id="token-not-working">Token not working</h3>
+<ul>
+<li><strong>401 page but token is correct</strong> – Check for trailing
+whitespace. The token is compared as an exact string match. Copy-paste
+may include a newline.</li>
+<li><strong>Token works in URL but not on subsequent pages</strong> –
+Cookies may be blocked. Check browser cookie settings. The
+<code>_auth</code> cookie has <code>SameSite=Lax</code> and
+<code>HttpOnly</code> flags.</li>
+<li><strong>Bearer token in curl not working</strong> – Ensure the
+header value is exactly <code>Bearer &lt;token&gt;</code> with a single
+space. The server uses <code>strings.TrimPrefix</code> on the literal
+string <code>"Bearer "</code>.</li>
+</ul>
+<h3 id="link-generation-fails-with-invalid-key">Link generation fails
+with “invalid key”</h3>
+<pre><code>invalid key: must be base64-encoded 32 bytes (got 24 bytes)</code></pre>
+<p>The key must be exactly 32 raw bytes, base64-encoded. Use the
+keygen:</p>
+<div class="sourceCode" id="cb34"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> /Users/sk_hga/azure-phish-kit/payload-generator</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> run keygen.go</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Copy the exact output -- 44 characters of base64</span></span></code></pre></div>
+<p>A 44-character base64 string encodes 32 bytes (256 bits). If you see
+43 or 45 characters, the key is wrong.</p>
+<h3 id="csv-upload-says-0-leads">CSV upload says “0 leads”</h3>
+<p>The CSV reader couldn’t detect an email column. The auto-detector
+scans the first 5 rows and looks for values containing <code>@</code>
+and <code>.</code>. Make sure: - Your CSV has a header row - At least
+one of the first 5 data rows contains an email address - The email
+column contains properly formatted addresses (e.g.,
+<code>user@domain.com</code>)</p>
+<h3 id="tui-raw-mode-not-restoring">TUI: raw mode not restoring</h3>
+<p>If the TUI crashes or you kill it with <code>kill -9</code>, the
+terminal may be left in raw mode (no echo, arrow keys print escape
+sequences). Fix it:</p>
+<div class="sourceCode" id="cb35"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="ex">reset</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or</span></span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a><span class="fu">stty</span> sane</span></code></pre></div>
+<h3 id="lure-preview-shows-link-literally">Lure preview shows “##LINK##”
+literally</h3>
+<p>The campaign hasn’t had a link generated yet. Go back to the campaign
+detail page and complete Step 2 (Generate Link) first. The preview
+substitutes the placeholder only when <code>campaign.Link</code> is
+non-empty.</p>
+</body>
+</html>
