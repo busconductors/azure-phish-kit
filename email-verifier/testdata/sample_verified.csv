@@ -1,4 +1,0 @@
-email,first,last,domain,pattern,department,company,title,verified,mx,_verified_status,_verified_at,_mx_host,_catch_all,_response_ms
-abigail.johnson@fidelity.com,Abigail,Johnson,fidelity.com,first.last,Executive,Fidelity Investments,CEO,mx_valid,,risky,2026-06-22T18:24:45Z,fidelity-com.mail.protection.outlook.com.,,11
-notreal@thisisnotarealdomainxyz123.com,Fake,User,thisisnotarealdomainxyz123.com,first.last,Executive,FakeCorp,CEO,,,invalid,2026-06-22T18:24:45Z,,,19
-invalid-email-no-at,Fake,User,nodomain,,Executive,FakeCorp,CEO,,,invalid,2026-06-22T18:24:45Z,,,0

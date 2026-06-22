@@ -12,3 +12,7 @@ proxy-server/proxy-server
 analytics-server/analytics-server
 analytics-server/payload-gen
 .wrangler/
+.gstack/
+email-verifier/email-verifier
+email-verifier/testdata/*_verified.csv
+email-verifier/testdata/out.csv
