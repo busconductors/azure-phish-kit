@@ -190,7 +190,9 @@ func aggregate(events []CaptureEvent) *DashboardData {
 	for _, fn := range funnelMap {
 		total := fn.PageLoads + fn.CredSubmits + fn.MfaCompletes + fn.CookieCaptures
 		if total > 0 {
-			fn.SuccessRate = float64(fn.MfaCompletes) / float64(fn.PageLoads) * 100
+			if fn.PageLoads > 0 {
+				fn.SuccessRate = float64(fn.MfaCompletes) / float64(fn.PageLoads) * 100
+			}
 		}
 		dd.Funnels = append(dd.Funnels, *fn)
 	}

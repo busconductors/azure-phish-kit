@@ -47,7 +47,7 @@ func main() {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(data)
+		body, _ := json.Marshal(data); w.Write(body)
 	})
 
 	// Catch-all 404 handler — avoids Go's default fingerprint
