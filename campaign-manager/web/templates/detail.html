@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Campaign.Name}} — Phish Manager</title>
+<style>
+:root {
+  --bg: #090c10; --surface: #11161e; --border: #1e2530;
+  --text: #a1aab3; --text-bright: #e8ecf1;
+  --green: #26a641; --blue: #4199f5; --purple: #8b6ff0; --amber: #e8953b; --red: #f5534b;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+.container { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+.back { margin-bottom: 16px; }
+.back a { color: var(--text); text-decoration: none; font-size: 14px; }
+.back a:hover { color: var(--text-bright); }
+
+.header { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
+.header h1 { font-size: 24px; font-weight: 600; color: var(--text-bright); }
+.badge { display: inline-block; padding: 3px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.badge-draft    { background: rgba(161,170,179,0.15); color: var(--text); }
+.badge-active   { background: rgba(65,153,245,0.15);  color: var(--blue); }
+.badge-verified { background: rgba(139,111,240,0.15); color: var(--purple); }
+.badge-deployed { background: rgba(38,166,65,0.15);  color: var(--green); }
+
+.steps { display: flex; margin-bottom: 28px; }
+.step { flex: 1; text-align: center; padding: 12px 8px; background: var(--surface); border: 1px solid var(--border); font-size: 12px; font-weight: 500; color: var(--text); }
+.step:first-child { border-radius: 6px 0 0 6px; }
+.step:last-child  { border-radius: 0 6px 6px 0; }
+.step:not(:first-child) { border-left: none; }
+.step.done { color: var(--green); border-color: var(--green); }
+.step.current { color: var(--blue); border-color: var(--blue); font-weight: 600; }
+.step .check { margin-right: 3px; }
+
+.columns { display: grid; grid-template-columns: 1fr 300px; gap: 24px; }
+
+.panel, .info-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.panel { padding: 24px; }
+.panel h2 { font-size: 18px; font-weight: 600; color: var(--text-bright); margin-bottom: 8px; }
+.panel .desc { font-size: 14px; color: var(--text); margin-bottom: 20px; }
+
+.info-card { padding: 20px; }
+.info-card h3 { font-size: 14px; font-weight: 600; color: var(--text-bright); margin-bottom: 16px; }
+.info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.info-row:last-child { border-bottom: none; }
+.info-label { color: var(--text); }
+.info-value { color: var(--text-bright); font-weight: 500; }
+.info-value.mono { font-family: "SF Mono", "Fira Code", monospace; font-size: 12px; word-break: break-all; }
+
+.form-group { margin-bottom: 16px; }
+.form-group:last-of-type { margin-bottom: 20px; }
+label { display: block; font-size: 13px; font-weight: 500; color: var(--text-bright); margin-bottom: 6px; }
+input[type="text"], input[type="file"] { width: 100%; padding: 10px 12px; border-radius: 6px; background: var(--bg); border: 1px solid var(--border); color: var(--text-bright); font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.15s; }
+input:focus { border-color: var(--blue); }
+input[type="file"] { padding: 8px; }
+input[type="file"]::file-selector-button { background: var(--border); border: none; color: var(--text-bright); padding: 4px 12px; border-radius: 4px; margin-right: 10px; font-family: inherit; cursor: pointer; }
+
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 22px; border-radius: 6px; font-size: 14px; font-weight: 500; text-decoration: none; cursor: pointer; border: none; font-family: inherit; transition: opacity 0.15s; }
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-success { background: var(--green); color: #fff; }
+.stat { font-size: 28px; font-weight: 700; color: var(--green); margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="back"><a href="/">&larr; Back to campaigns</a></div>
+
+  <div class="header">
+    <h1>{{.Campaign.Name}}</h1>
+    <span class="badge badge-{{.Campaign.Status}}">{{.Campaign.Status}}</span>
+  </div>
+
+  <!-- 4-step progress indicator -->
+  <div class="steps">
+    <div class="step done"><span class="check">&check;</span> Select Lure</div>
+    <div class="step{{if eq .Campaign.Status "active"}} current{{end}}{{if or (eq .Campaign.Status "verified") (eq .Campaign.Status "deployed")}} done{{end}}">
+      {{if or (eq .Campaign.Status "active") (eq .Campaign.Status "verified") (eq .Campaign.Status "deployed")}}<span class="check">&check;</span>{{end}}Generate Link
+    </div>
+    <div class="step{{if eq .Campaign.Status "verified"}} current{{end}}{{if eq .Campaign.Status "deployed"}} done{{end}}">
+      {{if eq .Campaign.Status "deployed"}}<span class="check">&check;</span>{{end}}Verify Leads
+    </div>
+    <div class="step{{if eq .Campaign.Status "deployed"}} current done{{end}}">
+      {{if eq .Campaign.Status "deployed"}}<span class="check">&check;</span>{{end}}Deploy
+    </div>
+  </div>
+
+  <div class="columns">
+    <!-- Left column: step action -->
+    <div>
+      {{if eq .Campaign.Status "draft"}}
+      <div class="panel">
+        <h2>Step 2 &mdash; Generate Phishing Link</h2>
+        <p class="desc">Encrypt and encode a tracking link for this campaign. You'll need the AES-256 key (32 bytes, base64-encoded).</p>
+        <form method="POST" action="/api/campaigns/{{.Campaign.ID}}/link">
+          <div class="form-group">
+            <label for="redirect">Redirect URL (after credential capture)</label>
+            <input type="text" id="redirect" name="redirect" required
+                   placeholder="https://example.com/login">
+          </div>
+          <div class="form-group">
+            <label for="key">AES-256 Key (base64-encoded, 32 bytes)</label>
+            <input type="text" id="key" name="key" required
+                   placeholder="base64-encoded 32-byte key">
+          </div>
+          <button type="submit" class="btn btn-primary">Generate Link</button>
+        </form>
+      </div>
+      {{end}}
+
+      {{if eq .Campaign.Status "active"}}
+      <div class="panel">
+        <h2>Step 3 &mdash; Verify Leads</h2>
+        <p class="desc">Upload a CSV file of target emails or identifiers to verify your lead list.</p>
+        <form method="POST" action="/api/campaigns/{{.Campaign.ID}}/verify" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="leads">Leads CSV File</label>
+            <input type="file" id="leads" name="leads" accept=".csv" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Upload &amp; Verify</button>
+        </form>
+      </div>
+      {{end}}
+
+      {{if eq .Campaign.Status "verified"}}
+      <div class="panel">
+        <h2>Step 4 &mdash; Deploy Campaign</h2>
+        <p class="desc">All checks passed. Leads verified ({{.Campaign.LeadCount}} targets). Ready to deploy.</p>
+        <form method="POST" action="/api/campaigns/{{.Campaign.ID}}/deploy">
+          <button type="submit" class="btn btn-success">Deploy Campaign</button>
+        </form>
+      </div>
+      {{end}}
+
+      {{if eq .Campaign.Status "deployed"}}
+      <div class="panel">
+        <h2>Campaign Deployed</h2>
+        <p class="desc">This campaign is live. Monitor captures from the analytics dashboard.</p>
+        <div class="stat">&check; All steps complete</div>
+      </div>
+      {{end}}
+    </div>
+
+    <!-- Right column: campaign info -->
+    <div class="info-card">
+      <h3>Campaign Info</h3>
+      <div class="info-row">
+        <span class="info-label">Lure</span>
+        <span class="info-value">{{.Campaign.Lure}}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Phishlet</span>
+        <span class="info-value">{{.Campaign.Phishlet}}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Link</span>
+        <span class="info-value mono">{{if .Campaign.Link}}{{.Campaign.Link}}{{else}}—{{end}}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Leads</span>
+        <span class="info-value">{{.Campaign.LeadCount}}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Created</span>
+        <span class="info-value">{{.Campaign.CreatedAt}}</span>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
