@@ -63,9 +63,9 @@ See `docs/domain-architecture.md` (MD + PDF) for full deployment guide.
 ### Lead Generation & Verification
 - **113,000+ leads** across 163 companies, 30+ industries, 6 continents
 - All MX-verified + DNS-verified with per-company CSVs
-- `data/master_leads.csv` — master database (112,710 emails)
-- `data/master_leads_verified.csv` — DNS-verified output with status columns
-- `data/leads/*.csv` — individual company files ready for SuperMailer import
+- `~/.glnt-data/leads/master_leads.csv` — master database (112,710 emails)
+- `~/.glnt-data/leads/master_leads_verified.csv` — DNS-verified output with status columns
+- `~/.glnt-data/leads/leads/*.csv` — individual company files ready for SuperMailer import
 - **Email verifier CLI tool** (`email-verifier/`) — syntax, disposable, MX, catch-all, SMTP validation pipeline
 - DNS-only verification: ~20 minutes for 113K leads
 - SMTP verification with SOCKS5 proxy support for deliverability confirmation
@@ -129,7 +129,7 @@ cd ../scripts
 # 9. Verify leads before campaign
 cd ../email-verifier
 go build -o email-verifier .
-./email-verifier --input ../data/master_leads.csv --output ../data/master_leads_verified.csv
+./email-verifier --input ../~/.glnt-data/leads/master_leads.csv --output ../~/.glnt-data/leads/master_leads_verified.csv
 
 # 10. Export Evilginx phishlets (optional)
 cd ..

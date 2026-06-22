@@ -14,5 +14,10 @@ analytics-server/payload-gen
 .wrangler/
 .gstack/
 email-verifier/email-verifier
+email-verifier/splitbatch
 email-verifier/testdata/*_verified.csv
 email-verifier/testdata/out.csv
+json2evilginx
+analytics-server/web
+campaign-manager/tui/tui
+campaign-manager/web/web

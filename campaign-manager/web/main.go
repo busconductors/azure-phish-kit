@@ -186,7 +186,7 @@ func main() {
 
 		// Save uploaded CSV to disk
 		os.MkdirAll("../data/leads", 0755)
-		dstPath := fmt.Sprintf("../data/leads/%s.csv", id)
+		dstPath := fmt.Sprintf("../../.glnt-data/leads/%s.csv", id)
 		dst, err := os.Create(dstPath)
 		if err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to save file"})
