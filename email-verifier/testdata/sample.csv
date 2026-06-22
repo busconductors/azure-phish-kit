@@ -1,0 +1,4 @@
+email,first,last,domain,pattern,department,company,title,verified,mx
+abigail.johnson@fidelity.com,Abigail,Johnson,fidelity.com,first.last,Executive,Fidelity Investments,CEO,mx_valid,
+notreal@thisisnotarealdomainxyz123.com,Fake,User,thisisnotarealdomainxyz123.com,first.last,Executive,FakeCorp,CEO,,
+invalid-email-no-at,Fake,User,nodomain,,Executive,FakeCorp,CEO,,
