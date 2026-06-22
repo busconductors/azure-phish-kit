@@ -1,6 +1,6 @@
 # GLNT Phish Kit — AiTM Reverse Proxy Framework
 
-> **STRASSER ⛫ LAB** | Classification: Internal | Version: 1.3 | June 2026
+> **STRASSER ⛫ LAB** | Classification: Internal | Version: 2.0 | June 2026
 
 A production-grade, Evilginx-style Adversary-in-the-Middle (AiTM) reverse proxy for authorized phishing simulations. The victim sees the **real** Microsoft/Google/Okta login page proxied through your domain. Credentials, session cookies, and MFA tokens are captured and delivered to Telegram with replay-ready scripts. No fake landing page — undetectable by DOM comparison.
 
@@ -63,9 +63,9 @@ See `docs/domain-architecture.md` (MD + PDF) for full deployment guide.
 ### Lead Generation & Verification
 - **113,000+ leads** across 163 companies, 30+ industries, 6 continents
 - All MX-verified + DNS-verified with per-company CSVs
-- `~/.glnt-data/leads/master_leads.csv` — master database (112,710 emails)
-- `~/.glnt-data/leads/master_leads_verified.csv` — DNS-verified output with status columns
-- `~/.glnt-data/leads/leads/*.csv` — individual company files ready for SuperMailer import
+- `~/glnt-data/leads/master_leads.csv` — master database (112,710 emails)
+- `~/glnt-data/leads/master_leads_verified.csv` — DNS-verified output with status columns
+- `~/glnt-data/leads/leads/*.csv` — individual company files ready for SuperMailer import
 - **Email verifier CLI tool** (`email-verifier/`) — syntax, disposable, MX, catch-all, SMTP validation pipeline
 - DNS-only verification: ~20 minutes for 113K leads
 - SMTP verification with SOCKS5 proxy support for deliverability confirmation
@@ -129,7 +129,7 @@ cd ../scripts
 # 9. Verify leads before campaign
 cd ../email-verifier
 go build -o email-verifier .
-./email-verifier --input ../~/.glnt-data/leads/master_leads.csv --output ../~/.glnt-data/leads/master_leads_verified.csv
+./email-verifier --input ~/glnt-data/leads/master_leads.csv --output ~/glnt-data/leads/master_leads_verified.csv
 
 # 10. Export Evilginx phishlets (optional)
 cd ..
@@ -146,7 +146,7 @@ go run ./scripts/json2evilginx --all
 | Analytics Server | `analytics-server/` | Campaign dashboard, JSONL event tracking, funnel analytics |
 | CDN Config | `cdn-config/` | Cloudflare Worker reverse proxy, bot blocking at edge |
 | Email Verifier | `email-verifier/` | Go CLI for batch email validation (syntax/DNS/SMTP) |
-| Email Lures | `lures/`, `campaign-emails/` | 20 HTML templates with SVG logos + MSO fallbacks, SuperMailer-ready |
+| Email Lures | `lures/` | 20 HTML templates with SVG logos + MSO fallbacks, SuperMailer-ready |
 | Lead Database | `data/` | 113K+ leads, MX-verified + DNS-verified |
 | Evilginx Export | `scripts/json2evilginx/`, `exports/evilginx/` | Template-based JSON→Evilginx 3.9.9 YAML converter |
 | Domain Architecture | `docs/domain-architecture.md` + PDF | Multi-host deployment guide with diagrams |
