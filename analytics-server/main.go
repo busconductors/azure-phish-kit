@@ -112,9 +112,15 @@ func authMiddleware(token string, next http.Handler) http.Handler {
 				return
 			}
 		}
-		// Token check: if a token is configured, one of query/auth header must match.
+		// Token check: cookie → query → auth header.
 		if token != "" {
+			// Cookie — set on first successful query-param auth, survives navigation.
+			if c, _ := r.Cookie("_auth"); c != nil && c.Value == token {
+				next.ServeHTTP(w, r)
+				return
+			}
 			if r.URL.Query().Get("token") == token {
+				http.SetCookie(w, &http.Cookie{Name: "_auth", Value: token, Path: "/", MaxAge: 86400, HttpOnly: true, SameSite: http.SameSiteLaxMode})
 				next.ServeHTTP(w, r)
 				return
 			}
