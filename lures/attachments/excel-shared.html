@@ -15,25 +15,30 @@
 
     <!-- Header: Excel Brand Bar -->
     <tr>
-      <td style="padding: 20px 28px 0 28px;">
+      <td style="padding: 22px 28px 0 28px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
           <tr>
-            <!-- Spreadsheet Icon (2x2 green grid) -->
-            <td width="32" style="vertical-align: middle; padding-right: 10px;">
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="32" style="border-collapse: collapse;">
-                <tr>
-                  <td width="15" height="15" style="background-color: #217346; border: 1px solid #1a5c38;"></td>
-                  <td width="15" height="15" style="background-color: #2b8a54; border: 1px solid #1a5c38;"></td>
-                </tr>
-                <tr>
-                  <td width="15" height="15" style="background-color: #2b8a54; border: 1px solid #1a5c38;"></td>
-                  <td width="15" height="15" style="background-color: #e8f5e9; border: 1px solid #1a5c38;"></td>
-                </tr>
-              </table>
+            <!-- Excel SVG Logo Mark (green tile + white cross/grid) -->
+            <td width="44" style="vertical-align: middle; padding-right: 12px;">
+              <!--[if !mso]><!-- -->
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block;">
+                <!-- Green tile -->
+                <rect x="2" y="2" width="36" height="36" rx="7" fill="#217346"/>
+                <!-- Crossed spreadsheet bars (Excel icon mark) -->
+                <rect x="15" y="6" width="10" height="28" rx="2.5" fill="white" opacity="0.9"/>
+                <rect x="6" y="15" width="28" height="10" rx="2.5" fill="white" opacity="0.9"/>
+                <!-- Center square (intersection) -->
+                <rect x="15" y="15" width="10" height="10" fill="white"/>
+              </svg>
+              <!--<![endif]-->
+              <!--[if mso]>
+              <span style="display: inline-block; width: 40px; height: 40px; background-color: #217346; border-radius: 7px; font-family: 'Segoe UI', Arial, sans-serif; font-size: 24px; font-weight: bold; color: #ffffff; text-align: center; vertical-align: top; line-height: 40px;">X</span>
+              <![endif]-->
             </td>
-            <!-- Excel Wordmark -->
+            <!-- Excel Wordmark + Office 365 tagline -->
             <td style="vertical-align: middle;">
-              <span style="font-size: 22px; font-weight: 700; color: #217346; font-family: 'Segoe UI Semibold', 'Segoe UI', Arial, Helvetica, sans-serif; letter-spacing: -0.3px;">Excel</span>
+              <span style="font-size: 22px; font-weight: 700; color: #217346; font-family: 'Segoe UI Semibold', 'Segoe UI', Arial, Helvetica, sans-serif; letter-spacing: -0.3px; line-height: 1.2;">Excel</span>
+              <span style="font-size: 12px; font-weight: 400; color: #888888; font-family: 'Segoe UI', Arial, Helvetica, sans-serif; display: block; margin-top: 1px;">Microsoft 365</span>
             </td>
           </tr>
         </table>

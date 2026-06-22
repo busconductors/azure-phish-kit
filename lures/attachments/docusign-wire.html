@@ -15,25 +15,43 @@
       <!-- Main email card -- 640px fixed width -->
       <table cellpadding="0" cellspacing="0" border="0" width="640" style="max-width: 640px; background-color: #FFFFFF;">
 
-        <!-- DocuSign wordmark header -->
+        <!-- DocuSign branded header with inline SVG icon -->
         <tr>
           <td style="padding: 28px 32px 0 32px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="font-family: Arial, Helvetica, sans-serif; font-size: 26px; font-weight: bold; color: #003366; letter-spacing: -0.3px;">
+                <!-- Inline SVG document icon (hidden in Outlook via conditional comments) -->
+                <td width="46" style="vertical-align: middle; padding-right: 12px;">
+                  <!--[if !mso]><!-- -->
+                  <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" style="display: block; vertical-align: middle;" role="img" aria-label="DocuSign">
+                    <defs>
+                      <linearGradient id="dsGrad" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#0056B3"/>
+                        <stop offset="100%" stop-color="#003D82"/>
+                      </linearGradient>
+                    </defs>
+                    <!-- Document body with rounded corners -->
+                    <rect x="6" y="2" width="24" height="32" rx="2" ry="2" fill="url(#dsGrad)"/>
+                    <!-- Folded corner -->
+                    <path d="M30 2v8a2 2 0 0 1-2 2h-8" fill="#002D66"/>
+                    <path d="M30 2l-10 10" stroke="#001F4D" stroke-width="0.5" opacity="0.3"/>
+                    <!-- Simulated text lines -->
+                    <line x1="11" y1="20" x2="25" y2="20" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" opacity="0.85"/>
+                    <line x1="11" y1="24" x2="22" y2="24" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" opacity="0.85"/>
+                    <line x1="11" y1="28" x2="25" y2="28" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+                  </svg>
+                  <!--<![endif]-->
+                </td>
+                <!-- Brand wordmark -->
+                <td style="vertical-align: middle; font-family: Arial, Helvetica, sans-serif; font-size: 26px; font-weight: 700; color: #003366; letter-spacing: 0.6px; line-height: 36px;">
                   DocuSign
                 </td>
               </tr>
             </table>
-          </td>
-        </tr>
-
-        <!-- Blue accent bar -->
-        <tr>
-          <td style="padding: 14px 32px 0 32px;">
+            <!-- Thin brand rule below icon + wordmark -->
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="border-top: 3px solid #0056B3; font-size: 0; line-height: 1px;">&nbsp;</td>
+                <td style="border-top: 3px solid #0056B3; padding-top: 10px; font-size: 0; line-height: 1px;">&nbsp;</td>
               </tr>
             </table>
           </td>
