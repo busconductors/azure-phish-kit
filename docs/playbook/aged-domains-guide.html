@@ -1,360 +1,519 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>Aged Domain Acquisition Guide — STRASSER ⛫ LAB</title>
-  <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
-    html {
-      color: #1a1a1a;
-      background-color: #fdfdfd;
-    }
-    body {
-      margin: 0 auto;
-      max-width: 36em;
-      padding-left: 50px;
-      padding-right: 50px;
-      padding-top: 50px;
-      padding-bottom: 50px;
-      hyphens: auto;
-      overflow-wrap: break-word;
-      text-rendering: optimizeLegibility;
-      font-kerning: normal;
-    }
-    @media (max-width: 600px) {
-      body {
-        font-size: 0.9em;
-        padding: 12px;
-      }
-      h1 {
-        font-size: 1.8em;
-      }
-    }
-    @media print {
-      html {
-        background-color: white;
-      }
-      body {
-        background-color: transparent;
-        color: black;
-        font-size: 12pt;
-      }
-      p, h2, h3 {
-        orphans: 3;
-        widows: 3;
-      }
-      h2, h3, h4 {
-        page-break-after: avoid;
-      }
-    }
-    p {
-      margin: 1em 0;
-    }
-    a {
-      color: #1a1a1a;
-    }
-    a:visited {
-      color: #1a1a1a;
-    }
-    img {
-      max-width: 100%;
-    }
-    svg {
-      height: auto;
-      max-width: 100%;
-    }
-    h1, h2, h3, h4, h5, h6 {
-      margin-top: 1.4em;
-    }
-    h5, h6 {
-      font-size: 1em;
-      font-style: italic;
-    }
-    h6 {
-      font-weight: normal;
-    }
-    ol, ul {
-      padding-left: 1.7em;
-      margin-top: 1em;
-    }
-    li > ol, li > ul {
-      margin-top: 0;
-    }
-    blockquote {
-      margin: 1em 0 1em 1.7em;
-      padding-left: 1em;
-      border-left: 2px solid #e6e6e6;
-      color: #606060;
-    }
-    code {
-      white-space: pre-wrap;
-      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
-      font-size: 85%;
-      margin: 0;
-      hyphens: manual;
-    }
-    pre {
-      margin: 1em 0;
-      overflow: auto;
-    }
-    pre code {
-      padding: 0;
-      overflow: visible;
-      overflow-wrap: normal;
-    }
-    .sourceCode {
-     background-color: transparent;
-     overflow: visible;
-    }
-    hr {
-      border: none;
-      border-top: 1px solid #1a1a1a;
-      height: 1px;
-      margin: 1em 0;
-    }
-    table {
-      margin: 1em 0;
-      border-collapse: collapse;
-      width: 100%;
-      overflow-x: auto;
-      display: block;
-      font-variant-numeric: lining-nums tabular-nums;
-    }
-    table caption {
-      margin-bottom: 0.75em;
-    }
-    tbody {
-      margin-top: 0.5em;
-      border-top: 1px solid #1a1a1a;
-      border-bottom: 1px solid #1a1a1a;
-    }
-    th {
-      border-top: 1px solid #1a1a1a;
-      padding: 0.25em 0.5em 0.25em 0.5em;
-    }
-    td {
-      padding: 0.125em 0.5em 0.25em 0.5em;
-    }
-    header {
-      margin-bottom: 4em;
-      text-align: center;
-    }
-    #TOC li {
-      list-style: none;
-    }
-    #TOC ul {
-      padding-left: 1.3em;
-    }
-    #TOC > ul {
-      padding-left: 0;
-    }
-    #TOC a:not(:hover) {
-      text-decoration: none;
-    }
-    span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
-    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    /* The extra [class] is a hack that increases specificity enough to
-       override a similar rule in reveal.js */
-    ul.task-list[class]{list-style: none;}
-    ul.task-list li input[type="checkbox"] {
-      font-size: inherit;
-      width: 0.8em;
-      margin: 0 0.8em 0.2em -1.6em;
-      vertical-align: middle;
-    }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FM-004 — Aged Domain Acquisition</title>
+<style>
+  :root {
+    --paper: #f7f5f0;
+    --ink: #1a1814;
+    --ink-dim: #5c5852;
+    --ink-faint: #8a8680;
+    --accent: #c41e3a;
+    --accent-dim: #8b1528;
+    --rule: #d4d0c8;
+    --surface: #ede9e2;
+    --code-bg: #e8e4dc;
+    --note-bg: #fef3e8;
+    --note-border: #f0c070;
+    --warn-bg: #fde8e8;
+    --warn-border: #e07070;
+  }
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: local('JetBrains Mono'), local('Menlo'), local('Consolas'), local('monospace');
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--ink);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 0;
+    position: relative;
+    border-bottom: 1px solid var(--rule);
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--accent);
+  }
+  .cover .classification {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    margin-bottom: 52px;
+    text-align: center;
+  }
+  .cover .fm-number {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--ink-dim);
+    letter-spacing: 0.12em;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .cover h1 {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    text-align: center;
+    line-height: 1.2;
+    margin-bottom: 8px;
+    color: var(--ink);
+  }
+  .cover .subtitle {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.85rem;
+    color: var(--ink-dim);
+    text-align: center;
+    letter-spacing: 0.06em;
+    margin-bottom: 48px;
+  }
+  .cover .meta {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    line-height: 1.8;
+  }
+  .cover .rule {
+    width: 60px;
+    height: 1px;
+    background: var(--rule);
+    margin: 32px auto;
+  }
+
+  .content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 32px 80px;
+  }
+  .content > * {
+    margin-bottom: 28px;
+  }
+
+  h2 {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-top: 56px;
+    margin-bottom: 10px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    position: relative;
+  }
+  h2::before {
+    content: '\00A7';
+    position: absolute;
+    left: -28px;
+    top: 18px;
+    font-size: 0.85rem;
+    color: var(--accent);
+    font-weight: 400;
+  }
+  h3 {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-top: 32px;
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+  }
+
+  p {
+    margin-bottom: 16px;
+    color: var(--ink);
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 20px 24px;
+    overflow-x: auto;
+    margin: 20px 0;
+    font-size: 0.78rem;
+    line-height: 1.55;
+  }
+  pre code {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.78rem;
+    color: var(--ink);
+  }
+  code {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.85em;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  .note {
+    background: var(--note-bg);
+    border-left: 3px solid var(--note-border);
+    padding: 14px 18px;
+    margin: 24px 0;
+    font-size: 0.9rem;
+    color: #5c3a10;
+    border-radius: 0 3px 3px 0;
+  }
+  .note strong { color: #8a4a00; }
+  .warn {
+    background: var(--warn-bg);
+    border-left: 3px solid var(--warn-border);
+    padding: 14px 18px;
+    margin: 24px 0;
+    font-size: 0.9rem;
+    color: #5c1010;
+    border-radius: 0 3px 3px 0;
+  }
+  .warn strong { color: #8a0000; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 0.85rem;
+  }
+  th {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-dim);
+    text-align: left;
+    padding: 10px 14px 6px;
+    border-bottom: 2px solid var(--rule);
+  }
+  td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink);
+  }
+  tr:last-child td { border-bottom: none; }
+
+  kbd {
+    display: inline-block;
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border: 1.5px solid #b0aaa0;
+    border-radius: 3px;
+    background: #f0ece4;
+    color: var(--ink);
+    box-shadow: 0 1px 0 #b0aaa0;
+    margin: 0 2px;
+  }
+
+  .footer {
+    margin-top: 64px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .margin-note {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+    float: right;
+    clear: right;
+    width: 160px;
+    margin-right: -180px;
+    margin-top: 4px;
+    line-height: 1.4;
+    text-align: left;
+    hyphens: none;
+  }
+  @media (max-width: 1100px) {
+    .margin-note { display: none; }
+  }
+
+  .step {
+    counter-increment: step-counter;
+    padding-left: 12px;
+    border-left: 3px solid var(--rule);
+    margin: 16px 0 16px 8px;
+    transition: border-color 0.2s;
+  }
+  .step:hover { border-left-color: var(--accent); }
+  .step::before {
+    content: counter(step-counter);
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .redflag-list {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0 0;
+  }
+  .redflag-list li {
+    padding: 4px 0 4px 16px;
+    position: relative;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: #5c1010;
+  }
+  .redflag-list li::before {
+    content: '\2717';
+    position: absolute;
+    left: 0;
+    top: 4px;
+    font-size: 0.72rem;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  @media print {
+    body { font-size: 12px; }
+    .content { max-width: 100%; padding: 0 40px; }
+    .margin-note { display: none; }
+    pre, code { font-size: 10px; }
+    h2 { page-break-before: always; }
+    h2:first-of-type { page-break-before: avoid; }
+    .cover { page-break-after: always; }
+  }
+</style>
 </head>
 <body>
-<header id="title-block-header">
-<h1 class="title">Aged Domain Acquisition Guide — STRASSER ⛫ LAB</h1>
-</header>
-<h1 id="aged-domain-acquisition-guide-strasser-lab">Aged Domain
-Acquisition Guide — STRASSER ⛫ LAB</h1>
-<p><strong>Classification:</strong> Internal | <strong>Date:</strong>
-2026-06-21</p>
-<hr />
-<h2 id="why-aged-domains-matter">Why Aged Domains Matter</h2>
-<p>Email gateways check domain age. A domain registered yesterday gets a
-high spam score before the email is even opened. A domain registered 3+
-years ago passes the age check silently.</p>
+
+<div class="cover">
+  <div class="classification">INTERNAL — RESTRICTED</div>
+  <div class="fm-number">FM-004</div>
+  <h1>Aged Domain Acquisition</h1>
+  <div class="subtitle">Operations Handbook</div>
+  <div class="rule"></div>
+  <div class="meta">
+    STRASSER &#x271B; LAB<br>
+    Version 1.0 &middot; June 2026<br>
+    Classification: Internal
+  </div>
+</div>
+
+<div class="content">
+
+<h2>Why Aged Domains Matter</h2>
+
+<p>Email gateways check domain age. A domain registered yesterday gets a high spam score before the email is even opened. A domain registered 3+ years ago passes the age check silently.</p>
+
 <table>
-<thead>
-<tr>
-<th>Domain Age</th>
-<th>Spam Score Impact</th>
-<th>Inbox Rate</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>0–30 days</td>
-<td>Heavy penalty</td>
-<td>30–50%</td>
-</tr>
-<tr>
-<td>1–6 months</td>
-<td>Moderate penalty</td>
-<td>50–70%</td>
-</tr>
-<tr>
-<td>6–12 months</td>
-<td>Light penalty</td>
-<td>70–85%</td>
-</tr>
-<tr>
-<td>3+ years</td>
-<td>No penalty</td>
-<td>85–95%</td>
-</tr>
-<tr>
-<td>5+ years</td>
-<td>Trust bonus</td>
-<td>90–98%</td>
-</tr>
-</tbody>
+  <thead><tr><th>Domain Age</th><th>Spam Score Impact</th><th>Inbox Rate</th></tr></thead>
+  <tbody>
+    <tr><td>0&ndash;30 days</td><td>Heavy penalty</td><td>30&ndash;50%</td></tr>
+    <tr><td>1&ndash;6 months</td><td>Moderate penalty</td><td>50&ndash;70%</td></tr>
+    <tr><td>6&ndash;12 months</td><td>Light penalty</td><td>70&ndash;85%</td></tr>
+    <tr><td>3+ years</td><td>No penalty</td><td>85&ndash;95%</td></tr>
+    <tr><td>5+ years</td><td>Trust bonus</td><td>90&ndash;98%</td></tr>
+  </tbody>
 </table>
-<hr />
-<h2 id="best-sources">Best Sources</h2>
-<h3 id="expireddomains.net-free-search-start-here">1. ExpiredDomains.net
-— Free Search (Start Here)</h3>
-<p><strong>URL:</strong> https://expireddomains.net</p>
-<p>This is the industry-standard free tool. 500,000+ expired and
-expiring domains, updated daily.</p>
+
+<h2>Best Sources</h2>
+
+<h3>1. ExpiredDomains.net &mdash; Free Search (Start Here)</h3>
+
+<div class="margin-note">Industry-standard. 500,000+ domains daily.</div>
+
+<p><strong>URL:</strong> <code>https://expireddomains.net</code></p>
+
+<p>This is the industry-standard free tool. 500,000+ expired and expiring domains, updated daily.</p>
+
 <p><strong>Filter setup:</strong></p>
 <pre><code>TLD:          .com, .net, .org, .cc
 Age:          3+ years
 Backlinks:    10 minimum
-Price:        $0–$200
+Price:        $0&ndash;$200
 Exclude:      Adult, Gambling, Pharmacy, Casino
 Sort by:      Domain Age (oldest first)</code></pre>
-<p><strong>How to evaluate a candidate:</strong> 1. Copy the domain name
-2. Open https://web.archive.org — paste the domain 3. Check what the
-site USED to be. If it was a real business, blog, or local service —
-good. If it was a spam page or parked domain with ads — skip. 4. Run
-through https://mxtoolbox.com/blacklists.aspx — must show 0/100
-blacklists 5. Check USPTO for trademarks:
-https://www.uspto.gov/trademarks/search</p>
-<h3 id="godaddy-auctions-largest-inventory">2. GoDaddy Auctions —
-Largest Inventory</h3>
-<p><strong>URL:</strong> https://auctions.godaddy.com</p>
+
+<p><strong>How to evaluate a candidate:</strong></p>
+
+<div class="step">
+  <p>Copy the domain name</p>
+</div>
+<div class="step">
+  <p>Open <code>https://web.archive.org</code> &mdash; paste the domain</p>
+</div>
+<div class="step">
+  <p>Check what the site USED to be. If it was a real business, blog, or local service &mdash; good. If it was a spam page or parked domain with ads &mdash; skip.</p>
+</div>
+<div class="step">
+  <p>Run through <code>https://mxtoolbox.com/blacklists.aspx</code> &mdash; must show 0/100 blacklists</p>
+</div>
+<div class="step">
+  <p>Check USPTO for trademarks: <code>https://www.uspto.gov/trademarks/search</code></p>
+</div>
+
+<h3>2. GoDaddy Auctions &mdash; Largest Inventory</h3>
+
+<div class="margin-note">65% of all expired domain sales happen here.</div>
+
+<p><strong>URL:</strong> <code>https://auctions.godaddy.com</code></p>
+
 <p>65% of all expired domain sales happen here.</p>
+
 <p><strong>Filter for bargains:</strong></p>
 <pre><code>Type:        Closeout (fixed price, no bidding)
 Price:       Under $50
 Age:         2+ years
 TLD:         .com, .net, .cc</code></pre>
-<p>Closeout domains are $12 + registration fee. They’re domains nobody
-bid on during the auction phase. Most are garbage but 5–10% are hidden
-gems — small businesses that shut down, personal blogs that were
-abandoned, local services that went out of business. These have clean
-history at a bargain price.</p>
-<h3 id="notrenewing.com-flat-99">3. NotRenewing.com — Flat $99</h3>
-<p><strong>URL:</strong> https://notrenewing.com</p>
-<p>Launched March 2026. Every domain is $99 fixed price. Minimum 24
-months old, expiring within 12 months. Sellers list domains they plan to
-let expire anyway. Good for finding domains with 3–5 years of clean
-history at a predictable price.</p>
-<h3 id="namejet-snapnames-backordering">4. NameJet / SnapNames —
-Backordering</h3>
-<p><strong>URL:</strong> https://namejet.com | https://snapnames.com</p>
-<p>Place a backorder on an expiring domain. If you’re the only bidder,
-you get it at the reserve price ($69). If multiple bidders, it goes to a
-3-day private auction. Best for targeting domains you’ve already vetted
-on ExpiredDomains.net.</p>
-<hr />
-<h2 id="step-by-step-acquisition">Step-by-Step Acquisition</h2>
-<h3 id="step-1-hunt-5-minutes">Step 1: Hunt (5 minutes)</h3>
-<ol type="1">
-<li>Open ExpiredDomains.net</li>
-<li>Apply filters: .com/.net/.cc, age 3+, backlinks 10+, price under
-$200</li>
-<li>Open 20 candidates in tabs</li>
-</ol>
-<h3 id="step-2-vet-2-minutes-per-domain">Step 2: Vet (2 minutes per
-domain)</h3>
-<ol type="1">
-<li>Web Archive check — was it a real site?</li>
-<li>Blacklist check — is it clean?</li>
-<li>Trademark check — is it safe to use?</li>
-<li>Backlink check — are links from real sites or spam farms?</li>
-</ol>
-<h3 id="step-3-buy">Step 3: Buy</h3>
-<ol type="1">
-<li>GoDaddy Closeout: click “Buy Now” → checkout → domain in your
-account in minutes</li>
-<li>NotRenewing: click “Buy” → pay $99 → domain transferred within 24
-hours</li>
-<li>NameJet backorder: place bid → wait for domain to drop → if won,
-domain in account in 24 hours</li>
-</ol>
-<h3 id="step-4-transfer-to-cloudflare">Step 4: Transfer to
-Cloudflare</h3>
-<ol type="1">
-<li>After purchase, unlock the domain at your registrar</li>
-<li>Get the transfer authorization code</li>
-<li>Cloudflare Dashboard → Add Site → Transfer Domain</li>
-<li>Enter the code → pay 1 year renewal → domain lives on
-Cloudflare</li>
-<li>Set up DNS + Worker (our standard deployment)</li>
-</ol>
-<hr />
-<h2 id="red-flags-do-not-buy">Red Flags — Do NOT Buy</h2>
-<ul>
-<li><strong>Parked with ads</strong> — the domain was never a real site,
-just a landing page with ads. No backlink value, likely flagged.</li>
-<li><strong>Pharmacy/casino/adult history</strong> — even if clean now,
-these niches trigger spam filters permanently.</li>
-<li><strong>Trademarked name</strong> — using “microsoft-support.cc”
-gets you sued and your domain seized.</li>
-<li><strong>Spam score above 5%</strong> — Moz Spam Score or similar.
-Check before buying.</li>
-<li><strong>Dropped multiple times</strong> — WHOIS shows repeated
-creation dates. The domain was repeatedly abandoned.</li>
-<li><strong>Chinese/Japanese characters in backlinks</strong> — common
-sign of a spam network.</li>
-</ul>
-<hr />
-<h2 id="quick-reference">Quick Reference</h2>
-<pre><code>ExpiredDomains.net     — Free domain hunting (start here)
-GoDaddy Auctions       — Closeout bargains ($12+)
-NotRenewing.com        — Flat $99 aged domains
-NameJet                — Backordering (pay only if you win)
-web.archive.org        — Check what a domain used to be
-mxtoolbox.com          — Blacklist check
-uspto.gov              — Trademark search</code></pre>
-<hr />
-<h2 id="budget-50150-gets-you-a-solid-aged-domain">Budget: $50–$150 gets
-you a solid aged domain</h2>
+
+<p>Closeout domains are $12 + registration fee. They&rsquo;re domains nobody bid on during the auction phase. Most are garbage but 5&ndash;10% are hidden gems &mdash; small businesses that shut down, personal blogs that were abandoned, local services that went out of business. These have clean history at a bargain price.</p>
+
+<h3>3. NotRenewing.com &mdash; Flat $99</h3>
+
+<p><strong>URL:</strong> <code>https://notrenewing.com</code></p>
+
+<p>Launched March 2026. Every domain is $99 fixed price. Minimum 24 months old, expiring within 12 months. Sellers list domains they plan to let expire anyway. Good for finding domains with 3&ndash;5 years of clean history at a predictable price.</p>
+
+<h3>4. NameJet / SnapNames &mdash; Backordering</h3>
+
+<p><strong>URL:</strong> <code>https://namejet.com</code> | <code>https://snapnames.com</code></p>
+
+<p>Place a backorder on an expiring domain. If you&rsquo;re the only bidder, you get it at the reserve price ($69). If multiple bidders, it goes to a 3-day private auction. Best for targeting domains you&rsquo;ve already vetted on ExpiredDomains.net.</p>
+
+<h2>Step-by-Step Acquisition</h2>
+
+<h3>Step 1: Hunt (5 minutes)</h3>
+
+<div class="step">
+  <p>Open ExpiredDomains.net</p>
+</div>
+<div class="step">
+  <p>Apply filters: <code>.com</code>/<code>.net</code>/<code>.cc</code>, age 3+, backlinks 10+, price under $200</p>
+</div>
+<div class="step">
+  <p>Open 20 candidates in tabs</p>
+</div>
+
+<h3>Step 2: Vet (2 minutes per domain)</h3>
+
+<div class="step">
+  <p>Web Archive check &mdash; was it a real site?</p>
+</div>
+<div class="step">
+  <p>Blacklist check &mdash; is it clean?</p>
+</div>
+<div class="step">
+  <p>Trademark check &mdash; is it safe to use?</p>
+</div>
+<div class="step">
+  <p>Backlink check &mdash; are links from real sites or spam farms?</p>
+</div>
+
+<h3>Step 3: Buy</h3>
+
+<div class="step">
+  <p><strong>GoDaddy Closeout:</strong> click &ldquo;Buy Now&rdquo; &rarr; checkout &rarr; domain in your account in minutes</p>
+</div>
+<div class="step">
+  <p><strong>NotRenewing:</strong> click &ldquo;Buy&rdquo; &rarr; pay $99 &rarr; domain transferred within 24 hours</p>
+</div>
+<div class="step">
+  <p><strong>NameJet backorder:</strong> place bid &rarr; wait for domain to drop &rarr; if won, domain in account in 24 hours</p>
+</div>
+
+<h3>Step 4: Transfer to Cloudflare</h3>
+
+<div class="step">
+  <p>After purchase, unlock the domain at your registrar</p>
+</div>
+<div class="step">
+  <p>Get the transfer authorization code</p>
+</div>
+<div class="step">
+  <p>Cloudflare Dashboard &rarr; Add Site &rarr; Transfer Domain</p>
+</div>
+<div class="step">
+  <p>Enter the code &rarr; pay 1 year renewal &rarr; domain lives on Cloudflare</p>
+</div>
+<div class="step">
+  <p>Set up DNS + Worker (our standard deployment)</p>
+</div>
+
+<h2>Red Flags &mdash; Do NOT Buy</h2>
+
+<div class="warn">
+  <strong>Warning:</strong> These are hard stops. A single red flag means reject the domain &mdash; no exceptions.
+  <ul class="redflag-list">
+    <li><strong>Parked with ads</strong> &mdash; the domain was never a real site, just a landing page with ads. No backlink value, likely flagged.</li>
+    <li><strong>Pharmacy/casino/adult history</strong> &mdash; even if clean now, these niches trigger spam filters permanently.</li>
+    <li><strong>Trademarked name</strong> &mdash; using &ldquo;microsoft-support.cc&rdquo; gets you sued and your domain seized.</li>
+    <li><strong>Spam score above 5%</strong> &mdash; Moz Spam Score or similar. Check before buying.</li>
+    <li><strong>Dropped multiple times</strong> &mdash; WHOIS shows repeated creation dates. The domain was repeatedly abandoned.</li>
+    <li><strong>Chinese/Japanese characters in backlinks</strong> &mdash; common sign of a spam network.</li>
+  </ul>
+</div>
+
+<h2>Quick Reference</h2>
+
+<pre><code>ExpiredDomains.net     &mdash; Free domain hunting (start here)
+GoDaddy Auctions       &mdash; Closeout bargains ($12+)
+NotRenewing.com        &mdash; Flat $99 aged domains
+NameJet                &mdash; Backordering (pay only if you win)
+web.archive.org        &mdash; Check what a domain used to be
+mxtoolbox.com          &mdash; Blacklist check
+uspto.gov              &mdash; Trademark search</code></pre>
+
+<h2>Budget</h2>
+
+<div class="margin-note">$50&ndash;$150 gets you a solid aged domain.</div>
+
+<p>$50&ndash;$150 gets you a solid aged domain. Here&rsquo;s the breakdown for the most common path &mdash; grabbing a GoDaddy closeout and transferring to Cloudflare:</p>
+
 <table>
-<thead>
-<tr>
-<th>Stage</th>
-<th>Cost</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>GoDaddy Closeout purchase</td>
-<td>$12–$50</td>
-</tr>
-<tr>
-<td>Transfer to Cloudflare</td>
-<td>$8–$10 (1 year renewal)</td>
-</tr>
-<tr>
-<td><strong>Total</strong></td>
-<td><strong>$20–$60</strong></td>
-</tr>
-</tbody>
+  <thead><tr><th>Stage</th><th>Cost</th></tr></thead>
+  <tbody>
+    <tr><td>GoDaddy Closeout purchase</td><td>$12&ndash;$50</td></tr>
+    <tr><td>Transfer to Cloudflare</td><td>$8&ndash;$10 (1 year renewal)</td></tr>
+    <tr><td><strong>Total</strong></td><td><strong>$20&ndash;$60</strong></td></tr>
+  </tbody>
 </table>
-<p>For $150 you can get a 5+ year aged .com with clean history and 20+
-backlinks. Worth every dollar for the inbox rate improvement.</p>
+
+<p>For $150 you can get a 5+ year aged <code>.com</code> with clean history and 20+ backlinks. Worth every dollar for the inbox rate improvement.</p>
+
+<div class="footer">
+  <span>FM-004 &middot; STRASSER &#x271B; LAB</span>
+  <span>June 2026</span>
+</div>
+
+</div>
 </body>
 </html>

