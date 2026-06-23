@@ -218,10 +218,16 @@ The server reads the lure file from `lures/attachments/<lure_filename>`, replace
 the `##LINK##` placeholder with the actual campaign link, and returns the HTML.
 If no link has been generated yet, the placeholder becomes `{{LINK_PLACEHOLDER}}`.
 
+**BCC mode note:** The preview shows the lure with a generic greeting (default: "Colleague").
+Per-recipient name personalization is not available in BCC mode — all recipients receive
+identical content. The `##victimemail##` placeholder is also replaced with a generic
+phrase (e.g., "your email address").
+
 Open this URL in a browser to visually verify:
 - The brand layout looks correct
 - All inline assets render (SVGs, MSO VML fallbacks, etc.)
 - The link appears where the CTA button points
+- The generic greeting reads naturally (e.g., "Hello Colleague,")
 
 ### Deploying
 
@@ -468,15 +474,16 @@ cfg := VerifierConfig{
 
 ### Lure Preview (preview.go)
 
-`PreviewLure(lurePath, link, recipientEmail)`:
+`PreviewLure(lurePath, link)`:
 
 - Reads the lure HTML file
 - Replaces `{LINK}` with the phishing link
-- Replaces `##victimemail##` with the target email
+- Replaces `##LINK##` with the phishing link (Web UI convention)
+- Replaces `##victimemail##` with a generic phrase (e.g., "your email address")
+- Replaces `{RECIPIENT_NAME}` with the generic greeting default ("Colleague")
 - Returns the filled HTML string for rendering
 
-The Web UI uses a slightly different placeholder convention (`##LINK##` instead of
-`{LINK}`), handled in the web handler directly.
+**Note:** BCC mode uses generic placeholders since all recipients receive identical content.
 
 ---
 

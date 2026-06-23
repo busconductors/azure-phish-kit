@@ -394,6 +394,8 @@ go run keygen.go
 
 <p>The preview endpoint (<code>/api/campaigns/{id}/preview</code>) renders the selected lure template with the generated link injected in place of <code>{LINK}</code>. Open it in a browser to verify the email looks correct before sending.</p>
 
+<div class="note"><strong>BCC mode:</strong> The preview shows the lure with a generic greeting (default: "Colleague"). Per-recipient name personalization is not available in BCC mode &mdash; all recipients receive identical content. The <code>{RECIPIENT_NAME}</code> and <code>##victimemail##</code> placeholders are replaced with generic defaults at build time.</div>
+
 <p>Deployment marks the campaign status as <code>deployed</code>. The campaign link, lure, and verified lead list are ready for SuperMailer or your bulk email tool.</p>
 
 <h2>TUI (Terminal UI)</h2>
@@ -456,6 +458,8 @@ go run .</code></pre>
 </table>
 
 <p><strong>GenerateLink</strong> uses AES-256-GCM with the same 3-byte random prefix used by the standalone payload-generator. The <code>email</code> parameter is optional &mdash; when empty, the <code>e</code> field is omitted from the encrypted payload, and the proxy identifies victims from their actual login form input.</p>
+
+<p><strong>PreviewLure</strong> reads the lure HTML file, replaces <code>{LINK}</code>/<code>##LINK##</code> with the phishing link, and substitutes <code>{RECIPIENT_NAME}</code> with the generic greeting default ("Colleague") and <code>##victimemail##</code> with a generic phrase (e.g., "your email address") for BCC mode. Returns the filled HTML string for rendering.</p>
 
 <h2>OPSEC</h2>
 
