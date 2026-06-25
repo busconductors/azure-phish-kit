@@ -73,14 +73,17 @@ input[type="file"]::file-selector-button { background: var(--border); border: no
     <span class="badge badge-{{.Campaign.Status}}">{{.Campaign.Status}}</span>
   </div>
 
-  <!-- 4-step progress indicator -->
+  <!-- 5-step progress indicator -->
   <div class="steps">
     <div class="step done"><span class="check">&check;</span> Select Lure</div>
     <div class="step{{if eq .Campaign.Status "active"}} current{{end}}{{if or (eq .Campaign.Status "verified") (eq .Campaign.Status "deployed")}} done{{end}}">
-      {{if or (eq .Campaign.Status "active") (eq .Campaign.Status "verified") (eq .Campaign.Status "deployed")}}<span class="check">&check;</span>{{end}}Generate Link
+      {{if or (eq .Campaign.Status "verified") (eq .Campaign.Status "deployed")}}<span class="check">&check;</span>{{end}}Generate Link
+    </div>
+    <div class="step{{if or (eq .Campaign.Status "verified") (eq .Campaign.Status "deployed")}} done{{end}}">
+      {{if or (eq .Campaign.Status "verified") (eq .Campaign.Status "deployed")}}<span class="check">&check;</span>{{end}}Verify Leads
     </div>
     <div class="step{{if eq .Campaign.Status "verified"}} current{{end}}{{if eq .Campaign.Status "deployed"}} done{{end}}">
-      {{if eq .Campaign.Status "deployed"}}<span class="check">&check;</span>{{end}}Verify Leads
+      {{if eq .Campaign.Status "deployed"}}<span class="check">&check;</span>{{end}}Preview
     </div>
     <div class="step{{if eq .Campaign.Status "deployed"}} current done{{end}}">
       {{if eq .Campaign.Status "deployed"}}<span class="check">&check;</span>{{end}}Deploy
@@ -126,8 +129,16 @@ input[type="file"]::file-selector-button { background: var(--border); border: no
 
       {{if eq .Campaign.Status "verified"}}
       <div class="panel">
-        <h2>Step 4 &mdash; Deploy Campaign</h2>
-        <p class="desc">All checks passed. Leads verified ({{.Campaign.LeadCount}} targets). Ready to deploy.</p>
+        <h2>Step 4 &mdash; Preview Lure Email</h2>
+        <p class="desc">Review the filled lure template before deploying. The <code>{LINK}</code> placeholder has been replaced with your actual tracking link.</p>
+        <p style="margin-bottom: 16px;">
+          <a href="/api/campaigns/{{.Campaign.ID}}/preview" target="_blank" class="btn btn-primary">Open Preview in New Tab</a>
+        </p>
+      </div>
+
+      <div class="panel" style="margin-top: 16px;">
+        <h2>Step 5 &mdash; Deploy Campaign</h2>
+        <p class="desc">All checks passed. Leads verified ({{.Campaign.LeadCount}} targets). Ready to deploy. A ZIP file with your campaign assets will be generated.</p>
         <form method="POST" action="/api/campaigns/{{.Campaign.ID}}/deploy">
           <button type="submit" class="btn btn-success">Deploy Campaign</button>
         </form>

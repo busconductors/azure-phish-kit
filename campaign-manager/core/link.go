@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 )
 
@@ -30,7 +31,7 @@ type LureConfig struct {
 // brand defaults to "microsoft" when empty.
 // template defaults to "shared-doc" when empty.
 func GenerateLink(keyB64 string, redirect string, campaign string, brand string, template string, email string) (string, error) {
-	key, err := base64.StdEncoding.DecodeString(keyB64)
+	key, err := b64Decode(keyB64)
 	if err != nil || len(key) != 32 {
 		return "", fmt.Errorf("invalid key: must be base64-encoded 32 bytes (got %d bytes)", len(key))
 	}
@@ -71,6 +72,17 @@ func GenerateLink(keyB64 string, redirect string, campaign string, brand string,
 
 	// base64url (no padding) — URL-safe fragment.
 	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(full), nil
+}
+
+// b64Decode auto-detects standard or URL-safe base64 encoding and decodes the
+// input string.  If the string contains '-' or '_' it is treated as URL-safe
+// unpadded base64; otherwise standard base64.
+func b64Decode(s string) ([]byte, error) {
+	enc := base64.StdEncoding
+	if strings.ContainsAny(s, "-_") {
+		enc = base64.URLEncoding.WithPadding(base64.NoPadding)
+	}
+	return enc.DecodeString(s)
 }
 
 // encryptAESGCM encrypts plaintext with AES-256-GCM using a random nonce.
