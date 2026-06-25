@@ -60,25 +60,14 @@ func newTestServer(t *testing.T) *httptest.Server {
 
 	// Replicate the route registrations from main().
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		campaigns := store.List()
-		data := listPageData{
-			Campaigns: campaigns,
-			Summary:   buildSummary(campaigns),
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "list.html", data); err != nil {
-			t.Logf("[ERROR] template list: %v", err)
-		}
-	})
-
-	mux.HandleFunc("GET /campaigns/new", func(w http.ResponseWriter, r *http.Request) {
-		data := newCampaignData{
+		data := appPageData{
+			Campaigns: store.List(),
 			Lures:     lures,
 			Phishlets: phishlets,
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "new.html", data); err != nil {
-			t.Logf("[ERROR] template new: %v", err)
+		if err := tmpl.ExecuteTemplate(w, "app.html", data); err != nil {
+			t.Logf("[ERROR] template app: %v", err)
 		}
 	})
 
@@ -89,14 +78,15 @@ func newTestServer(t *testing.T) *httptest.Server {
 			http.NotFound(w, r)
 			return
 		}
-		data := detailPageData{
-			Campaign:  c,
+		data := appPageData{
+			Campaigns: store.List(),
+			Selected:  &c,
 			Lures:     lures,
 			Phishlets: phishlets,
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "detail.html", data); err != nil {
-			t.Logf("[ERROR] template detail: %v", err)
+		if err := tmpl.ExecuteTemplate(w, "app.html", data); err != nil {
+			t.Logf("[ERROR] template app: %v", err)
 		}
 	})
 
@@ -118,7 +108,7 @@ func newTestServer(t *testing.T) *httptest.Server {
 			Lure:      lure,
 			Phishlet:  phishlet,
 			Status:    core.StatusDraft,
-			CreatedAt: "2025-01-01T00:00:00Z", // deterministic for test
+			CreatedAt: "2025-01-01T00:00:00Z",
 		}
 		store.Put(c)
 		http.Redirect(w, r, "/campaigns/"+c.ID, http.StatusSeeOther)
@@ -158,7 +148,6 @@ func newTestServer(t *testing.T) *httptest.Server {
 		}
 		defer file.Close()
 
-		// Save uploaded CSV to disk (in tmpDir).
 		leadsDir := filepath.Join(tmpDir, "leads")
 		os.MkdirAll(leadsDir, 0755)
 		dstPath := filepath.Join(leadsDir, id+".csv")
@@ -170,7 +159,6 @@ func newTestServer(t *testing.T) *httptest.Server {
 		defer dst.Close()
 		io.Copy(dst, file)
 
-		// Re-read and count lines.
 		dst.Seek(0, 0)
 		reader := csv.NewReader(dst)
 		count := 0
@@ -223,7 +211,6 @@ func newTestServer(t *testing.T) *httptest.Server {
 		writeJSON(w, http.StatusOK, map[string]string{"status": "deployed"})
 	})
 
-	// Catch-all 404 handler.
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("<html><body></body></html>"))
@@ -256,14 +243,20 @@ func TestNewCampaignPage(t *testing.T) {
 	srv := newTestServer(t)
 	defer srv.Close()
 
-	resp, err := srv.Client().Get(srv.URL + "/campaigns/new")
+	// The new campaign form is now inline in the SPA at GET /
+	resp, err := srv.Client().Get(srv.URL + "/")
 	if err != nil {
-		t.Fatalf("GET /campaigns/new: %v", err)
+		t.Fatalf("GET /: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("expected 200, got %d", resp.StatusCode)
+	}
+
+	body, _ := io.ReadAll(resp.Body)
+	if !strings.Contains(string(body), "New Campaign") {
+		t.Error("expected new campaign form in SPA")
 	}
 }
 
@@ -271,7 +264,6 @@ func TestCreateCampaign(t *testing.T) {
 	srv := newTestServer(t)
 	defer srv.Close()
 
-	// The client should not follow redirects so we can check the 303.
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
@@ -338,7 +330,6 @@ func TestVerifyCSVUpload(t *testing.T) {
 	srv := newTestServer(t)
 	defer srv.Close()
 
-	// First, create a campaign to verify.
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
@@ -358,10 +349,8 @@ func TestVerifyCSVUpload(t *testing.T) {
 	if loc == "" {
 		t.Fatal("expected Location header in redirect")
 	}
-	// Extract campaign ID from /campaigns/{id}
 	campaignID := filepath.Base(loc)
 
-	// Build a multipart form with a CSV file.
 	var buf bytes.Buffer
 	mw := multipart.NewWriter(&buf)
 	fw, err := mw.CreateFormFile("leads", "leads.csv")

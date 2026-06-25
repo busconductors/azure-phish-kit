@@ -69,27 +69,16 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	// Page routes
+	// Page routes — single SPA template
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		campaigns := store.List()
-		data := listPageData{
-			Campaigns: campaigns,
-			Summary:   buildSummary(campaigns),
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "list.html", data); err != nil {
-			log.Printf("[ERROR] template list: %v", err)
-		}
-	})
-
-	mux.HandleFunc("GET /campaigns/new", func(w http.ResponseWriter, r *http.Request) {
-		data := newCampaignData{
-			Lures:    lures,
+		data := appPageData{
+			Campaigns: store.List(),
+			Lures:     lures,
 			Phishlets: phishlets,
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "new.html", data); err != nil {
-			log.Printf("[ERROR] template new: %v", err)
+		if err := tmpl.ExecuteTemplate(w, "app.html", data); err != nil {
+			log.Printf("[ERROR] template app: %v", err)
 		}
 	})
 
@@ -100,14 +89,15 @@ func main() {
 			http.NotFound(w, r)
 			return
 		}
-		data := detailPageData{
-			Campaign:  c,
+		data := appPageData{
+			Campaigns: store.List(),
+			Selected:  &c,
 			Lures:     lures,
 			Phishlets: phishlets,
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := tmpl.ExecuteTemplate(w, "detail.html", data); err != nil {
-			log.Printf("[ERROR] template detail: %v", err)
+		if err := tmpl.ExecuteTemplate(w, "app.html", data); err != nil {
+			log.Printf("[ERROR] template app: %v", err)
 		}
 	})
 
@@ -456,44 +446,11 @@ func scanPhishlets(dir string) []PhishletInfo {
 
 // ---------- Template Data Types ----------
 
-type listSummary struct {
-	Active    int
-	TotalTargets int
-	SuccessRate  string
-	LinksGen   int
-}
-
-type listPageData struct {
+type appPageData struct {
 	Campaigns []core.Campaign
-	Summary   listSummary
-}
-
-type newCampaignData struct {
+	Selected  *core.Campaign // nil when showing the "new campaign" form
 	Lures     []LureInfo
 	Phishlets []PhishletInfo
-}
-
-type detailPageData struct {
-	Campaign  core.Campaign
-	Lures     []LureInfo
-	Phishlets []PhishletInfo
-}
-
-func buildSummary(campaigns []core.Campaign) listSummary {
-	s := listSummary{}
-	s.LinksGen = len(campaigns)
-	for _, c := range campaigns {
-		if c.Status == core.StatusActive || c.Status == core.StatusDeployed {
-			s.Active++
-		}
-		s.TotalTargets += c.LeadCount
-	}
-	if s.LinksGen > 0 && s.Active > 0 {
-		s.SuccessRate = fmt.Sprintf("%.1f%%", float64(s.Active)/float64(s.LinksGen)*100)
-	} else {
-		s.SuccessRate = "0.0%"
-	}
-	return s
 }
 
 // ---------- Live Events Data ----------

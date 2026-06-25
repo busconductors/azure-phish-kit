@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"strings"
 	"time"
 )
 
@@ -75,14 +74,22 @@ func GenerateLink(keyB64 string, redirect string, campaign string, brand string,
 }
 
 // b64Decode auto-detects standard or URL-safe base64 encoding and decodes the
-// input string.  If the string contains '-' or '_' it is treated as URL-safe
-// unpadded base64; otherwise standard base64.
+// input string.  It tries standard encoding first; if the result is not 32
+// bytes it falls back to URL-safe unpadded encoding.
 func b64Decode(s string) ([]byte, error) {
-	enc := base64.StdEncoding
-	if strings.ContainsAny(s, "-_") {
-		enc = base64.URLEncoding.WithPadding(base64.NoPadding)
+	// Try standard encoding first.
+	if b, err := base64.StdEncoding.DecodeString(s); err == nil && len(b) == 32 {
+		return b, nil
 	}
-	return enc.DecodeString(s)
+	// Fall back to URL-safe encoding (with or without padding).
+	if b, err := base64.URLEncoding.WithPadding(base64.NoPadding).DecodeString(s); err == nil && len(b) == 32 {
+		return b, nil
+	}
+	if b, err := base64.URLEncoding.DecodeString(s); err == nil && len(b) == 32 {
+		return b, nil
+	}
+	// Return whatever StdEncoding gives us so the caller gets a sensible error.
+	return base64.StdEncoding.DecodeString(s)
 }
 
 // encryptAESGCM encrypts plaintext with AES-256-GCM using a random nonce.

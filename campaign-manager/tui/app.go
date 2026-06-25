@@ -1,324 +1,983 @@
+// Package main — Bubble Tea model, update loop, and rendering for the
+// GLNT Campaign Manager TUI.
 package main
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
+	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 
-	"strconv"
+	"github.com/strasser-lab/azure-phish-kit/campaign-manager/core"
 
-	"golang.org/x/term"
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
-// App holds the full TUI application state.
-type App struct {
-	campaigns  []Campaign
-	selected   int  // index into campaigns
-	currentStep int  // 1-4 workflow step
-	focusPanel int  // 0 = campaign list (left), 1 = workflow (right)
-	proxyOnline bool
-	lastCapture string
-	newEvents   int
-	width       int
-	height      int
-	quit        bool
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
-	// Debug / status
-	statusMsg string
+type focusType string
+
+const (
+	focusList   focusType = "list"
+	focusDetail focusType = "detail"
+	focusForm   focusType = "form"
+)
+
+type stepType int
+
+const (
+	stepLink stepType = iota + 1
+	stepVerify
+	stepPreview
+	stepDeploy
+)
+
+const stepCount = 4
+
+var stepNames = map[stepType]string{
+	stepLink:    "Generate Link",
+	stepVerify:  "Verify Leads",
+	stepPreview: "Preview Lure",
+	stepDeploy:  "Deploy",
 }
 
-// NewApp constructs the application and seeds it with sample campaigns.
-func NewApp() *App {
-	w, h, err := term.GetSize(int(os.Stdin.Fd()))
-	if err != nil {
-		w, h = 80, 24
-	}
-
-	return &App{
-		campaigns:   seedCampaigns(),
-		selected:    0,
-		currentStep: 1,
-		focusPanel:  0,
-		proxyOnline: true,
-		lastCapture: time.Now().UTC().Format("15:04 MST"),
-		newEvents:   3,
-		width:       w,
-		height:      h,
-	}
-}
-
-// seedCampaigns returns plausible demo data so the UI shows something on first run.
-func seedCampaigns() []Campaign {
-	return []Campaign{
-		{
-			ID:        "c001",
-			Name:      "q3-phishing",
-			Lure:      "fake-mfa.html",
-			Phishlet:  "microsoft",
-			Status:    "active",
-			LeadCount: 5210,
-			Link:      "https://phish.example.com/?t=ZXhhbXBsZS5jb20",
-			LeadFile:  "leads/q3-targets.csv",
-			CreatedAt: "2026-06-15",
-		},
-		{
-			ID:        "c002",
-			Name:      "exec-payroll",
-			Lure:      "payroll-update.html",
-			Phishlet:  "microsoft",
-			Status:    "ready",
-			LeadCount: 340,
-			Link:      "",
-			LeadFile:  "leads/exec-payroll.csv",
-			CreatedAt: "2026-06-18",
-		},
-		{
-			ID:        "c003",
-			Name:      "q2-it-audit",
-			Lure:      "it-audit.html",
-			Phishlet:  "okta",
-			Status:    "draft",
-			LeadCount: 0,
-			Link:      "",
-			LeadFile:  "",
-			CreatedAt: "2026-06-20",
-		},
-	}
+var stepDescriptions = map[stepType][]string{
+	stepLink: {
+		"Encrypt campaign metadata with the",
+		"AES-256 key and generate a base64url",
+		"phishing link fragment.",
+		"",
+		"The link is embedded into the lure HTML",
+		"at the {LINK} placeholder.",
+	},
+	stepVerify: {
+		"Verify email addresses against target",
+		"mail servers (SMTP RCPT TO probe).",
+		"",
+		"Valid (delivered) leads are counted and",
+		"the campaign status is updated.",
+		"",
+		"Enable --smtp-proxy for SOCKS5 routing.",
+	},
+	stepPreview: {
+		"Read the lure HTML file, replace the",
+		"{LINK} placeholder with the generated",
+		"link, and display a preview snippet.",
+		"",
+		"Verify that assets, branding, and the",
+		"redirect URL look correct.",
+	},
+	stepDeploy: {
+		"Mark the campaign as deployed.",
+		"",
+		"The campaign is ready for SuperMailer",
+		"or Amazon SES dispatch.",
+		"",
+		"Monitor deliveries and captures in the",
+		"analytics dashboard.",
+	},
 }
 
 // ---------------------------------------------------------------------------
-// Main loop
+// Styles
 // ---------------------------------------------------------------------------
 
-// Run enters the TUI event loop. It returns when the user presses Q.
-func (a *App) Run() {
-	// Clear screen once.
-	fmt.Print("\033[2J")
-	fmt.Print("\033[?25l") // hide cursor
-	defer func() {
-		fmt.Print("\033[?25h") // show cursor
-		fmt.Print("\033[2J")   // clear
-		fmt.Print("\033[H")    // home
-	}()
+var (
+	headerStyle = lipgloss.NewStyle().
+			Background(lipgloss.Color("63")).
+			Foreground(lipgloss.Color("255")).
+			Bold(true).
+			Padding(0, 1)
 
-	// Keyboard input channel.
-	keyCh := make(chan []byte, 16)
-	go a.readInputLoop(keyCh)
+	panelBorderStyle = lipgloss.NewStyle().
+				Border(lipgloss.NormalBorder()).
+				BorderForeground(lipgloss.Color("240"))
 
-	// SIGWINCH → terminal resize.
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGWINCH)
-	defer signal.Stop(sigCh)
+	listSelectedStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("39")).
+				Bold(true)
 
-	// Periodic refresh (updates last-capture clock, etc.).
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
+	listNormalStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("252"))
 
-	// Initial draw.
-	a.refreshSize()
-	a.draw()
+	statusActiveStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("42")).Bold(true)
+	statusDraftStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	statusVerifiedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("39")).Bold(true)
+	statusDeployedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("226")).Bold(true)
 
-	for !a.quit {
-		select {
-		case key := <-keyCh:
-			a.handleKey(key)
-			a.draw()
-		case <-sigCh:
-			a.refreshSize()
-			a.draw()
-		case <-ticker.C:
-			a.lastCapture = time.Now().UTC().Format("15:04 MST")
-			a.draw()
+	stepActiveStyle   = lipgloss.NewStyle().Background(lipgloss.Color("63")).Foreground(lipgloss.Color("255")).Padding(0, 1)
+	stepInactiveStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Padding(0, 1)
+
+	statusBarStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("240"))
+
+	keyHintStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("39"))
+
+	formLabelStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("39")).
+			Bold(true)
+
+	formTitleStyle = lipgloss.NewStyle().
+			Background(lipgloss.Color("63")).
+			Foreground(lipgloss.Color("255")).
+			Bold(true).
+			Padding(0, 1)
+
+	errorStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("196"))
+)
+
+// ---------------------------------------------------------------------------
+// Model
+// ---------------------------------------------------------------------------
+
+type model struct {
+	store      *core.Store
+	luresPath  string
+	phishKey   string
+	smtpProxy  string
+	campaigns  []core.Campaign
+	selected   int
+	listOffset int
+	focus      focusType
+	step       stepType
+	statusMsg  string
+	statusErr  bool
+	width      int
+	height     int
+
+	// Form state
+	formInputs []textinput.Model
+	formFocus  int
+}
+
+func newModel(storePath, luresPath, phishKey, smtpProxy string) model {
+	store := core.NewStore(storePath)
+	campaigns := store.List()
+
+	inputs := make([]textinput.Model, 4)
+
+	inputs[0] = textinput.New()
+	inputs[0].Placeholder = "campaign name (e.g., q3-phishing)"
+	inputs[0].CharLimit = 64
+	inputs[0].Focus()
+
+	inputs[1] = textinput.New()
+	inputs[1].Placeholder = "lure filename (e.g., fake-mfa.html)"
+	inputs[1].CharLimit = 128
+
+	inputs[2] = textinput.New()
+	inputs[2].Placeholder = "phishlet (e.g., microsoft, okta)"
+	inputs[2].CharLimit = 32
+
+	inputs[3] = textinput.New()
+	inputs[3].Placeholder = "lead CSV path (e.g., leads/targets.csv)"
+	inputs[3].CharLimit = 256
+
+	m := model{
+		store:      store,
+		luresPath:  luresPath,
+		phishKey:   phishKey,
+		smtpProxy:  smtpProxy,
+		campaigns:  campaigns,
+		focus:      focusList,
+		step:       stepLink,
+		formInputs: inputs,
+	}
+	return m
+}
+
+// ---------------------------------------------------------------------------
+// Bubble Tea interface
+// ---------------------------------------------------------------------------
+
+func (m model) Init() tea.Cmd {
+	return textinput.Blink
+}
+
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	var cmds []tea.Cmd
+
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+
+	case tea.KeyMsg:
+		if m.focus == focusForm {
+			cmd = m.updateForm(msg)
+			return m, cmd
+		}
+		return m.updateMain(msg)
+
+	case tickMsg:
+		// Refresh campaign list from store.
+		m.campaigns = m.store.List()
+		if m.selected >= len(m.campaigns) && len(m.campaigns) > 0 {
+			m.selected = len(m.campaigns) - 1
+		}
+		cmds = append(cmds, tickCmd())
+	}
+
+	return m, tea.Batch(cmds...)
+}
+
+// updateMain handles keyboard input when not in form mode.
+func (m model) updateMain(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	key := msg.String()
+
+	// Global keys (work regardless of focus).
+	switch key {
+	case "q", "ctrl+c":
+		return m, tea.Quit
+	case "n":
+		// Open new-campaign form.
+		m.focus = focusForm
+		m.formFocus = 0
+		m.resetForm()
+		return m, textinput.Blink
+	}
+
+	// Focus-dependent keys.
+	switch m.focus {
+	case focusList:
+		return m.updateListKeys(key)
+	case focusDetail:
+		return m.updateDetailKeys(key)
+	}
+	return m, nil
+}
+
+// updateListKeys handles keys when the campaign list panel is focused.
+func (m model) updateListKeys(key string) (tea.Model, tea.Cmd) {
+	switch key {
+	case "j", "down":
+		m.moveDown()
+	case "k", "up":
+		m.moveUp()
+	case "enter":
+		if len(m.campaigns) > 0 {
+			m.focus = focusDetail
+			m.step = stepLink
+			m.statusMsg = ""
+			m.statusErr = false
+		}
+	case "tab":
+		if len(m.campaigns) > 0 {
+			m.focus = focusDetail
 		}
 	}
+	return m, nil
 }
 
-// ---------------------------------------------------------------------------
-// Keyboard input
-// ---------------------------------------------------------------------------
-
-// readInputLoop runs in a goroutine, pushing raw byte sequences onto ch.
-// Single bytes (regular keys, Ctrl+key) are sent as-is. Escape sequences
-// (arrow keys, etc.) are collected with a short deadline and sent as one slice.
-func (a *App) readInputLoop(ch chan<- []byte) {
-	one := make([]byte, 1)
-	for {
-		_, err := os.Stdin.Read(one)
-		if err != nil {
-			return
-		}
-		if one[0] != '\x1b' {
-			ch <- []byte{one[0]}
-			continue
-		}
-		// ESC received — try to slurp the rest of an escape sequence.
-		os.Stdin.SetReadDeadline(time.Now().Add(40 * time.Millisecond))
-		rest := make([]byte, 5)
-		n, _ := os.Stdin.Read(rest)
-		os.Stdin.SetReadDeadline(time.Time{})
-		ch <- append([]byte{'\x1b'}, rest[:n]...)
+// updateDetailKeys handles keys when the workflow/detail panel is focused.
+func (m model) updateDetailKeys(key string) (tea.Model, tea.Cmd) {
+	switch key {
+	case "tab":
+		m.focus = focusList
+	case "l", "L":
+		return m.doGenerateLink()
+	case "v", "V":
+		return m.doVerifyLeads()
+	case "p", "P":
+		return m.doPreview()
+	case "d", "D":
+		return m.doDeploy()
+	case "1", "2", "3", "4":
+		m.step = stepType(key[0] - '0')
+		m.statusMsg = ""
+		m.statusErr = false
 	}
+
+	return m, nil
 }
 
-// handleKey dispatches a raw key sequence to the appropriate action.
-// Returns true if the app should quit.
-func (a *App) handleKey(key []byte) {
-	switch {
-	// --- Single-byte keys ---
-	case len(key) == 1:
-		switch key[0] {
-		case 'q', 'Q', 0x03: // Ctrl+C
-			a.quit = true
-		case 'l', 'L':
-			a.stepGenerateLink()
-		case 'v', 'V':
-			a.stepVerifyLeads()
-		case 'p', 'P':
-			a.stepPreview()
-		case 'd', 'D':
-			a.stepDeploy()
-		case '\t':
-			a.focusPanel = (a.focusPanel + 1) % 2
-		case '\r': // Enter — context-dependent
-			a.handleEnter()
-		case 'j':
-			if a.focusPanel == 0 {
-				a.cursorDown()
+// ---------------------------------------------------------------------------
+// Form handling
+// ---------------------------------------------------------------------------
+
+func (m *model) resetForm() {
+	for i := range m.formInputs {
+		m.formInputs[i].SetValue("")
+		m.formInputs[i].Blur()
+	}
+	m.formInputs[0].Focus()
+}
+
+func (m model) updateForm(msg tea.KeyMsg) tea.Cmd {
+	key := msg.String()
+
+	switch key {
+	case "esc":
+		m.focus = focusList
+		m.statusMsg = ""
+		m.statusErr = false
+		return nil
+	case "tab":
+		m.formFocus = (m.formFocus + 1) % len(m.formInputs)
+		for i := range m.formInputs {
+			if i == m.formFocus {
+				m.formInputs[i].Focus()
+			} else {
+				m.formInputs[i].Blur()
 			}
-		case 'k':
-			if a.focusPanel == 0 {
-				a.cursorUp()
+		}
+		return textinput.Blink
+	case "shift+tab":
+		m.formFocus = (m.formFocus - 1 + len(m.formInputs)) % len(m.formInputs)
+		for i := range m.formInputs {
+			if i == m.formFocus {
+				m.formInputs[i].Focus()
+			} else {
+				m.formInputs[i].Blur()
 			}
 		}
+		return textinput.Blink
+	case "enter":
+		if m.formFocus == len(m.formInputs)-1 {
+			// Last field — submit.
+			return m.doNewCampaign()
+		}
+		// Move to next field.
+		m.formFocus = (m.formFocus + 1) % len(m.formInputs)
+		for i := range m.formInputs {
+			if i == m.formFocus {
+				m.formInputs[i].Focus()
+			} else {
+				m.formInputs[i].Blur()
+			}
+		}
+		return textinput.Blink
+	}
 
-	// --- Escape sequences (arrow keys) ---
-	case len(key) >= 3 && key[0] == '\x1b' && key[1] == '[':
-		switch key[2] {
-		case 'A': // Up
-			a.cursorUp()
-		case 'B': // Down
-			a.cursorDown()
-		case 'C': // Right
-			a.focusPanel = 1
-		case 'D': // Left
-			a.focusPanel = 0
+	// Delegate to the focused text input.
+	var cmd tea.Cmd
+	for i := range m.formInputs {
+		if i == m.formFocus {
+			m.formInputs[i], cmd = m.formInputs[i].Update(msg)
 		}
 	}
+	return cmd
 }
 
 // ---------------------------------------------------------------------------
 // Navigation helpers
 // ---------------------------------------------------------------------------
 
-func (a *App) cursorUp() {
-	if a.selected > 0 {
-		a.selected--
+func (m *model) moveUp() {
+	if m.selected > 0 {
+		m.selected--
+	}
+	// If selected is above visible area, scroll up.
+	if m.selected < m.listOffset {
+		m.listOffset = m.selected
 	}
 }
 
-func (a *App) cursorDown() {
-	if a.selected < len(a.campaigns)-1 {
-		a.selected++
+func (m *model) moveDown() {
+	if m.selected < len(m.campaigns)-1 {
+		m.selected++
+	}
+	// If selected is below visible area, scroll down.
+	visibleRows := m.listContentHeight()
+	if visibleRows <= 0 {
+		return
+	}
+	if m.selected >= m.listOffset+visibleRows {
+		m.listOffset = m.selected - visibleRows + 1
 	}
 }
 
-func (a *App) handleEnter() {
-	if a.focusPanel == 0 && a.selected < len(a.campaigns) {
-		// Activating a campaign moves focus to the workflow panel.
-		a.focusPanel = 1
+func (m model) listContentHeight() int {
+	// Screen height minus header (1), status bar (1), and panel borders (2).
+	h := m.height - 4
+	if h < 3 {
+		h = 3
 	}
+	return h
 }
 
 // ---------------------------------------------------------------------------
-// Workflow step handlers (stubs — wired to core logic in ../core/)
+// Core action methods
 // ---------------------------------------------------------------------------
 
-func (a *App) stepGenerateLink() {
-	if a.selected >= len(a.campaigns) {
-		a.statusMsg = "No campaign selected."
-		return
+// doGenerateLink calls core.GenerateLink and updates the campaign.
+func (m model) doGenerateLink() (tea.Model, tea.Cmd) {
+	if m.selected >= len(m.campaigns) {
+		m.statusMsg = "No campaign selected."
+		m.statusErr = true
+		return m, nil
 	}
-	a.currentStep = 1
-	a.statusMsg = "Generating link... (core not yet wired)"
-	// TODO: call core.GenerateLink(campaign)
-}
+	c := m.campaigns[m.selected]
 
-func (a *App) stepVerifyLeads() {
-	if a.selected >= len(a.campaigns) {
-		a.statusMsg = "No campaign selected."
-		return
-	}
-	a.currentStep = 2
-	a.statusMsg = "Verifying leads... (core not yet wired)"
-	// TODO: call core.VerifyLeads(campaign)
-}
-
-func (a *App) stepPreview() {
-	if a.selected >= len(a.campaigns) {
-		a.statusMsg = "No campaign selected."
-		return
-	}
-	a.currentStep = 3
-	a.statusMsg = "Opening preview... (core not yet wired)"
-	// TODO: call core.Preview(campaign)
-}
-
-func (a *App) stepDeploy() {
-	if a.selected >= len(a.campaigns) {
-		a.statusMsg = "No campaign selected."
-		return
-	}
-	a.currentStep = 4
-	a.statusMsg = "Deploying campaign... (core not yet wired)"
-	// TODO: call core.Deploy(campaign)
-}
-
-// ---------------------------------------------------------------------------
-// Resize
-// ---------------------------------------------------------------------------
-
-func (a *App) refreshSize() {
-	w, h, err := term.GetSize(int(os.Stdin.Fd()))
+	link, err := core.GenerateLink(
+		m.phishKey,
+		"https://www.office.com", // default redirect
+		c.ID,
+		c.Phishlet,
+		"shared-doc",
+		"", // BCC mode — no per-recipient email
+	)
 	if err != nil {
-		return
+		m.statusMsg = fmt.Sprintf("Link generation failed: %v", err)
+		m.statusErr = true
+		return m, nil
 	}
-	if w != a.width || h != a.height {
-		a.width = w
-		a.height = h
-		// Re-clear so old artefacts are scrubbed.
-		fmt.Print("\033[2J")
+
+	c.Link = link
+	m.store.Put(c)
+	m.statusMsg = fmt.Sprintf("Link generated for %s: %s", c.Name, link)
+	m.statusErr = false
+	m.tick()
+
+	return m, tickCmd()
+}
+
+// doVerifyLeads calls core.VerifyLeads and updates the campaign.
+func (m model) doVerifyLeads() (tea.Model, tea.Cmd) {
+	if m.selected >= len(m.campaigns) {
+		m.statusMsg = "No campaign selected."
+		m.statusErr = true
+		return m, nil
+	}
+	c := m.campaigns[m.selected]
+
+	if c.LeadFile == "" {
+		m.statusMsg = "Campaign has no lead file set."
+		m.statusErr = true
+		return m, nil
+	}
+
+	enableSMTP := true // always enable SMTP check
+
+	m.statusMsg = fmt.Sprintf("Verifying leads in %s ...", c.LeadFile)
+	m.statusErr = false
+
+	total, valid, invalid, catchAll, err := core.VerifyLeads(c.LeadFile, enableSMTP, m.smtpProxy)
+	if err != nil {
+		m.statusMsg = fmt.Sprintf("Verify failed: %v", err)
+		m.statusErr = true
+		return m, tickCmd()
+	}
+
+	c.LeadCount = valid
+	c.Status = core.StatusVerified
+	m.store.Put(c)
+
+	m.statusMsg = fmt.Sprintf("Verified %d leads: %d valid, %d invalid, %d catch-all (of %d total)",
+		valid+invalid+catchAll, valid, invalid, catchAll, total)
+	m.statusErr = false
+	m.tick()
+
+	return m, tickCmd()
+}
+
+// doPreview calls core.PreviewLure and shows a snippet.
+func (m model) doPreview() (tea.Model, tea.Cmd) {
+	if m.selected >= len(m.campaigns) {
+		m.statusMsg = "No campaign selected."
+		m.statusErr = true
+		return m, nil
+	}
+	c := m.campaigns[m.selected]
+
+	if c.Lure == "" {
+		m.statusMsg = "Campaign has no lure file set."
+		m.statusErr = true
+		return m, nil
+	}
+
+	lurePath := filepath.Join(m.luresPath, c.Lure)
+
+	// Generate a link first if not already present.
+	link := c.Link
+	if link == "" {
+		var err error
+		link, err = core.GenerateLink(
+			m.phishKey,
+			"https://www.office.com",
+			c.ID,
+			c.Phishlet,
+			"shared-doc",
+			"",
+		)
+		if err != nil {
+			m.statusMsg = fmt.Sprintf("Preview failed (link gen): %v", err)
+			m.statusErr = true
+			return m, nil
+		}
+		c.Link = link
+		m.store.Put(c)
+	}
+
+	html, err := core.PreviewLure(lurePath, link)
+	if err != nil {
+		m.statusMsg = fmt.Sprintf("Preview failed: %v", err)
+		m.statusErr = true
+		return m, tickCmd()
+	}
+
+	// Truncate HTML for status display.
+	preview := html
+	if len(preview) > 120 {
+		preview = preview[:117] + "..."
+	}
+	m.statusMsg = fmt.Sprintf("Preview (%s): %s", c.Lure, preview)
+	m.statusErr = false
+	m.tick()
+
+	return m, tickCmd()
+}
+
+// doDeploy marks the campaign as deployed.
+func (m model) doDeploy() (tea.Model, tea.Cmd) {
+	if m.selected >= len(m.campaigns) {
+		m.statusMsg = "No campaign selected."
+		m.statusErr = true
+		return m, nil
+	}
+	c := m.campaigns[m.selected]
+
+	c.Status = core.StatusDeployed
+	m.store.Put(c)
+
+	m.statusMsg = fmt.Sprintf("Campaign %s deployed — ready for SuperMailer dispatch.", c.Name)
+	m.statusErr = false
+	m.tick()
+
+	return m, tickCmd()
+}
+
+// doNewCampaign creates a campaign from form inputs and saves it.
+func (m model) doNewCampaign() tea.Cmd {
+	name := strings.TrimSpace(m.formInputs[0].Value())
+	if name == "" {
+		m.statusMsg = "Campaign name is required."
+		m.statusErr = true
+		return nil
+	}
+
+	c := core.Campaign{
+		ID:        fmt.Sprintf("c%d", time.Now().Unix()),
+		Name:      name,
+		Lure:      strings.TrimSpace(m.formInputs[1].Value()),
+		Phishlet:  strings.TrimSpace(m.formInputs[2].Value()),
+		LeadFile:  strings.TrimSpace(m.formInputs[3].Value()),
+		Status:    core.StatusDraft,
+		CreatedAt: time.Now().UTC().Format("2006-01-02"),
+	}
+
+	m.store.Put(c)
+	m.focus = focusList
+	m.statusMsg = fmt.Sprintf("Created campaign: %s", c.Name)
+	m.statusErr = false
+	m.tick()
+
+	return tickCmd()
+}
+
+// tick reloads campaigns from the store.
+func (m *model) tick() {
+	m.campaigns = m.store.List()
+	if m.selected >= len(m.campaigns) {
+		m.selected = 0
+	}
+	if len(m.campaigns) == 0 {
+		m.selected = 0
+		m.listOffset = 0
 	}
 }
 
 // ---------------------------------------------------------------------------
-// Layout calculator
+// Tick (async refresh)
 // ---------------------------------------------------------------------------
 
-// layout returns (leftWidth, rightWidth, contentHeight) in terminal columns/rows.
-func (a *App) layout() (int, int, int) {
-	leftW := a.width * 28 / 100
-	if leftW < 22 {
-		leftW = 22
+type tickMsg struct{}
+
+func tickCmd() tea.Cmd {
+	return tea.Tick(500*time.Millisecond, func(t time.Time) tea.Msg {
+		return tickMsg{}
+	})
+}
+
+// ---------------------------------------------------------------------------
+// View
+// ---------------------------------------------------------------------------
+
+func (m model) View() string {
+	if m.focus == focusForm {
+		return m.renderForm()
 	}
-	if leftW > 35 {
-		leftW = 35
+
+	// Calculate layout.
+	listW, detailW := m.panelWidths()
+	contentH := m.height - 2 // header + status bar
+	if contentH < 6 {
+		contentH = 6
 	}
-	rightW := a.width - leftW - 1 // one column gap between panels
+
+	// Render sections.
+	header := m.renderHeader()
+	list := m.renderList(listW, contentH)
+	detail := m.renderDetail(detailW, contentH)
+
+	// Join panels side-by-side.
+	panels := lipgloss.JoinHorizontal(lipgloss.Top, list, detail)
+	status := m.renderStatusBar()
+
+	return header + "\n" + panels + "\n" + status
+}
+
+// panelWidths returns the left and right panel widths.
+func (m model) panelWidths() (int, int) {
+	leftW := m.width * 30 / 100
+	if leftW < 20 {
+		leftW = 20
+	}
+	if leftW > 38 {
+		leftW = 38
+	}
+	rightW := m.width - leftW - 1
 	if rightW < 30 {
 		rightW = 30
 	}
-	contentH := a.height - 1 // bottom row reserved for status bar
-	if contentH < 8 {
-		contentH = 8
-	}
-	return leftW, rightW, contentH
+	return leftW, rightW
 }
 
-// visibleLen counts printable characters, skipping ANSI escapes.
-func visibleLen(s string) int {
+// ---------------------------------------------------------------------------
+// Render: header
+// ---------------------------------------------------------------------------
+
+func (m model) renderHeader() string {
+	title := " GLNT Campaign Manager "
+	if m.width > 40 {
+		title = fmt.Sprintf(" GLNT Campaign Manager  |  %d campaigns ",
+			len(m.campaigns))
+	}
+	return headerStyle.Copy().Width(m.width).Render(padRight(title, m.width))
+}
+
+// ---------------------------------------------------------------------------
+// Render: campaign list (left panel)
+// ---------------------------------------------------------------------------
+
+func (m model) renderList(width, height int) string {
+	// Inner content height (excluding borders).
+	innerW := width - 2
+	innerH := height - 2
+	if innerH < 1 {
+		innerH = 1
+	}
+
+	// Clamp list offset.
+	maxOff := len(m.campaigns) - innerH
+	if maxOff < 0 {
+		maxOff = 0
+	}
+	if m.listOffset > maxOff {
+		m.listOffset = maxOff
+	}
+	if m.listOffset < 0 {
+		m.listOffset = 0
+	}
+
+	var sb strings.Builder
+	sb.WriteString(panelBorderStyle.Copy().BorderTop(false).BorderBottom(false).BorderRight(false).
+		Width(innerW).Render("CAMPAIGNS") + "\n")
+
+	for i := 0; i < innerH; i++ {
+		idx := m.listOffset + i
+		row := ""
+		if idx < len(m.campaigns) {
+			row = m.renderCampaignRow(idx, innerW)
+		}
+		sb.WriteString(padRight(row, innerW) + "\n")
+	}
+
+	return panelBorderStyle.Copy().Width(width).Height(height).Render(
+		strings.TrimRight(sb.String(), "\n"),
+	)
+}
+
+func (m model) renderCampaignRow(idx, width int) string {
+	c := m.campaigns[idx]
+
+	// Marker.
+	marker := "  "
+	style := listNormalStyle
+	if m.focus == focusList && idx == m.selected {
+		marker = "> "
+		style = listSelectedStyle
+	}
+
+	// Status badge.
+	statusStr := statusLabel(c.Status)
+
+	// Build line: marker + name (trunc) + status.
+	nameMax := width - 9 // marker(2) + space(1) + status(6)
+	if nameMax < 3 {
+		nameMax = 3
+	}
+	line := fmt.Sprintf("%s%s %s",
+		marker,
+		truncate(c.Name, nameMax),
+		statusStr,
+	)
+	return style.Render(padRight(line, width))
+}
+
+// ---------------------------------------------------------------------------
+// Render: detail/workflow (right panel)
+// ---------------------------------------------------------------------------
+
+func (m model) renderDetail(width, height int) string {
+	innerW := width - 4  // inner padding
+	if innerW < 20 {
+		innerW = 20
+	}
+
+	var sb strings.Builder
+
+	// --- Campaign info ---
+	if m.selected < len(m.campaigns) {
+		c := m.campaigns[m.selected]
+
+		infoLines := m.renderCampaignInfo(c, innerW)
+		for _, line := range infoLines {
+			sb.WriteString(line + "\n")
+		}
+	} else {
+		sb.WriteString(formLabelStyle.Render("No campaigns. Press [N] to create one.") + "\n")
+	}
+
+	sb.WriteString(strings.Repeat("─", innerW) + "\n")
+
+	// --- Step indicators ---
+	sb.WriteString(m.renderStepIndicators(innerW) + "\n")
+	sb.WriteString(strings.Repeat("─", innerW) + "\n")
+
+	// --- Step description ---
+	for _, line := range stepDescriptions[m.step] {
+		sb.WriteString(line + "\n")
+	}
+
+	// --- Key hints ---
+	sb.WriteString("\n")
+	hints := "Keys: [L]ink  [V]erify  [P]review  [D]eploy  [N]ew  [Q]uit"
+	sb.WriteString(keyHintStyle.Render(padRight(hints, innerW)))
+	sb.WriteString("\n")
+	hints2 := "      [1-4] steps  [Tab] switch  [j/k] navigate  [Enter] select"
+	sb.WriteString(keyHintStyle.Render(padRight(hints2, innerW)))
+
+	return panelBorderStyle.Copy().Width(width).Height(height).Render(
+		" " + formLabelStyle.Render("WORKFLOW") + "\n\n" +
+			strings.TrimRight(sb.String(), "\n"),
+	)
+}
+
+func (m model) renderCampaignInfo(c core.Campaign, width int) []string {
+	var lines []string
+
+	nameLine := fmt.Sprintf("%s %s",
+		formLabelStyle.Render("Name:"),
+		c.Name,
+	)
+	lines = append(lines, padRight(nameLine, width))
+
+	idLine := fmt.Sprintf("%s %s",
+		lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("ID:"),
+		lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render(c.ID),
+	)
+	lines = append(lines, padRight(idLine, width))
+
+	lureLine := fmt.Sprintf("%s %s",
+		formLabelStyle.Render("Lure:"),
+		c.Lure,
+	)
+	lines = append(lines, padRight(lureLine, width))
+
+	phishLine := fmt.Sprintf("%s %s",
+		formLabelStyle.Render("Phishlet:"),
+		c.Phishlet,
+	)
+	lines = append(lines, padRight(phishLine, width))
+
+	statusLine := fmt.Sprintf("%s %s",
+		formLabelStyle.Render("Status:"),
+		statusLabel(c.Status),
+	)
+	lines = append(lines, padRight(statusLine, width))
+
+	leadsLine := fmt.Sprintf("%s %d",
+		formLabelStyle.Render("Leads:"),
+		c.LeadCount,
+	)
+	lines = append(lines, padRight(leadsLine, width))
+
+	if c.LeadFile != "" {
+		fileLine := fmt.Sprintf("%s %s",
+			lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("CSV:"),
+			lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render(c.LeadFile),
+		)
+		lines = append(lines, padRight(fileLine, width))
+	}
+
+	if c.Link != "" {
+		linkDisplay := c.Link
+		if len(linkDisplay) > width-8 {
+			linkDisplay = linkDisplay[:width-11] + "..."
+		}
+		linkLine := fmt.Sprintf("%s %s",
+			lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("Link:"),
+			lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render(linkDisplay),
+		)
+		lines = append(lines, padRight(linkLine, width))
+	}
+
+	dateLine := fmt.Sprintf("%s %s",
+		lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render("Created:"),
+		lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render(c.CreatedAt),
+	)
+	lines = append(lines, padRight(dateLine, width))
+
+	return lines
+}
+
+func (m model) renderStepIndicators(width int) string {
+	var parts []string
+	for i := stepType(1); i <= stepCount; i++ {
+		name := stepNames[i][:1] // First letter.
+		if i == stepLink {
+			name = "L"
+		} else if i == stepVerify {
+			name = "V"
+		} else if i == stepPreview {
+			name = "P"
+		} else {
+			name = "D"
+		}
+		if i == m.step {
+			parts = append(parts, stepActiveStyle.Render(fmt.Sprintf(" %s ", name)))
+		} else {
+			parts = append(parts, stepInactiveStyle.Render(fmt.Sprintf(" %s ", name)))
+		}
+	}
+	joined := strings.Join(parts, " ")
+	return padRight(joined, width)
+}
+
+// ---------------------------------------------------------------------------
+// Render: status bar
+// ---------------------------------------------------------------------------
+
+func (m model) renderStatusBar() string {
+	var text string
+	if m.statusMsg != "" {
+		prefix := ""
+		if m.statusErr {
+			prefix = errorStyle.Render("! ") + statusBarStyle.Render("")
+		}
+		text = fmt.Sprintf(" %s%s ", prefix, m.statusMsg)
+		// Clear status after one render.
+		// m.statusMsg stays until next action or navigation.
+	} else {
+		focusLabel := "LIST"
+		if m.focus == focusDetail {
+			focusLabel = "DETAIL"
+		}
+		text = fmt.Sprintf(" Focus: %s  |  %d campaigns loaded ",
+			focusLabel, len(m.campaigns))
+	}
+	return statusBarStyle.Copy().Width(m.width).Render(padRight(text, m.width))
+}
+
+// ---------------------------------------------------------------------------
+// Render: new campaign form
+// ---------------------------------------------------------------------------
+
+func (m model) renderForm() string {
+	formW := 60
+	if m.width < formW+4 {
+		formW = m.width - 4
+	}
+
+	var sb strings.Builder
+
+	sb.WriteString(formTitleStyle.Copy().Width(m.width).Render(
+		padRight(" NEW CAMPAIGN ", m.width),
+	))
+	sb.WriteString("\n\n")
+
+	labels := []string{"Name", "Lure File", "Phishlet", "Lead CSV"}
+	for i, input := range m.formInputs {
+		label := formLabelStyle.Render(fmt.Sprintf("  %-12s", labels[i]+":"))
+		view := input.View()
+		sb.WriteString(label)
+		sb.WriteString(formLabelStyle.Render("│ "))
+		sb.WriteString(view)
+		sb.WriteString("\n\n")
+	}
+
+	sb.WriteString("\n")
+	hint := keyHintStyle.Render("  [Tab/Shift+Tab] navigate  [Enter] submit/next  [Esc] cancel")
+	sb.WriteString(padRight(hint, formW))
+
+	// Center the form.
+	formContent := sb.String()
+	centered := lipgloss.NewStyle().
+		Width(m.width).
+		Align(lipgloss.Center).
+		Render(formContent)
+
+	return centered + "\n" + m.renderStatusBar()
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+func statusLabel(status string) string {
+	switch status {
+	case core.StatusActive:
+		return statusActiveStyle.Render("ACT")
+	case core.StatusDraft:
+		return statusDraftStyle.Render("DFT")
+	case core.StatusVerified:
+		return statusVerifiedStyle.Render("VER")
+	case core.StatusDeployed:
+		return statusDeployedStyle.Render("DEP")
+	default:
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("240")).Render(status)
+	}
+}
+
+func truncate(s string, max int) string {
+	runes := []rune(s)
+	if len(runes) <= max {
+		return s
+	}
+	if max < 2 {
+		return string(runes[:max])
+	}
+	return string(runes[:max-1]) + "…"
+}
+
+func padRight(s string, total int) string {
+	// Calculate visible width (strip ANSI).
+	vis := visibleWidth(s)
+	if vis >= total {
+		return s
+	}
+	return s + strings.Repeat(" ", total-vis)
+}
+
+func visibleWidth(s string) int {
 	n := 0
 	esc := false
 	for i := 0; i < len(s); i++ {
@@ -336,236 +995,3 @@ func visibleLen(s string) int {
 	}
 	return n
 }
-
-// padRight returns s padded with spaces so that visibleLen(s) == total.
-func padRight(s string, total int) string {
-	vl := visibleLen(s)
-	if vl >= total {
-		return s
-	}
-	return s + strings.Repeat(" ", total-vl)
-}
-
-// ---------------------------------------------------------------------------
-// Drawing
-// ---------------------------------------------------------------------------
-
-// draw renders the full TUI frame to stdout.
-func (a *App) draw() {
-	leftW, rightW, contentH := a.layout()
-	panelH := contentH - 1 // subtract header row
-	if panelH < 6 {
-		panelH = 6
-	}
-
-	var sb strings.Builder
-	sb.Grow(a.width * a.height * 12)
-
-	// Home cursor
-	sb.WriteString("\033[H")
-
-	// ---- Header bar ----
-	sb.WriteString("\033[1;37;44m") // bold white on blue
-	sb.WriteString(padRight(" GLNT Campaign Manager v1.3 ", a.width))
-	sb.WriteString("\033[0m\r\n")
-
-	// ---- Panel rows ----
-	for row := 0; row < panelH; row++ {
-		lc := a.leftCell(leftW, panelH, row)
-		rc := a.rightCell(rightW, panelH, row)
-		sb.WriteString(padRight(lc, leftW))
-		sb.WriteByte(' ')
-		sb.WriteString(padRight(rc, rightW))
-		sb.WriteString("\033[K\r\n")
-	}
-
-	// ---- Status bar ----
-	proxyDot := "\033[32m●\033[90m"
-	if !a.proxyOnline {
-		proxyDot = "\033[31m●\033[90m"
-	}
-	var status string
-	if a.statusMsg != "" {
-		status = fmt.Sprintf(" %s %s ", proxyDot, a.statusMsg)
-		a.statusMsg = ""
-	} else {
-		status = fmt.Sprintf(" %s online  │  Last capture: %s  │  Events: %d ",
-			proxyDot, a.lastCapture, a.newEvents)
-	}
-	sb.WriteString("\033[90m") // dim
-	sb.WriteString(padRight(status, a.width))
-	sb.WriteString("\033[0m")
-
-	fmt.Print(sb.String())
-}
-
-// leftCell returns the content for one row of the left (campaign list) panel.
-func (a *App) leftCell(width, height, row int) string {
-	switch {
-	case row == 0:
-		return "\033[90m╔" + strings.Repeat("═", width-2) + "╗\033[0m"
-	case row == height-1:
-		return "\033[90m╚" + strings.Repeat("═", width-2) + "╝\033[0m"
-	default:
-		idx := row - 1
-		if idx >= len(a.campaigns) {
-			return "\033[90m║\033[0m" + strings.Repeat(" ", width-2) + "\033[90m║\033[0m"
-		}
-		c := a.campaigns[idx]
-
-		marker := "  "
-		if a.focusPanel == 0 && idx == a.selected {
-			marker = "\033[34m▶ \033[0m"
-		}
-		status := statusIcon(c.Status)
-		nameMax := width - 10
-		if nameMax < 1 {
-			nameMax = 1
-		}
-		line := fmt.Sprintf(" %s%s %s", marker, truncate(c.Name, nameMax), status)
-		return "\033[90m║\033[0m" + padRight(line, width-2) + "\033[90m║\033[0m"
-	}
-}
-
-// rightCell returns the content for one row of the right (workflow) panel.
-func (a *App) rightCell(width, height, row int) string {
-	switch {
-	case row == 0:
-		return "\033[90m╔" + strings.Repeat("═", width-2) + "╗\033[0m"
-	case row == height-1:
-		return "\033[90m╚" + strings.Repeat("═", width-2) + "╝\033[0m"
-	case row == 1:
-		title := fmt.Sprintf(" Step %d: %s  ", a.currentStep, stepName(a.currentStep))
-		// Show step progress indicators (1 2 3 4) on the right side.
-		steps := ""
-		for i := 1; i <= 4; i++ {
-			if i == a.currentStep {
-				steps += fmt.Sprintf("\033[1;37;44m %d \033[0m ", i)
-			} else {
-				steps += fmt.Sprintf("\033[90m %d \033[0m ", i)
-			}
-		}
-		// Fit title + steps into the available width, dropping steps if too narrow.
-		avail := width - 2
-		titleVal := visibleLen(title)
-		stepsVal := visibleLen(steps)
-		if titleVal+stepsVal > avail {
-			line := padRight(title, avail)
-			return "\033[90m║\033[0m\033[1;37m" + line + "\033[0m\033[90m║\033[0m"
-		}
-		spacer := strings.Repeat(" ", avail-titleVal-stepsVal)
-		line := title + spacer + steps
-		return "\033[90m║\033[0m\033[1;37m" + padRight(line, avail) + "\033[0m\033[90m║\033[0m"
-	case row == 2:
-		return "\033[90m╠" + strings.Repeat("═", width-2) + "╣\033[0m"
-	case row == height-2:
-		keys := " Keys: [L]ink  [V]erify  [P]review  [D]eploy  [Q]uit  [Tab] focus "
-		return "\033[90m║\033[0m\033[36m" + padRight(keys, width-2) + "\033[0m\033[90m║\033[0m"
-	default:
-		lines := stepContentLines(a.currentStep)
-		idx := row - 3
-		if idx >= 0 && idx < len(lines) {
-			return "\033[90m║\033[0m " + padRight(lines[idx], width-3) + "\033[90m║\033[0m"
-		}
-		return "\033[90m║\033[0m" + strings.Repeat(" ", width-2) + "\033[90m║\033[0m"
-	}
-}
-
-// ---------------------------------------------------------------------------
-// Drawing helpers
-// ---------------------------------------------------------------------------
-
-// statusIcon returns a 3-letter colored status abbreviation.
-func statusIcon(status string) string {
-	switch status {
-	case "active":
-		return "\033[32mACT\033[0m"
-	case "ready":
-		return "\033[34mRDY\033[0m"
-	case "draft":
-		return "\033[90mDFT\033[0m"
-	case "archived":
-		return "\033[31mARC\033[0m"
-	default:
-		return "---"
-	}
-}
-
-// truncate shortens s to max runes, appending an ellipsis if needed.
-func truncate(s string, max int) string {
-	if max < 1 {
-		return ""
-	}
-	runes := []rune(s)
-	if len(runes) <= max {
-		return s
-	}
-	return string(runes[:max-1]) + "…"
-}
-
-// stepName returns the human-readable name for a workflow step.
-func stepName(step int) string {
-	switch step {
-	case 1:
-		return "Generate Link"
-	case 2:
-		return "Verify Leads"
-	case 3:
-		return "Preview"
-	case 4:
-		return "Deploy"
-	default:
-		return "Unknown"
-	}
-}
-
-// stepContentLines returns descriptive lines for the current workflow step.
-func stepContentLines(step int) []string {
-	switch step {
-	case 1:
-		return []string{
-			"Generate a phishing link with the",
-			"base64-encoded target address.",
-			"",
-			"The link is embedded into the lure page.",
-			"Verified leads click through to Evilginx.",
-			"",
-			"Press [L] to generate the link.",
-		}
-	case 2:
-		return []string{
-			"Verify email addresses against the",
-			"target mail server (SMTP RCPT TO).",
-			"",
-			"Valid leads are marked as verified and",
-			"ready for campaign deployment.",
-			"",
-			"Press [V] to start verification.",
-		}
-	case 3:
-		return []string{
-			"Preview the phishing page with the",
-			"generated link embedded in the lure.",
-			"",
-			"Check that all assets load correctly",
-			"and the redirect works as expected.",
-			"",
-			"Press [P] to open the preview.",
-		}
-	case 4:
-		return []string{
-			"Deploy the campaign via SuperMailer",
-			"or Amazon SES to all verified leads.",
-			"",
-			"Monitor delivery rates and capture",
-			"events in real time.",
-			"",
-			"Press [D] to start deployment.",
-		}
-	default:
-		return []string{"No content available for this step."}
-	}
-}
-
-// Ensure strconv is referenced (used by future workflow wiring).
-var _ = strconv.Itoa
