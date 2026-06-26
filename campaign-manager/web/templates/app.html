@@ -18,6 +18,8 @@
   --purple: #8b6ff0;
   --amber: #e8953b;
   --red: #f5534b;
+  --danger-bg: rgba(245,83,75,0.15);
+  --success-bg: rgba(38,166,65,0.15);
   --font-sans: 'IBM Plex Sans', -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
 }
@@ -380,9 +382,9 @@ input[type="file"]::file-selector-button {
   box-shadow: 0 4px 16px rgba(0,0,0,0.3);
 }
 .toast-out { opacity: 0; transform: translateX(100%); transition: all 0.3s ease-in; }
-.toast-success { background: #1a6b30; }
-.toast-error   { background: #9b1c1c; }
-.toast-icon { flex-shrink: 0; font-size: 15px; line-height: 1.3; }
+.toast-success { background: var(--success-bg); color: var(--green); }
+.toast-error   { background: var(--danger-bg); color: var(--red); }
+.toast-icon { flex-shrink: 0; font-size: 15px; line-height: 1.3; color: inherit; }
 @keyframes toast-in {
   from { opacity: 0; transform: translateX(100%); }
   to   { opacity: 1; transform: translateX(0); }
@@ -581,7 +583,7 @@ input[type="file"]::file-selector-button {
         </div>
 
         {{if eq .Selected.Status "active"}}
-        <p class="panel-desc">Upload a CSV file of target emails or identifiers. Use Quick Count for a fast count, or Deep Verify for SMTP validation.</p>
+        <p class="panel-desc">Upload a CSV file of target emails or identifiers to count and verify your lead list.</p>
         <div id="upload-progress" class="hidden mt-16" style="margin-bottom:12px;">
           <p style="font-size:13px;color:var(--text);margin-bottom:8px;" id="upload-progress-text">Uploading leads.csv...</p>
           <div class="progress-bar"></div>
@@ -592,8 +594,7 @@ input[type="file"]::file-selector-button {
             <input type="file" id="leads" name="leads" accept=".csv" required>
           </div>
           <div class="form-actions">
-            <button type="submit" name="mode" value="count" class="btn btn-primary">Quick Count</button>
-            <button type="submit" name="mode" value="smtp" class="btn btn-ghost">Deep Verify (SMTP)</button>
+            <button type="submit" class="btn btn-primary">Upload & Count</button>
           </div>
         </form>
         <div id="verify-result" class="hidden verify-result mt-16"></div>
@@ -922,20 +923,11 @@ input[type="file"]::file-selector-button {
           showToast(data.error, 'error');
           return;
         }
-        if (data.mode === 'smtp') {
-          resultDiv.innerHTML =
-            '<div class="verify-stats">' +
-              '<div class="verify-stat"><div class="verify-stat-value">' + (data.total||0) + '</div><div class="verify-stat-label">Total</div></div>' +
-              '<div class="verify-stat"><div class="verify-stat-value text-green">' + (data.valid||0) + '</div><div class="verify-stat-label">Valid</div></div>' +
-              '<div class="verify-stat"><div class="verify-stat-value text-amber">' + (data.catch_all||0) + '</div><div class="verify-stat-label">Catch-All</div></div>' +
-              '<div class="verify-stat"><div class="verify-stat-value" style="color:var(--red);">' + (data.invalid||0) + '</div><div class="verify-stat-label">Invalid</div></div>' +
-            '</div>';
-        } else {
-          resultDiv.innerHTML =
-            '<div class="verify-stats">' +
-              '<div class="verify-stat"><div class="verify-stat-value text-green">' + (data.count||0) + '</div><div class="verify-stat-label">Leads Found</div></div>' +
-              '<div class="verify-stat"><div class="verify-stat-value" style="font-size:13px;font-family:var(--font-mono);">' + escHtml(data.file||'') + '</div><div class="verify-stat-label">File</div></div>' +
-            '</div>';
+        resultDiv.innerHTML =
+          '<div class="verify-stats">' +
+            '<div class="verify-stat"><div class="verify-stat-value text-green">' + (data.count||0) + '</div><div class="verify-stat-label">Leads Found</div></div>' +
+            '<div class="verify-stat"><div class="verify-stat-value" style="font-size:13px;font-family:var(--font-mono);">' + escHtml(data.file||'') + '</div><div class="verify-stat-label">File</div></div>' +
+          '</div>';
         }
         showToast('Verification complete: ' + (data.count||data.total||0) + ' leads processed.', 'success');
       })

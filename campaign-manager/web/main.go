@@ -175,18 +175,15 @@ func main() {
 			return
 		}
 
-		mode := r.URL.Query().Get("mode")
-		if mode == "" {
-			mode = "count"
-		}
-
-		// Handle file upload (optional for smtp mode if LeadFile already exists)
-		var csvPath string
-		file, _, err := r.FormFile("leads")
-		if err == nil {
+		// Upload CSV and count lines
+			file, _, err := r.FormFile("leads")
+			if err != nil {
+				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "CSV file upload required (field: leads)"})
+				return
+			}
 			defer file.Close()
 			os.MkdirAll("../data/leads", 0755)
-			csvPath = fmt.Sprintf("../../.glnt-data/leads/%s.csv", id)
+			csvPath := fmt.Sprintf("../data/leads/%s.csv", id)
 			dst, err := os.Create(csvPath)
 			if err != nil {
 				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to save file"})
@@ -195,59 +192,32 @@ func main() {
 			defer dst.Close()
 			io.Copy(dst, file)
 			c.LeadFile = csvPath
-		} else if mode == "smtp" && c.LeadFile != "" {
-			csvPath = c.LeadFile
-		} else {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "CSV file upload required (field: leads)"})
-			return
-		}
 
-		if mode == "smtp" {
-			total, valid, invalid, catchAll, err := core.VerifyLeads(csvPath, true, "")
+			// Count CSV lines
+			f, err := os.Open(csvPath)
 			if err != nil {
-				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to read file"})
 				return
 			}
-			c.LeadCount = total
+			defer f.Close()
+			reader := csv.NewReader(f)
+			count := 0
+			for {
+				_, err := reader.Read()
+				if err != nil {
+					break
+				}
+				count++
+			}
+
+			c.LeadCount = count
 			c.Status = core.StatusVerified
 			store.Put(c)
 			writeJSON(w, http.StatusOK, map[string]interface{}{
-				"total":     total,
-				"valid":     valid,
-				"invalid":   invalid,
-				"catch_all": catchAll,
-				"status":    "ok",
-				"mode":      "smtp",
+				"count":  count,
+				"file":   csvPath,
+				"status": "ok",
 			})
-			return
-		}
-
-		// Default: count mode — count CSV lines
-		f, err := os.Open(csvPath)
-		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to read file"})
-			return
-		}
-		defer f.Close()
-		reader := csv.NewReader(f)
-		count := 0
-		for {
-			_, err := reader.Read()
-			if err != nil {
-				break
-			}
-			count++
-		}
-
-		c.LeadCount = count
-		c.Status = core.StatusVerified
-		store.Put(c)
-		writeJSON(w, http.StatusOK, map[string]interface{}{
-			"count":  count,
-			"file":   csvPath,
-			"status": "ok",
-			"mode":   "count",
-		})
 	})
 
 	mux.HandleFunc("GET /api/campaigns/{id}/preview", func(w http.ResponseWriter, r *http.Request) {

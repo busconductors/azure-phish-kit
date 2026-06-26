@@ -30,7 +30,7 @@ Last updated: 2025-06-25 (reconciled with app.html post-Phase 2 SPA redesign)
 | --amber | #e8953b | — | Warnings, in-progress states |
 | --red | #f5534b | — | Errors, destructive actions |
 
-**Gap:** `--danger-bg` and `--success-bg` tokens are not yet defined. Toast CSS hardcodes `#1a6b30` (success) and `#9b1c1c` (error) backgrounds. Define `--danger-bg: rgba(245,83,75,0.15)` and `--success-bg: rgba(38,166,65,0.15)` and refactor toast styles to use them.
+`--danger-bg: rgba(245,83,75,0.15)` and `--success-bg: rgba(38,166,65,0.15)` tokens defined. Toast styles use them via `var(--success-bg)` and `var(--danger-bg)` with matching `var(--green)` / `var(--red)` text.
 
 ## Typography
 
@@ -97,7 +97,7 @@ Hover: `opacity: 0.85`. Focus: `outline: 2px solid var(--blue); outline-offset: 
 
 12px font, 600 weight, 12px border-radius, `role="status"`. Padding: 2px 10px.
 
-**Gap:** detail.html badges use 3px 12px padding. Standardize on 2px 10px.
+**Gap:** Some spacing values deviate from the 4px grid: 6px, 10px, 14px, 18px, 22px. These should be audited and snapped where practical.
 
 ### Card
 
@@ -143,12 +143,10 @@ Brand selection cards in a flexible grid:
 
 Fixed position, top-right, single-column stacking:
 - Container: `position: fixed; top: 16px; right: 16px; z-index: 9999`
-- Success: `#1a6b30` background, 4s auto-dismiss
-- Error: `#9b1c1c` background, 6s auto-dismiss
+- Success: `var(--success-bg)` background, `var(--green)` text, 4s auto-dismiss
+- Error: `var(--danger-bg)` background, `var(--red)` text, 6s auto-dismiss
 - Slide-in animation from right edge
 - Multiple toasts stack vertically
-
-**Gap:** Background colors should use --success-bg / --danger-bg tokens instead of hardcoded hex values.
 
 ### Spinner
 

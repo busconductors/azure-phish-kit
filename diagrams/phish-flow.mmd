@@ -1,0 +1,26 @@
+graph LR
+    %% Stage 1: Setup
+    OP["Operator (Web UI / TUI)"] -->|"GenerateLink() AES-256-GCM encrypt"| LINK["Phishing Link /#encrypted-fragment"]
+    LINK -->|"lure email"| TARGET["Target (victim)"]
+
+    %% Stage 2: Bootloader
+    TARGET -->|"clicks link"| PROXY["Proxy Server (handleRequest)"]
+    PROXY -->|"first visit no _s cookie"| BOOT["Bootloader (bootloader.html)"]
+    BOOT -->|"Web Crypto decrypts payload sets _s, _c cookies"| REDIR["Redirect to login.glnt.cc"]
+
+    %% Stage 3: AiTM Proxy
+    REDIR -->|"_s cookie present"| PROXY
+    PROXY -->|"matchPhishlet() ReverseProxy to real IdP"| IDP["Real IdP (Microsoft / Google / Okta)"]
+    IDP -->|"login page (rewritten)"| TARGET
+    TARGET -->|"enters creds"| CREDS["Username captured (credential_submit)"]
+    TARGET -->|"completes MFA"| MFA["Session cookies captured (mfa_complete)"]
+
+    %% Stage 4: Event Logging
+    CREDS -->|"notifyCapture()"| EVENT["writeEvent() captures.jsonl"]
+    MFA -->|"notifyCapture()"| EVENT
+
+    %% Stage 5: Telegram
+    EVENT -->|"sendTelegramMessage() + sendTelegramDocument()"| TG["Telegram Bot (message + replay script)"]
+
+    %% Stage 6: Analytics
+    EVENT -->|"parseJSONL()"| ANALYTICS["Analytics Server (timeline / funnel / dashboard)"]

@@ -1,0 +1,47 @@
+graph LR
+    %% Operator Tools
+    subgraph OP[" Operator Console "]
+        CM["Campaign Manager\n(Web + TUI)"]
+        PG["Payload Generator\n(CLI)"]
+        EV["Email Verifier\n(CLI)"]
+    end
+
+    %% Data
+    CM -->|"read/write"| STORE["campaigns.json"]
+    CM -->|"scans"| LURES["20 Lure Templates\n(HTML attachments)"]
+    CM -->|"scans"| PHLETS["Phishlet Configs\n(JSON)"]
+    PG -->|"AES-256-GCM\nencrypt"| LINK["Phishing Link\n/#fragment"]
+
+    %% Proxy
+    subgraph PROXY[" Proxy Server (AiTM) "]
+        BL["Bootloader\n(decrypts payload)"]
+        PR["Reverse Proxy\n(rewrites IdP)"]
+        NC["notifyCapture()\n(classifies events)"]
+    end
+
+    LINK -->|"target clicks"| BL
+    BL -->|"_s _c cookies"| PR
+    PR -->|"POST body\nSet-Cookie"| NC
+
+    %% Events
+    NC -->|"writeEvent()"| EVENTS["captures.jsonl"]
+    EVENTS -->|"sendTelegramMessage()"| TG["Telegram Bot\n(alerts + replay script)"]
+    EVENTS -->|"parseJSONL()"| DASH["Analytics Dashboard\n(timeline / funnel)"]
+
+    %% Loop back
+    EVENTS -->|"live stats"| CM
+
+    %% Style
+    style CM fill:#4199f5,stroke:#1e2530,color:#fff
+    style PG fill:#4199f5,stroke:#1e2530,color:#fff
+    style EV fill:#4199f5,stroke:#1e2530,color:#fff
+    style LINK fill:#e8953b,stroke:#1e2530,color:#111
+    style BL fill:#8b6ff0,stroke:#1e2530,color:#fff
+    style PR fill:#8b6ff0,stroke:#1e2530,color:#fff
+    style NC fill:#8b6ff0,stroke:#1e2530,color:#fff
+    style EVENTS fill:#e8953b,stroke:#1e2530,color:#111
+    style TG fill:#26a641,stroke:#1e2530,color:#fff
+    style DASH fill:#26a641,stroke:#1e2530,color:#fff
+    style STORE fill:#e8953b,stroke:#1e2530,color:#111
+    style LURES fill:#e8953b,stroke:#1e2530,color:#111
+    style PHLETS fill:#e8953b,stroke:#1e2530,color:#111
